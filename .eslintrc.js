@@ -15,7 +15,7 @@ module.exports = {
         project: ["./tsconfig.json"],
         sourceType: "module",
     },
-    plugins: ["prefer-arrow", "@typescript-eslint", "prettier"],
+    plugins: ["@typescript-eslint", "prettier"],
     rules: {
         // The typescript version adds extra checks on top of the eslint version, so we disable the eslint version
         // https://github.com/typescript-eslint/typescript-eslint/blob/master/packages/eslint-plugin/docs/rules/init-declarations.md
