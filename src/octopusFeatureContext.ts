@@ -29,7 +29,7 @@ export class OctopusFeatureContext {
             };
         }
 
-        const evaluation = this.toggles.evaluations.find(feature => feature.slug.toLowerCase() === slug.toLowerCase());
+        const evaluation = this.toggles.evaluations.find((feature) => feature.slug.toLowerCase() === slug.toLowerCase());
 
         if (!evaluation) {
             return {
@@ -45,12 +45,11 @@ export class OctopusFeatureContext {
     matchesSegment(context: EvaluationContext, segments: Record<string, string>): boolean {
         if (!context) return false;
 
-        var result = Object.keys(context).some(contextKey =>
-            Object.keys(segments).some(segmentKey => {
+        const result = Object.keys(context).some((contextKey) =>
+            Object.keys(segments).some((segmentKey) => {
                 const contextValue = context[contextKey];
                 if (typeof contextValue === "string") {
                     return contextKey === segmentKey && contextValue === segments[segmentKey];
-
                 }
                 return false;
             })
@@ -59,9 +58,8 @@ export class OctopusFeatureContext {
         return result;
     }
 
-
     evaluateSegments(evaluation: FeatureToggleEvaluation, context: EvaluationContext): boolean {
-        var result = evaluation.isEnabled && (Object.keys(evaluation.segments).length === 0 || this.matchesSegment(context, evaluation.segments));
+        const result = evaluation.isEnabled && (Object.keys(evaluation.segments).length === 0 || this.matchesSegment(context, evaluation.segments));
         return result;
     }
 }

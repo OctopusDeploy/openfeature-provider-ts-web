@@ -12,10 +12,9 @@ export class OctopusFeatureClient {
     }
 
     async getEvaluationContext(): Promise<OctopusFeatureContext> {
-
         // If the features have not changed, return the feature set
 
-        if (!await this.haveFeaturesChanged()) {
+        if (!(await this.haveFeaturesChanged())) {
             return this.context;
         }
 
@@ -28,7 +27,6 @@ export class OctopusFeatureClient {
         this.context = new OctopusFeatureContext(manifest);
 
         return this.context;
-
     }
 
     async haveFeaturesChanged(): Promise<boolean> {
@@ -49,8 +47,8 @@ export class OctopusFeatureClient {
             return true;
         }
 
-        var decoder = new TextDecoder("utf8");
-        var decodedContentHash = btoa(decoder.decode(response.data));
+        const decoder = new TextDecoder("utf8");
+        const decodedContentHash = btoa(decoder.decode(response.data));
 
         const haveFeaturesChanged = this.context.toggles.contentHash !== decodedContentHash;
 
@@ -58,7 +56,6 @@ export class OctopusFeatureClient {
     }
 
     async getFeatureManifest(): Promise<FeatureToggles | undefined> {
-
         const config: AxiosRequestConfig = {
             url: `api/featuretoggles/v2/${this.configuration.clientIdentifier}`,
             maxContentLength: Infinity,

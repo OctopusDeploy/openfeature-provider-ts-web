@@ -34,7 +34,6 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
-
         const isFeatureEnabled = this.evaluationContext.evaluate(flagKey, defaultValue, this.context);
 
         return isFeatureEnabled;
@@ -51,6 +50,4 @@ export class OctopusFeatureProvider implements Provider {
     resolveObjectEvaluation<U extends JsonValue>(flagKey: string, defaultValue: U): ResolutionDetails<U> {
         throw new Error("Octopus Features only support boolean toggles.");
     }
-
-
 }

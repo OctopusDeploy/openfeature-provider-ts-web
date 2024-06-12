@@ -1,1 +1,1 @@
-export * from "./octopusFeatureProvider"
+export * from "./octopusFeatureProvider";
