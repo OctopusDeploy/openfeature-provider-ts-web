@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "removeComments": false,
+        "outDir": "dist",
+        "target": "ES5",
+        "allowJs": true,
+        "module": "CommonJS",
+        "moduleResolution": "node",
+        "declaration": true,
+        "esModuleInterop": true,
+        "strict": true,
+        "downlevelIteration": true
+    },
+    "exclude": ["node_modules", "dist"],
+    "include": ["src/**/*"]
+}
