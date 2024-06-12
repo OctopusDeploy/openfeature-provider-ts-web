@@ -3,9 +3,8 @@ import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 
 export interface OctopusFeatureConfiguration {
-    serverUri: string;
     clientIdentifier: string;
-    cacheDurationInMinutes: number;
+    serverUri?: string;
 }
 
 export class OctopusFeatureProvider implements Provider {

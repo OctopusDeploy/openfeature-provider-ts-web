@@ -4,11 +4,13 @@ import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 
 export class OctopusFeatureClient {
     private context: OctopusFeatureContext;
-    private configuration: OctopusFeatureConfiguration;
+    private clientIdentifier: string;
+    private serverUri: string;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.context = new OctopusFeatureContext({ evaluations: [], contentHash: "" });
-        this.configuration = configuration;
+        this.clientIdentifier = configuration.clientIdentifier;
+        this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
     }
 
     async getEvaluationContext(): Promise<OctopusFeatureContext> {
@@ -33,7 +35,7 @@ export class OctopusFeatureClient {
         if (this.context.toggles.contentHash === "") return true;
 
         const config: AxiosRequestConfig = {
-            url: `api/featuretoggles/${this.configuration.clientIdentifier}/check`,
+            url: `${this.serverUri}/api/featuretoggles/${this.clientIdentifier}/check`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
@@ -57,7 +59,7 @@ export class OctopusFeatureClient {
 
     async getFeatureManifest(): Promise<FeatureToggles | undefined> {
         const config: AxiosRequestConfig = {
-            url: `api/featuretoggles/v2/${this.configuration.clientIdentifier}`,
+            url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
@@ -70,10 +72,12 @@ export class OctopusFeatureClient {
             return undefined;
         }
 
-        if (!response.headers["ContentHash"]) {
+        // @ts-ignore
+        const contentHash = response.headers.get("ContentHash");
+        if (!contentHash) {
             return undefined;
         }
 
-        return { evaluations: response.data, contentHash: response.headers["ContentHash"] };
+        return { evaluations: response.data, contentHash: contentHash };
     }
 }

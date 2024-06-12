@@ -1,2 +1,9 @@
+.eslintignore
+.eslintrc.js
+.prettierignore
+.prettierrc
 .github
+.idea
 src
+jest**
+tsconfig.json
