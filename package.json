@@ -38,5 +38,9 @@
     "prettier": "^3.3.2",
     "ts-jest": "^29.1.4",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@openfeature/web-sdk": "^1.2.0",
+    "axios": "^1.7.2"
   }
 }
