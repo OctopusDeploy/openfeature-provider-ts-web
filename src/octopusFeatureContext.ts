@@ -10,7 +10,7 @@ export interface FeatureToggleEvaluation {
     name: string;
     slug: string;
     isEnabled: boolean;
-    segments: Record<string, string>;
+    segments: { key: string; value: string }[];
 }
 
 export class OctopusFeatureContext {
@@ -42,14 +42,14 @@ export class OctopusFeatureContext {
         return { value: this.evaluateSegments(evaluation, context) };
     }
 
-    matchesSegment(context: EvaluationContext, segments: Record<string, string>): boolean {
+    matchesSegment(context: EvaluationContext, segments: { key: string; value: string }[]): boolean {
         if (!context) return false;
 
         const result = Object.keys(context).some((contextKey) =>
-            Object.keys(segments).some((segmentKey) => {
+            segments.some(({ key, value }) => {
                 const contextValue = context[contextKey];
                 if (typeof contextValue === "string") {
-                    return contextKey === segmentKey && contextValue === segments[segmentKey];
+                    return contextKey === key && contextValue === value;
                 }
                 return false;
             })
