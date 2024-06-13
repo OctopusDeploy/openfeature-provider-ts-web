@@ -31,9 +31,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-        // code to run to reconcile the providers state with the newly updated context
         this.context = newContext;
-        this.evaluationContext = await this.client.getEvaluationContext();
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
