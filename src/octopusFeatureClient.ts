@@ -1,4 +1,5 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axiosRetry from "axios-retry";
 import { FeatureToggleEvaluation, FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 
@@ -6,11 +7,14 @@ export class OctopusFeatureClient {
     private context: OctopusFeatureContext;
     private clientIdentifier: string;
     private serverUri: string;
+    private axiosInstance: AxiosInstance;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.context = new OctopusFeatureContext({ evaluations: [], contentHash: "" });
         this.clientIdentifier = configuration.clientIdentifier;
         this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
+        this.axiosInstance = axios.create();
+        axiosRetry(this.axiosInstance, { retries: 3 });
     }
 
     async getEvaluationContext(): Promise<OctopusFeatureContext> {
@@ -43,7 +47,7 @@ export class OctopusFeatureClient {
         };
 
         // TODO: Validate this behaviour if the array is null
-        const response = await axios.request<Uint8Array>(config);
+        const response = await this.axiosInstance.request<Uint8Array>(config);
 
         if (!response.data.length) {
             return true;
@@ -66,7 +70,7 @@ export class OctopusFeatureClient {
             responseType: "json",
         };
 
-        const response = await axios.request<FeatureToggleEvaluation[]>(config);
+        const response = await this.axiosInstance.request<FeatureToggleEvaluation[]>(config);
 
         if (response.status == 404) {
             return undefined;

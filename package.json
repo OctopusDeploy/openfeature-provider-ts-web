@@ -43,7 +43,8 @@
   },
   "dependencies": {
     "@openfeature/web-sdk": "^1.2.0",
-    "axios": "^1.7.2"
+    "axios": "^1.7.2",
+    "axios-retry": "^4.4.0"
   },
   "jest-junit": {
     "outputDirectory": "reports",
