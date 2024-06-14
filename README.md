@@ -20,4 +20,3 @@ if (client.getBooleanValue("to-the-moon-feature", false, {})) {
     console.log('🚀🚀🚀');
 }
 ```
-
