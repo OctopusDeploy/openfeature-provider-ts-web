@@ -7,3 +7,4 @@
 src
 jest**
 tsconfig.json
+**.test.*
