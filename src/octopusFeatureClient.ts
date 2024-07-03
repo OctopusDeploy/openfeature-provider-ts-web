@@ -7,6 +7,7 @@ type SchemaVersion = "v1";
 
 interface CacheEntry {
     schemaVersion: SchemaVersion;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     contents: any;
 }
 
@@ -50,10 +51,12 @@ export class OctopusFeatureClient {
         return new OctopusFeatureContext(manifest);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isCacheEntry(entry: any): entry is CacheEntry {
         return (entry as CacheEntry).schemaVersion !== undefined && (entry as CacheEntry).contents !== undefined;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isFeatureToggles(featureToggles: any): featureToggles is FeatureToggles {
         return (featureToggles as FeatureToggles).evaluations !== undefined && (featureToggles as FeatureToggles).contentHash !== undefined;
     }
@@ -80,21 +83,5 @@ export class OctopusFeatureClient {
         }
 
         return { evaluations: response.data, contentHash: contentHash };
-    }
-
-    setValueInStorage(key: string, value: string) {
-        try {
-        } catch (e) {
-            // TODO logger.warn(e, "Failed to update local storage value for key {key}", { key });
-        }
-    }
-
-    getValueInStorage(key: string): string | null {
-        try {
-            return localStorage.getItem(key);
-        } catch (e) {
-            // TODO logger.warn(e, "Failed to fetch item from local storage for key {key}", { key });
-        }
-        return null;
     }
 }
