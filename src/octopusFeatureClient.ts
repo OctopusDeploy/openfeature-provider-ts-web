@@ -3,10 +3,18 @@ import axiosRetry from "axios-retry";
 import { FeatureToggleEvaluation, FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 
+type SchemaVersion = "v1";
+
+interface CacheEntry {
+    schemaVersion: SchemaVersion;
+    contents: any;
+}
+
 export class OctopusFeatureClient {
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
     private readonly axiosInstance: AxiosInstance;
+    private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.clientIdentifier = configuration.clientIdentifier;
@@ -19,10 +27,35 @@ export class OctopusFeatureClient {
         const manifest = await this.getFeatureManifest();
 
         if (manifest === undefined) {
+            const rawCache = localStorage.getItem(this.localStorageKey);
+            if (rawCache === null) {
+                return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
+            }
+
+            try {
+                const cacheEntry = JSON.parse(rawCache);
+                if (this.isCacheEntry(cacheEntry) && this.isFeatureToggles(cacheEntry.contents)) {
+                    return new OctopusFeatureContext(cacheEntry.contents);
+                }
+            } catch (e) {
+                // TODO Logging
+            }
+
             return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
         }
 
+        const cacheEntry: CacheEntry = { schemaVersion: "v1", contents: manifest };
+        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
+
         return new OctopusFeatureContext(manifest);
+    }
+
+    isCacheEntry(entry: any): entry is CacheEntry {
+        return (entry as CacheEntry).schemaVersion !== undefined && (entry as CacheEntry).contents !== undefined;
+    }
+
+    isFeatureToggles(featureToggles: any): featureToggles is FeatureToggles {
+        return (featureToggles as FeatureToggles).evaluations !== undefined && (featureToggles as FeatureToggles).contentHash !== undefined;
     }
 
     async getFeatureManifest(): Promise<FeatureToggles | undefined> {
@@ -47,5 +80,21 @@ export class OctopusFeatureClient {
         }
 
         return { evaluations: response.data, contentHash: contentHash };
+    }
+
+    setValueInStorage(key: string, value: string) {
+        try {
+        } catch (e) {
+            // TODO logger.warn(e, "Failed to update local storage value for key {key}", { key });
+        }
+    }
+
+    getValueInStorage(key: string): string | null {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            // TODO logger.warn(e, "Failed to fetch item from local storage for key {key}", { key });
+        }
+        return null;
     }
 }
