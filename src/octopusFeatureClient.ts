@@ -4,10 +4,8 @@ import { V1FeatureToggleEvaluation, V1FeatureToggles, OctopusFeatureContext } fr
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
 
-type SchemaVersion = "v1";
-
 interface V1CacheEntry {
-    schemaVersion: SchemaVersion;
+    schemaVersion: "v1";
     contents: V1FeatureToggles;
 }
 
