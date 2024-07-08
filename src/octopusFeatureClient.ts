@@ -41,7 +41,7 @@ export class OctopusFeatureClient {
 
             try {
                 const cacheEntry = JSON.parse(rawCache);
-                if (this.isCacheEntry(cacheEntry) && this.isFeatureToggles(cacheEntry.contents)) {
+                if (this.isV1CacheEntry(cacheEntry)) {
                     return new OctopusFeatureContext(cacheEntry.contents);
                 }
             } catch (e) {
@@ -57,12 +57,14 @@ export class OctopusFeatureClient {
         return new OctopusFeatureContext(manifest);
     }
 
-    isCacheEntry(entry: unknown): entry is V1CacheEntry {
-        return (entry as V1CacheEntry).schemaVersion !== "v1" && (entry as V1CacheEntry).contents !== undefined;
-    }
-
-    isFeatureToggles(featureToggles: unknown): featureToggles is V1FeatureToggles {
-        return (featureToggles as V1FeatureToggles).evaluations !== undefined && (featureToggles as V1FeatureToggles).contentHash !== undefined;
+    isV1CacheEntry(entry: unknown): entry is V1CacheEntry {
+        const possibleV1CacheEntry = entry as V1CacheEntry;
+        return (
+            possibleV1CacheEntry.schemaVersion === "v1" &&
+            possibleV1CacheEntry.contents !== undefined &&
+            possibleV1CacheEntry.contents.evaluations !== undefined &&
+            possibleV1CacheEntry.contents.contentHash !== undefined
+        );
     }
 
     async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
