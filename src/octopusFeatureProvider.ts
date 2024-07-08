@@ -1,10 +1,11 @@
-import { EvaluationContext, JsonValue, Provider, ResolutionDetails } from "@openfeature/web-sdk";
+import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 
 export interface OctopusFeatureConfiguration {
     clientIdentifier: string;
     serverUri?: string;
+    logger?: Logger;
 }
 
 export class OctopusFeatureProvider implements Provider {

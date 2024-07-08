@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import axiosRetry from "axios-retry";
 import { FeatureToggleEvaluation, FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
+import { DefaultLogger, Logger } from "@openfeature/web-sdk";
 
 type SchemaVersion = "v1";
 
@@ -14,14 +15,23 @@ interface CacheEntry {
 export class OctopusFeatureClient {
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
+    private readonly logger: Logger;
     private readonly axiosInstance: AxiosInstance;
     private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.clientIdentifier = configuration.clientIdentifier;
         this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
+        this.logger = configuration.logger ?? new DefaultLogger();
         this.axiosInstance = axios.create();
-        axiosRetry(this.axiosInstance, { retries: 3 });
+        axiosRetry(this.axiosInstance, {
+            retries: 3,
+            onRetry: (retryCount, error) =>
+                this.logger.warn(
+                    error,
+                    `Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri} ${retryCount} times...`
+                ),
+        });
     }
 
     async getEvaluationContext(): Promise<OctopusFeatureContext> {
@@ -39,7 +49,7 @@ export class OctopusFeatureClient {
                     return new OctopusFeatureContext(cacheEntry.contents);
                 }
             } catch (e) {
-                // TODO Logging
+                this.logger.warn(e, "An error occurred parsing feature toggles returned from OctoToggle.");
             }
 
             return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
@@ -73,12 +83,14 @@ export class OctopusFeatureClient {
         const response = await this.axiosInstance.request<FeatureToggleEvaluation[]>(config);
 
         if (response.status == 404) {
+            this.logger.warn(`Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri}`);
             return undefined;
         }
 
         // @ts-ignore
         const contentHash = response.headers.get("ContentHash");
         if (!contentHash) {
+            this.logger.warn(`Feature toggle response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
         }
 
