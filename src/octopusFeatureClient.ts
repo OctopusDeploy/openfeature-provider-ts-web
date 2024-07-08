@@ -25,8 +25,7 @@ export class OctopusFeatureClient {
             retries: 3,
             onRetry: (retryCount, error) =>
                 this.logger.warn(
-                    error,
-                    `Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri} ${retryCount} times...`
+                    `Failed to retrieve feature toggles ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
                 ),
         });
     }
@@ -46,7 +45,7 @@ export class OctopusFeatureClient {
                     return new OctopusFeatureContext(cacheEntry.contents);
                 }
             } catch (e) {
-                this.logger.warn(e, "An error occurred parsing feature toggles returned from OctoToggle.");
+                this.logger.warn(`An error occurred parsing feature toggles returned from Octopus: ${JSON.stringify(e)}`);
             }
 
             return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
