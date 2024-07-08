@@ -58,7 +58,7 @@ export class OctopusFeatureClient {
     }
 
     isCacheEntry(entry: unknown): entry is V1CacheEntry {
-        return (entry as V1CacheEntry).schemaVersion !== undefined && (entry as V1CacheEntry).contents !== undefined;
+        return (entry as V1CacheEntry).schemaVersion !== "v1" && (entry as V1CacheEntry).contents !== undefined;
     }
 
     isFeatureToggles(featureToggles: unknown): featureToggles is V1FeatureToggles {
