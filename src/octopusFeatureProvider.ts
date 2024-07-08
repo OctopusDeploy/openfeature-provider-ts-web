@@ -37,7 +37,6 @@ export class OctopusFeatureProvider implements Provider {
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
         const isFeatureEnabled = this.evaluationContext.evaluate(flagKey, defaultValue, this.context);
-
         return isFeatureEnabled;
     }
 
