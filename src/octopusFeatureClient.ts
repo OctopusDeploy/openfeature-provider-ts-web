@@ -1,15 +1,14 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import axiosRetry from "axios-retry";
-import { FeatureToggleEvaluation, FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
+import { V1FeatureToggleEvaluation, V1FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
 
 type SchemaVersion = "v1";
 
-interface CacheEntry {
+interface V1CacheEntry {
     schemaVersion: SchemaVersion;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    contents: any;
+    contents: V1FeatureToggles;
 }
 
 export class OctopusFeatureClient {
@@ -55,23 +54,21 @@ export class OctopusFeatureClient {
             return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
         }
 
-        const cacheEntry: CacheEntry = { schemaVersion: "v1", contents: manifest };
+        const cacheEntry: V1CacheEntry = { schemaVersion: "v1", contents: manifest };
         localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
 
         return new OctopusFeatureContext(manifest);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isCacheEntry(entry: any): entry is CacheEntry {
-        return (entry as CacheEntry).schemaVersion !== undefined && (entry as CacheEntry).contents !== undefined;
+    isCacheEntry(entry: unknown): entry is V1CacheEntry {
+        return (entry as V1CacheEntry).schemaVersion !== undefined && (entry as V1CacheEntry).contents !== undefined;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    isFeatureToggles(featureToggles: any): featureToggles is FeatureToggles {
-        return (featureToggles as FeatureToggles).evaluations !== undefined && (featureToggles as FeatureToggles).contentHash !== undefined;
+    isFeatureToggles(featureToggles: unknown): featureToggles is V1FeatureToggles {
+        return (featureToggles as V1FeatureToggles).evaluations !== undefined && (featureToggles as V1FeatureToggles).contentHash !== undefined;
     }
 
-    async getFeatureManifest(): Promise<FeatureToggles | undefined> {
+    async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
             maxContentLength: Infinity,
@@ -80,7 +77,7 @@ export class OctopusFeatureClient {
             responseType: "json",
         };
 
-        const response = await this.axiosInstance.request<FeatureToggleEvaluation[]>(config);
+        const response = await this.axiosInstance.request<V1FeatureToggleEvaluation[]>(config);
 
         if (response.status == 404) {
             this.logger.warn(`Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri}`);

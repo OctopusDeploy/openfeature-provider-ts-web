@@ -1,9 +1,9 @@
-import { FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
+import { V1FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { ErrorCode } from "@openfeature/core";
 
 describe("Given a set of feature toggles", () => {
     test("Evaluates to true if feature is contained within the set and enabled", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
@@ -21,7 +21,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     test("Evaluates to true if feature is contained within the set and enabled, and evaluation casing differs", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
@@ -39,7 +39,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     test("Evaluates to false if feature is contained within the set but is not enabled", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
@@ -57,7 +57,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When flag key provided is not a slug", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "notaslug",
@@ -83,7 +83,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When flag is not present within the set", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "notaslug",
@@ -109,7 +109,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is toggled on for a specific segment", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
@@ -140,7 +140,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is not toggled on for a specific segment", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
@@ -161,7 +161,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is toggled on for multiple segments", () => {
-        const toggles: FeatureToggles = {
+        const toggles: V1FeatureToggles = {
             evaluations: [
                 {
                     name: "enabledfeature",
