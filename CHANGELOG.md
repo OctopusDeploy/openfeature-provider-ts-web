@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v1.0.1...v1.1.0) (2024-07-08)
+
+
+### Features
+
+* cache toggle values to promote stability ([954e20c](https://github.com/OctopusDeploy/openfeature-ts-web/commit/954e20ca2bbe8bfa1323ba4074d6bf6fe8d350bc))
+
 ## [1.0.1](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v1.0.0...v1.0.1) (2024-06-14)
 
 
