@@ -8,10 +8,15 @@ export interface OctopusFeatureConfiguration {
     logger?: Logger;
 }
 
+export interface ContextValue {
+    value: string;
+    hashedValue: string;
+}
+
 export class OctopusFeatureProvider implements Provider {
     private client: OctopusFeatureClient;
     private evaluationContext: OctopusFeatureContext;
-    private context: EvaluationContext;
+    public context: Record<string, ContextValue>;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.client = new OctopusFeatureClient(configuration);
@@ -31,8 +36,28 @@ export class OctopusFeatureProvider implements Provider {
         this.evaluationContext = await this.client.getEvaluationContext();
     }
 
+    async getSha256Hash(value: string): Promise<string> {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(value);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashBase64 = btoa(String.fromCharCode(...hashArray));
+        return hashBase64;
+    }
+
     async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
-        this.context = newContext;
+        const hashedContext: Record<string, ContextValue> = {};
+        await Promise.all(
+            Object.keys(newContext).map(async (contextKey) => {
+                const contextValue = newContext[contextKey];
+                if (typeof contextValue === "string") {
+                    hashedContext[contextKey] = { value: contextValue, hashedValue: await this.getSha256Hash(contextValue) };
+                } else {
+                    hashedContext[contextKey] = { value: "", hashedValue: "" };
+                }
+            })
+        );
+        this.context = hashedContext;
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {

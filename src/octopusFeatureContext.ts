@@ -1,5 +1,6 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
 import { ErrorCode } from "@openfeature/core";
+import { ContextValue } from "./octopusFeatureProvider";
 
 export interface V1FeatureToggles {
     evaluations: V1FeatureToggleEvaluation[];
@@ -20,7 +21,7 @@ export class OctopusFeatureContext {
         this.toggles = toggles;
     }
 
-    evaluate(slug: string, defaultValue: boolean, context: EvaluationContext): ResolutionDetails<boolean> {
+    evaluate(slug: string, defaultValue: boolean, context: Record<string, ContextValue>): ResolutionDetails<boolean> {
         if (!slug.match(/^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)$/g)) {
             return {
                 value: defaultValue,
@@ -42,23 +43,19 @@ export class OctopusFeatureContext {
         return { value: this.evaluateSegments(evaluation, context) };
     }
 
-    matchesSegment(context: EvaluationContext, segments: { key: string; value: string }[]): boolean {
+    matchesSegment(context: Record<string, ContextValue>, segments: { key: string; value: string }[]): boolean {
         if (!context) return false;
 
         const result = Object.keys(context).some((contextKey) =>
             segments.some(({ key, value }) => {
-                const contextValue = context[contextKey];
-                if (typeof contextValue === "string") {
-                    return contextKey === key && contextValue === value;
-                }
-                return false;
+                return contextKey === key && (context[contextKey].value === value || context[contextKey].hashedValue === value);
             })
         );
 
         return result;
     }
 
-    evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: EvaluationContext): boolean {
+    evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: Record<string, ContextValue>): boolean {
         const result = evaluation.isEnabled && (Object.keys(evaluation.segments).length === 0 || this.matchesSegment(context, evaluation.segments));
         return result;
     }

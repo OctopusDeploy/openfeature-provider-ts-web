@@ -124,12 +124,12 @@ describe("Given a set of feature toggles", () => {
         const context = new OctopusFeatureContext(toggles);
 
         test("Evaluates to true if the segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+            const result = context.evaluate("enabled-feature", false, { region: { value: "us", hashedValue: "_" } });
             expect(result).toStrictEqual({ value: true });
         });
 
         test("Evaluates to false if an invalid segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { locale: "en-us" });
+            const result = context.evaluate("enabled-feature", false, { locale: { value: "en-us", hashedValue: "_" } });
             expect(result).toStrictEqual({ value: false });
         });
 
@@ -155,7 +155,7 @@ describe("Given a set of feature toggles", () => {
         const context = new OctopusFeatureContext(toggles);
 
         test("Evaluates to true regardless of the segment specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+            const result = context.evaluate("enabled-feature", false, { region: { value: "us", hashedValue: "_" } });
             expect(result).toStrictEqual({ value: true });
         });
     });
@@ -179,22 +179,60 @@ describe("Given a set of feature toggles", () => {
         const context = new OctopusFeatureContext(toggles);
 
         test("Evaluates to true if all segments are specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial" });
+            const result = context.evaluate("enabled-feature", false, {
+                region: { value: "us", hashedValue: "_" },
+                license: { value: "trial", hashedValue: "_" },
+            });
             expect(result).toStrictEqual({ value: true });
         });
 
         test("Evaluates to true if a superset of segments is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial", color: "red" });
+            const result = context.evaluate("enabled-feature", false, {
+                region: { value: "us", hashedValue: "_" },
+                license: { value: "trial", hashedValue: "_" },
+                color: { value: "red", hashedValue: "_" },
+            });
             expect(result).toStrictEqual({ value: true });
         });
 
         test("Evaluates to true if a subset of segments is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+            const result = context.evaluate("enabled-feature", false, { region: { value: "us", hashedValue: "_" } });
             expect(result).toStrictEqual({ value: true });
         });
 
         test("Evaluates to false a non-matching segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { locale: "en-us" });
+            const result = context.evaluate("enabled-feature", false, { locale: { value: "en-us", hashedValue: "_" } });
+            expect(result).toStrictEqual({ value: false });
+        });
+
+        test("Evaluates to false if no segment is specified", () => {
+            const result = context.evaluate("enabled-feature", false, {});
+            expect(result).toStrictEqual({ value: false });
+        });
+    });
+
+    describe("When a feature is toggled on for a specific segment, and the segments are specified as hashes", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [
+                {
+                    name: "enabledfeature",
+                    slug: "enabled-feature",
+                    isEnabled: true,
+                    segments: [{ key: "region", value: "ea2yovzlxrohX+Xyf1MtTn7brEtqXgnh7zoICEqQRiE=" }],
+                },
+            ],
+            contentHash: "",
+        };
+
+        const context = new OctopusFeatureContext(toggles);
+
+        test("Evaluates to true if the segment is specified", () => {
+            const result = context.evaluate("enabled-feature", false, { region: { value: "us", hashedValue: "ea2yovzlxrohX+Xyf1MtTn7brEtqXgnh7zoICEqQRiE=" } });
+            expect(result).toStrictEqual({ value: true });
+        });
+
+        test("Evaluates to false if an invalid segment is specified", () => {
+            const result = context.evaluate("enabled-feature", false, { region: { value: "au", hashedValue: "YyzS/qcdzeAFr04H8UuLwfaLY9nBs3PcYEj7h+kK8is=" } });
             expect(result).toStrictEqual({ value: false });
         });
 

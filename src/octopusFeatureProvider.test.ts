@@ -11,3 +11,11 @@ describe.skip("octopusFeatureProvider", () => {
         expect(result).toBe(true);
     });
 });
+
+describe("When the context changes", () => {
+    test("The provider hashes the context values", async () => {
+        const client = new OctopusFeatureProvider({ clientIdentifier: "_" });
+        await client.onContextChange({}, { locale: "au" });
+        expect(client.context["locale"].hashedValue).toBe("YyzS/qcdzeAFr04H8UuLwfaLY9nBs3PcYEj7h+kK8is=");
+    });
+});
