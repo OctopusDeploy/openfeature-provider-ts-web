@@ -42,8 +42,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@openfeature/web-sdk": "^1.2.0",
-    "axios": "^1.7.2",
+    "@openfeature/web-sdk": "^1.3.2",
+    "axios": "^1.7.4",
     "axios-retry": "^4.4.0"
   },
   "jest-junit": {
