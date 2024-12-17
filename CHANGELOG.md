@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v1.1.0...v2.0.0) (2024-12-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* Use v3 endpoint and attach authorization header ([#8](https://github.com/OctopusDeploy/openfeature-ts-web/issues/8))
+
+### Features
+
+* Use v3 endpoint and attach authorization header ([#8](https://github.com/OctopusDeploy/openfeature-ts-web/issues/8)) ([5fbf197](https://github.com/OctopusDeploy/openfeature-ts-web/commit/5fbf19768cedc6420a73ee8f71498931a346856a))
+
 ## [1.1.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v1.0.1...v1.1.0) (2024-07-08)
 
 
