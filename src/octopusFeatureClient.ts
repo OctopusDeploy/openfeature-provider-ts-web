@@ -69,11 +69,14 @@ export class OctopusFeatureClient {
 
     async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
         const config: AxiosRequestConfig = {
-            url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
+            url: `${this.serverUri}/api/featuretoggles/v3/`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
             responseType: "json",
+            headers: {
+                Authorization: `Bearer ${this.clientIdentifier}`,
+            },
         };
 
         const response = await this.axiosInstance.request<V1FeatureToggleEvaluation[]>(config);
