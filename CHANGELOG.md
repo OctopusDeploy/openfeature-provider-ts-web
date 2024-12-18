@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v2.0.0...v2.1.0) (2024-12-18)
+
+
+### Features
+
+* Adds v2 client identifier backwards compatibility ([#10](https://github.com/OctopusDeploy/openfeature-ts-web/issues/10)) ([e6305f3](https://github.com/OctopusDeploy/openfeature-ts-web/commit/e6305f38b8be24639167cd99f5ba608db9baf862))
+
 ## [2.0.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v1.1.0...v2.0.0) (2024-12-17)
 
 
