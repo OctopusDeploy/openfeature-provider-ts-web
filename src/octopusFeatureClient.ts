@@ -68,17 +68,32 @@ export class OctopusFeatureClient {
     }
 
     async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
-        const config: AxiosRequestConfig = {
-            url: `${this.serverUri}/api/featuretoggles/v3/`,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            method: "GET",
-            responseType: "json",
-            headers: {
-                Authorization: `Bearer ${this.clientIdentifier}`,
-            },
-        };
+        // A very basic test to see if we have a JWT-formatted client identifier
+        const tokenSegments = this.clientIdentifier.split(".");
+        const isV3ClientIdentifier = tokenSegments.length === 3;
 
+        const config: AxiosRequestConfig = isV3ClientIdentifier
+            ? {
+                  url: `${this.serverUri}/api/featuretoggles/v3/`,
+                  maxContentLength: Infinity,
+                  maxBodyLength: Infinity,
+                  method: "GET",
+                  responseType: "json",
+                  headers: {
+                      Authorization: `Bearer ${this.clientIdentifier}`,
+                  },
+              }
+            : {
+                  url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
+                  maxContentLength: Infinity,
+                  maxBodyLength: Infinity,
+                  method: "GET",
+                  responseType: "json",
+              };
+
+        // WARNING: v2 and v3 endpoints have identical response contracts.
+        // If for any reason the v3 endpoint response contract starts to diverge from the v2 contract,
+        // This code will need to update accordingly
         const response = await this.axiosInstance.request<V1FeatureToggleEvaluation[]>(config);
 
         if (response.status == 404) {
