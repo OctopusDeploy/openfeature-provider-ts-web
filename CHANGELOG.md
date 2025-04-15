@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v2.1.0...v2.1.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* evaluate segments in groups ([c90b75d](https://github.com/OctopusDeploy/openfeature-ts-web/commit/c90b75dfc5164e21024353f71c57b1ea822022d4))
+
 ## [2.1.0](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v2.0.0...v2.1.0) (2024-12-18)
 
 
