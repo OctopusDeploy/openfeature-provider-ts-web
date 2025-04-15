@@ -193,7 +193,7 @@ describe("Given a set of feature toggles", () => {
             expect(result).toStrictEqual({ value: true });
         });
 
-        test("Evaluates to false if a subset of segments is specifiedin context", () => {
+        test("Evaluates to false if a subset of segments is specified in context", () => {
             const result = context.evaluate("enabled-feature", false, { region: "us" });
             expect(result).toStrictEqual({ value: false });
         });
