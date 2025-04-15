@@ -178,27 +178,32 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        test("Evaluates to true if all segments are specified", () => {
+        test("Evaluates to true if all segments are specified in context", () => {
             const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial" });
             expect(result).toStrictEqual({ value: true });
         });
 
-        test("Evaluates to true if a superset of segments is specified", () => {
+        test("Evaluates to false if all segments are specified in context, but one does not match the toggle", () => {
+            const result = context.evaluate("enabled-feature", false, { region: "eu", license: "trial" });
+            expect(result).toStrictEqual({ value: false });
+        });
+
+        test("Evaluates to true if a superset of segments is specified in context", () => {
             const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial", color: "red" });
             expect(result).toStrictEqual({ value: true });
         });
 
-        test("Evaluates to true if a subset of segments is specified", () => {
+        test("Evaluates to false if a subset of segments is specifiedin context", () => {
             const result = context.evaluate("enabled-feature", false, { region: "us" });
-            expect(result).toStrictEqual({ value: true });
+            expect(result).toStrictEqual({ value: false });
         });
 
-        test("Evaluates to false a non-matching segment is specified", () => {
+        test("Evaluates to false if no context values match toggled segment values", () => {
             const result = context.evaluate("enabled-feature", false, { locale: "en-us" });
             expect(result).toStrictEqual({ value: false });
         });
 
-        test("Evaluates to false if no segment is specified", () => {
+        test("Evaluates to false if no segment is specified in context", () => {
             const result = context.evaluate("enabled-feature", false, {});
             expect(result).toStrictEqual({ value: false });
         });

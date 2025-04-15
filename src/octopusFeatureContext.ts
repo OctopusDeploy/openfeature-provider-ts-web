@@ -45,15 +45,31 @@ export class OctopusFeatureContext {
     matchesSegment(context: EvaluationContext, segments: { key: string; value: string }[]): boolean {
         if (!context) return false;
 
-        const result = Object.keys(context).some((contextKey) =>
-            segments.some(({ key, value }) => {
-                const contextValue = context[contextKey];
-                if (typeof contextValue === "string") {
-                    return contextKey === key && contextValue === value;
+        // Group segments by key
+        const groupedSegments = segments.reduce(
+            (groups, segment) => {
+                if (!groups[segment.key]) {
+                    groups[segment.key] = [];
                 }
-                return false;
-            })
+                groups[segment.key].push(segment.value);
+                return groups;
+            },
+            {} as Record<string, string[]>
         );
+
+        // Check if all segment groups have at least one matching context entry
+        const result = Object.keys(groupedSegments).every((segmentKey) => {
+            const group = groupedSegments[segmentKey];
+            return group.some((segment) =>
+                Object.keys(context).some((contextKey) => {
+                    const contextValue = context[contextKey];
+                    if (typeof contextValue === "string") {
+                        return contextKey === segmentKey && contextValue === segment;
+                    }
+                    return false;
+                })
+            );
+        });
 
         return result;
     }
