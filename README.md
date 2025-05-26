@@ -1,4 +1,4 @@
-# Octopus Deploy OpenFeature Provider for TypeScript/JavaScript (web client) 
+# Octopus Deploy OpenFeature Provider for TypeScript/JavaScript (web clients) 
 
 [![Build test and release](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/build-test-release.yml/badge.svg)](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/build-test-release.yml)
 
