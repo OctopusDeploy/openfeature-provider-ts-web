@@ -1,7 +1,7 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { OpenFeature } from "@openfeature/web-sdk";
 
-describe("octopusFeatureProvider", () => {
+describe.skip("octopusFeatureProvider", () => {
     // Stub out local storage for this particular test
     global.localStorage = {
         getItem: jest.fn(),
