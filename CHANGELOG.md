@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.1...v2.1.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* updates dependencies ([52e610d](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/52e610d8406446763a120156ad7bf65038aa2ab4))
+
 ## [2.1.1](https://github.com/OctopusDeploy/openfeature-ts-web/compare/v2.1.0...v2.1.1) (2025-04-15)
 
 
