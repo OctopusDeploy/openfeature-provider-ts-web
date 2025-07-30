@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@openfeature/web-sdk": "1.5.0",
-    "axios": "1.9.0",
+    "axios": "1.11.0",
     "axios-retry": "4.5.0"
   },
   "jest-junit": {
