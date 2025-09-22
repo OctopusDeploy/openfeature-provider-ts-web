@@ -10,8 +10,7 @@ export interface OctopusFeatureConfiguration {
 
     logger?: Logger;
 
-    /** Overrides the reported version of the release that would typically
-     be extracted from the value embedded in the ClientIdentifier Token at deploy time. */
+    /** Overrides the application release version embedded in the ClientIdentifier */
     releaseVersionOverride?: string;
 }
 
