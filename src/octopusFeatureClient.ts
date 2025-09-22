@@ -15,10 +15,12 @@ export class OctopusFeatureClient {
     private readonly logger: Logger;
     private readonly axiosInstance: AxiosInstance;
     private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
+    private readonly releaseVersionOverride?: string;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.clientIdentifier = configuration.clientIdentifier;
         this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
+        this.releaseVersionOverride = configuration.releaseVersionOverride;
         this.logger = configuration.logger ?? new DefaultLogger();
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
@@ -72,24 +74,30 @@ export class OctopusFeatureClient {
         const tokenSegments = this.clientIdentifier.split(".");
         const isV3ClientIdentifier = tokenSegments.length === 3;
 
-        const config: AxiosRequestConfig = isV3ClientIdentifier
-            ? {
-                  url: `${this.serverUri}/api/featuretoggles/v3/`,
-                  maxContentLength: Infinity,
-                  maxBodyLength: Infinity,
-                  method: "GET",
-                  responseType: "json",
-                  headers: {
-                      Authorization: `Bearer ${this.clientIdentifier}`,
-                  },
-              }
-            : {
-                  url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
-                  maxContentLength: Infinity,
-                  maxBodyLength: Infinity,
-                  method: "GET",
-                  responseType: "json",
-              };
+        let config: AxiosRequestConfig;
+        if (isV3ClientIdentifier) {
+            config = {
+                url: `${this.serverUri}/api/featuretoggles/v3/`,
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
+                method: "GET",
+                responseType: "json",
+                headers: {
+                    Authorization: `Bearer ${this.clientIdentifier}`,
+                },
+            };
+            if (this.releaseVersionOverride) {
+                config.headers!["X-Release-Version"] = this.releaseVersionOverride;
+            }
+        } else {
+            config = {
+                url: `${this.serverUri}/api/featuretoggles/v2/${this.clientIdentifier}`,
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
+                method: "GET",
+                responseType: "json",
+            };
+        }
 
         // WARNING: v2 and v3 endpoints have identical response contracts.
         // If for any reason the v3 endpoint response contract starts to diverge from the v2 contract,

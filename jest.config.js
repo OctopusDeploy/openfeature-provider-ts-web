@@ -13,7 +13,7 @@ module.exports = {
             moduleDirectories: ["<rootDir>/src/", "node_modules"],
             moduleFileExtensions: ["ts", "js"],
             resetMocks: true,
-            setupFilesAfterEnv: ["jest-expect-message", "jest-extended"],
+            setupFilesAfterEnv: ["jest-expect-message", "jest-extended", "jest-localstorage-mock"],
             testRegex: ".*\\.(test|spec)\\.(ts)$",
             transform: {
                 ".(ts)": "ts-jest",
