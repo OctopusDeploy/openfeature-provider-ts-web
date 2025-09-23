@@ -28,8 +28,9 @@
   },
   "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.14",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "axios-mock-adapter": "^2.1.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
@@ -37,13 +38,14 @@
     "jest-expect-message": "^1.1.3",
     "jest-extended": "^4.0.2",
     "jest-junit": "^16.0.0",
+    "jest-localstorage-mock": "^2.4.26",
     "prettier": "^3.3.2",
-    "ts-jest": "^29.1.4",
+    "ts-jest": "^29.4.4",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@openfeature/web-sdk": "1.5.0",
-    "axios": "1.11.0",
+    "axios": "^1.12.2",
     "axios-retry": "4.5.0"
   },
   "jest-junit": {

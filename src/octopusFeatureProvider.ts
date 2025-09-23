@@ -3,9 +3,15 @@ import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 
 export interface OctopusFeatureConfiguration {
+    /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
     clientIdentifier: string;
+
     serverUri?: string;
+
     logger?: Logger;
+
+    /** Overrides the application release version embedded in the ClientIdentifier */
+    releaseVersionOverride?: string;
 }
 
 export class OctopusFeatureProvider implements Provider {
