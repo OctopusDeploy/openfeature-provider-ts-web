@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.4](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.3...v2.1.4) (2025-09-23)
+
+
+### Features
+
+* Support passing release version override to OctoToggle ([#25](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/25)) ([6f1d846](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/6f1d8465652493951ec6022a39f337657ee7b9a0))
+
 ## [2.1.3](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.2...v2.1.3) (2025-07-30)
 
 
