@@ -10,6 +10,7 @@ interface V1CacheEntry {
 }
 
 export class OctopusFeatureClient {
+    private readonly test: string;
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
     private readonly logger: Logger;
