@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.4...v3.0.0) (2026-02-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Remove V2 toggle endpoint support ([#37](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/37))
+
+### Miscellaneous Chores
+
+* Remove V2 toggle endpoint support ([#37](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/37)) ([2e4d40f](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/2e4d40f1a46171b54dd7029a358377f151315378))
+
 ## [2.1.4](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.3...v2.1.4) (2025-09-23)
 
 
