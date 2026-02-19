@@ -19,15 +19,30 @@ npm i @octopusdeploy/openfeature
 
 ### Usage
 
+Set context before the provider to avoid a race condition where segment-based toggles fall back to their default value before the context is available:
+
 ```ts
 const provider = new OctopusFeatureProvider({ clientIdentifier: "YourClientIdentifier" });
 
+await OpenFeature.setContext({ userid: "bob@octopus.com" });
 await OpenFeature.setProviderAndWait(provider);
 
-await OpenFeature.setContext({ userid: "bob@octopus.com" });
+const client = OpenFeature.getClient();
+
+if (client.getBooleanValue("to-the-moon-feature", false, {})) {
+    console.log('🚀🚀🚀');
+}
+```
+
+Alternatively, you can pass the context directly when setting the provider:
+
+```ts
+const provider = new OctopusFeatureProvider({ clientIdentifier: "YourClientIdentifier" });
+
+await OpenFeature.setProviderAndWait(provider, { userid: "bob@octopus.com" });
 
 const client = OpenFeature.getClient();
-    
+
 if (client.getBooleanValue("to-the-moon-feature", false, {})) {
     console.log('🚀🚀🚀');
 }
