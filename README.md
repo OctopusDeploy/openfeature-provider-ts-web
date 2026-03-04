@@ -22,9 +22,8 @@ npm i @octopusdeploy/openfeature
 ```ts
 const provider = new OctopusFeatureProvider({ clientIdentifier: "YourClientIdentifier" });
 
-await OpenFeature.setProviderAndWait(provider);
-
 await OpenFeature.setContext({ userid: "bob@octopus.com" });
+await OpenFeature.setProviderAndWait(provider);
 
 const client = OpenFeature.getClient();
     

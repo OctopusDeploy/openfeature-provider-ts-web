@@ -33,8 +33,11 @@ export class OctopusFeatureProvider implements Provider {
 
     hooks = [];
 
-    async initialize(): Promise<void> {
+    async initialize(context?: EvaluationContext): Promise<void> {
         this.evaluationContext = await this.client.getEvaluationContext();
+        if (context) {
+            this.context = context;
+        }
     }
 
     async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
