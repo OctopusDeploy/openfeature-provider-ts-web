@@ -50,4 +50,25 @@ describe("V1FeatureToggleEvaluation JSON deserialization", () => {
         expect(result[1].slug).toBe("feature-b");
         expect(result[1].isEnabled).toBe(false);
     });
+
+    it("ignores extraneous properties", () => {
+        const json = `{
+                       "name": "My Feature",
+                       "slug": "my-feature",
+                       "isEnabled": true,
+                       "segments": [],
+                       "foo": "bar",
+                       "qux": 123,
+                       "wux": {
+                           "nested": "value"
+                       }
+                   }`;
+
+        const result = JSON.parse(json) as V1FeatureToggleEvaluation;
+
+        expect(result.name).toBe("My Feature");
+        expect(result.slug).toBe("my-feature");
+        expect(result.isEnabled).toBe(true);
+        expect(result.segments).toStrictEqual([]);
+    })
 });
