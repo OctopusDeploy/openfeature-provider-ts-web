@@ -5,27 +5,31 @@ import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { V1FeatureToggleEvaluation } from "../octopusFeatureContext";
 import { Server } from "./server";
 
-interface Case {
-    description: string;
-    configuration: {
-        slug: string;
-        defaultValue: boolean;
-        context?: Record<string, string>;
-    };
-    expected: {
-        value: boolean;
-        errorCode?: ErrorCode;
-    };
-}
-
 interface Fixture {
     response: V1FeatureToggleEvaluation[];
     cases: Case[];
 }
 
 interface TestEntry {
-    responseJson: string;
+    testResponse: string;
     testCase: Case;
+}
+
+interface Case {
+    description: string;
+    configuration: Configuration;
+    expected: Expected;
+}
+
+interface Configuration {
+    slug: string;
+    defaultValue: boolean;
+    context?: Record<string, string>;
+}
+
+interface Expected {
+    value: boolean;
+    errorCode?: ErrorCode;
 }
 
 function loadTestCases(): TestEntry[] {
@@ -36,10 +40,10 @@ function loadTestCases(): TestEntry[] {
     for (const file of fixtureFiles) {
         const json = fs.readFileSync(path.join(fixturesDir, file), "utf-8");
         const fixture: Fixture = JSON.parse(json);
-        const responseJson = JSON.stringify(fixture.response);
+        const testResponse = JSON.stringify(fixture.response);
 
         for (const c of fixture.cases) {
-            testCases.push({ responseJson, testCase: c });
+            testCases.push({ testResponse, testCase: c });
         }
     }
     return testCases;
@@ -60,8 +64,8 @@ beforeEach(() => {
     localStorage.clear();
 });
 
-test.each(testCases)("$testCase.description", async ({ responseJson, testCase }) => {
-    const token = server.configure(responseJson);
+test.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
+    const token = server.configure(testResponse);
     const provider = new OctopusFeatureProvider({
         clientIdentifier: token,
         serverUri: server.url,
