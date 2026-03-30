@@ -1,9 +1,9 @@
 import * as http from "http";
+import * as crypto from "crypto";
 
 export class Server {
     private server!: http.Server;
     private responses = new Map<string, string>();
-    private tokenCounter = 0;
     url = "";
 
     start(): Promise<void> {
@@ -41,7 +41,7 @@ export class Server {
     }
 
     configure(responseJson: string): string {
-        const token = `spec-test-token-${this.tokenCounter++}`;
+        const token = crypto.randomUUID();
         this.responses.set(token, responseJson);
         return token;
     }

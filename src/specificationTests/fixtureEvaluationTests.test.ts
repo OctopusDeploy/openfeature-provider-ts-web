@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
-import { OpenFeature, EvaluationContext } from "@openfeature/web-sdk";
+import { OpenFeature, EvaluationContext, ErrorCode } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
+import { V1FeatureToggleEvaluation } from "../octopusFeatureContext";
 import { Server } from "./server";
 
 interface FixtureCase {
@@ -13,28 +14,28 @@ interface FixtureCase {
     };
     expected: {
         value: boolean;
-        errorCode?: string;
+        errorCode?: ErrorCode;
     };
 }
 
 interface Fixture {
-    response: unknown;
+    response: V1FeatureToggleEvaluation[];
     cases: FixtureCase[];
 }
 
-interface SpecTestCase {
+interface FlattenedTestCase {
     description: string;
     responseJson: string;
     slug: string;
     defaultValue: boolean;
     context: EvaluationContext;
     expectedValue: boolean;
-    expectedErrorCode?: string;
+    expectedErrorCode?: ErrorCode;
 }
 
-function loadTestCases(): SpecTestCase[] {
+function loadTestCases(): FlattenedTestCase[] {
     const fixturesDir = path.join(__dirname, "../../specification/Fixtures");
-    const testCases: SpecTestCase[] = [];
+    const testCases: FlattenedTestCase[] = [];
 
     const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
     for (const file of fixtureFiles) {
@@ -80,7 +81,8 @@ test.each(testCases)("$description", async ({ responseJson, slug, defaultValue, 
         serverUri: server.url,
     });
 
-    await OpenFeature.setProviderAndWait(provider, context);
+    await OpenFeature.setProviderAndWait(provider);
+    await OpenFeature.setContext(context);
 
     const result = OpenFeature.getClient().getBooleanDetails(slug, defaultValue);
 
