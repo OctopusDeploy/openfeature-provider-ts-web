@@ -5,7 +5,7 @@ import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { V1FeatureToggleEvaluation } from "../octopusFeatureContext";
 import { Server } from "./server";
 
-interface FixtureCase {
+interface Case {
     description: string;
     configuration: {
         slug: string;
@@ -20,22 +20,17 @@ interface FixtureCase {
 
 interface Fixture {
     response: V1FeatureToggleEvaluation[];
-    cases: FixtureCase[];
+    cases: Case[];
 }
 
-interface FlattenedTestCase {
-    description: string;
+interface TestEntry {
     responseJson: string;
-    slug: string;
-    defaultValue: boolean;
-    context: EvaluationContext;
-    expectedValue: boolean;
-    expectedErrorCode?: ErrorCode;
+    testCase: Case;
 }
 
-function loadTestCases(): FlattenedTestCase[] {
+function loadTestCases(): TestEntry[] {
     const fixturesDir = path.join(__dirname, "../../specification/Fixtures");
-    const testCases: FlattenedTestCase[] = [];
+    const testCases: TestEntry[] = [];
 
     const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
     for (const file of fixtureFiles) {
@@ -44,18 +39,9 @@ function loadTestCases(): FlattenedTestCase[] {
         const responseJson = JSON.stringify(fixture.response);
 
         for (const c of fixture.cases) {
-            testCases.push({
-                description: c.description,
-                responseJson,
-                slug: c.configuration.slug,
-                defaultValue: c.configuration.defaultValue,
-                context: c.configuration.context ?? {},
-                expectedValue: c.expected.value,
-                expectedErrorCode: c.expected.errorCode,
-            });
+            testCases.push({ responseJson, testCase: c });
         }
     }
-
     return testCases;
 }
 
@@ -74,7 +60,7 @@ beforeEach(() => {
     localStorage.clear();
 });
 
-test.each(testCases)("$description", async ({ responseJson, slug, defaultValue, context, expectedValue, expectedErrorCode }) => {
+test.each(testCases)("$testCase.description", async ({ responseJson, testCase }) => {
     const token = server.configure(responseJson);
     const provider = new OctopusFeatureProvider({
         clientIdentifier: token,
@@ -82,10 +68,10 @@ test.each(testCases)("$description", async ({ responseJson, slug, defaultValue, 
     });
 
     await OpenFeature.setProviderAndWait(provider);
-    await OpenFeature.setContext(context);
+    await OpenFeature.setContext(testCase.configuration.context ?? {});
 
-    const result = OpenFeature.getClient().getBooleanDetails(slug, defaultValue);
+    const result = OpenFeature.getClient().getBooleanDetails(testCase.configuration.slug, testCase.configuration.defaultValue);
 
-    expect(result.value).toBe(expectedValue);
-    expect(result.errorCode).toBe(expectedErrorCode);
+    expect(result.value).toBe(testCase.expected.value);
+    expect(result.errorCode).toBe(testCase.expected.errorCode);
 });
