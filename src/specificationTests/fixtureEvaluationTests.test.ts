@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { OpenFeature, EvaluationContext, ErrorCode } from "@openfeature/web-sdk";
+import { ErrorCode } from "@openfeature/core";
+import { OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { V1FeatureToggleEvaluation } from "../octopusFeatureContext";
 import { Server } from "./server";
@@ -64,6 +65,7 @@ beforeEach(() => {
     localStorage.clear();
 });
 
+// Requires `specification` submodule to be initialized.
 test.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
     const token = server.configure(testResponse);
     const provider = new OctopusFeatureProvider({

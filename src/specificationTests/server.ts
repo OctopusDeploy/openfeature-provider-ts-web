@@ -7,20 +7,21 @@ export class Server {
     url = "";
 
     start(): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             this.server = http.createServer((req, res) => {
                 if (req.method === "GET" && req.url === "/api/featuretoggles/v3/") {
                     const authHeader = req.headers["authorization"];
                     if (authHeader && authHeader.startsWith("Bearer ")) {
                         const token = authHeader.slice("Bearer ".length);
                         const responseBody = this.responses.get(token);
-                        if (responseBody) {
+                        if (responseBody !== undefined) {
                             const contentHash = Buffer.from([0x01]).toString("base64");
                             res.writeHead(200, {
                                 "Content-Type": "application/json",
                                 ContentHash: contentHash,
                             });
                             res.end(responseBody);
+                            this.responses.delete(token);
                             return;
                         }
                     }
@@ -31,6 +32,8 @@ export class Server {
                 res.writeHead(404);
                 res.end();
             });
+
+            this.server.on("error", reject);
 
             this.server.listen(0, "127.0.0.1", () => {
                 const address = this.server.address() as { port: number };
