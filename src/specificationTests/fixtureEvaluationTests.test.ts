@@ -61,10 +61,6 @@ afterAll(async () => {
     await server.stop();
 });
 
-beforeEach(() => {
-    localStorage.clear();
-});
-
 // Requires `specification` submodule to be initialized.
 test.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
     const token = server.configure(testResponse);
