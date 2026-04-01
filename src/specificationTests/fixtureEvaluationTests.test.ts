@@ -3,11 +3,10 @@ import * as path from "path";
 import { ErrorCode } from "@openfeature/core";
 import { OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
-import { V1FeatureToggleEvaluation } from "../octopusFeatureContext";
 import { Server } from "./server";
 
 interface Fixture {
-    response: V1FeatureToggleEvaluation[];
+    response: unknown;
     cases: Case[];
 }
 
@@ -40,6 +39,7 @@ function loadTestCases(): TestEntry[] {
     const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
     for (const file of fixtureFiles) {
         const json = fs.readFileSync(path.join(fixturesDir, file), "utf-8");
+        // Unlike in the other client libraries, we parse and re-serialize here.
         const fixture: Fixture = JSON.parse(json);
         const testResponse = JSON.stringify(fixture.response);
 
