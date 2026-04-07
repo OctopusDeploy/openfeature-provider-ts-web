@@ -7,10 +7,11 @@ export interface V1FeatureToggles {
 }
 
 export interface V1FeatureToggleEvaluation {
-    name: string;
     slug: string;
     isEnabled: boolean;
-    segments: { key: string; value: string }[];
+    evaluationKey?: string;
+    segments?: { key: string; value: string }[];
+    clientRolloutPercentage?: number;
 }
 
 export class OctopusFeatureContext {
@@ -36,6 +37,14 @@ export class OctopusFeatureContext {
                 value: defaultValue,
                 errorCode: ErrorCode.FLAG_NOT_FOUND,
                 errorMessage: "The slug provided did not match any of your Octopus Feature Toggles. Please double check your slug and try again.",
+            };
+        }
+
+        if (missingRequiredFieldsForClientEvaluation(evaluation)) {
+            return {
+                value: defaultValue,
+                errorCode: ErrorCode.PARSE_ERROR,
+                errorMessage: `Feature toggle ${slug} is missing necessary information for client-side evaluation.`,
             };
         }
 
@@ -75,7 +84,14 @@ export class OctopusFeatureContext {
     }
 
     evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: EvaluationContext): boolean {
-        const result = evaluation.isEnabled && (Object.keys(evaluation.segments).length === 0 || this.matchesSegment(context, evaluation.segments));
-        return result;
+        const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
+        return evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
     }
+}
+
+function missingRequiredFieldsForClientEvaluation(evaluation: V1FeatureToggleEvaluation): boolean {
+    if (!evaluation.isEnabled) {
+        return false;
+    }
+    return evaluation.evaluationKey == null || evaluation.segments == null || evaluation.clientRolloutPercentage == null;
 }
