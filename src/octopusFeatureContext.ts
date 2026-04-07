@@ -1,12 +1,12 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
 import { ErrorCode } from "@openfeature/core";
 
-export interface V1FeatureToggles {
-    evaluations: V1FeatureToggleEvaluation[];
+export interface V2FeatureToggles {
+    evaluations: V2FeatureToggleEvaluation[];
     contentHash: string;
 }
 
-export interface V1FeatureToggleEvaluation {
+export interface V2FeatureToggleEvaluation {
     slug: string;
     isEnabled: boolean;
     evaluationKey?: string;
@@ -15,9 +15,9 @@ export interface V1FeatureToggleEvaluation {
 }
 
 export class OctopusFeatureContext {
-    toggles: V1FeatureToggles;
+    toggles: V2FeatureToggles;
 
-    constructor(toggles: V1FeatureToggles) {
+    constructor(toggles: V2FeatureToggles) {
         this.toggles = toggles;
     }
 
@@ -83,14 +83,14 @@ export class OctopusFeatureContext {
         return result;
     }
 
-    evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: EvaluationContext): boolean {
+    evaluateSegments(evaluation: V2FeatureToggleEvaluation, context: EvaluationContext): boolean {
         const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
         const result = evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
         return result;
     }
 }
 
-function missingRequiredPropertiesForClientSideEvaluation(evaluation: V1FeatureToggleEvaluation): boolean {
+function missingRequiredPropertiesForClientSideEvaluation(evaluation: V2FeatureToggleEvaluation): boolean {
     if (!evaluation.isEnabled) {
         return false;
     }

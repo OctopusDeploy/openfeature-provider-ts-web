@@ -1,9 +1,9 @@
-import { V1FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
+import { V2FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { ErrorCode } from "@openfeature/core";
 
 describe("Given a set of feature toggles", () => {
     test("Evaluates to true if feature is contained within the set and enabled", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -22,7 +22,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     test("Evaluates to true if feature is contained within the set and enabled, and evaluation casing differs", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -41,7 +41,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     test("Evaluates to false if feature is contained within the set but is not enabled", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -57,7 +57,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When flag key provided is not a slug", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "not-a-slug",
@@ -81,7 +81,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When flag is not present within the set", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "not-a-slug",
@@ -105,7 +105,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is toggled on for a specific segment", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -137,7 +137,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is not toggled on for a specific segment", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -159,7 +159,7 @@ describe("Given a set of feature toggles", () => {
     });
 
     describe("When a feature is toggled on for multiple segments", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [
                 {
                     slug: "enabled-feature",
@@ -211,7 +211,7 @@ describe("Given a set of feature toggles", () => {
 
 describe("When an enabled toggle is missing required client evaluation fields", () => {
     test("Returns PARSE_ERROR when evaluationKey is absent", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [{ slug: "feature-a", isEnabled: true, segments: [], clientRolloutPercentage: 100 }],
             contentHash: "",
         };
@@ -223,7 +223,7 @@ describe("When an enabled toggle is missing required client evaluation fields", 
     });
 
     test("Returns PARSE_ERROR when segments is absent", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [{ slug: "feature-b", isEnabled: true, evaluationKey: "evaluation-key", clientRolloutPercentage: 100 }],
             contentHash: "",
         };
@@ -235,7 +235,7 @@ describe("When an enabled toggle is missing required client evaluation fields", 
     });
 
     test("Returns PARSE_ERROR when clientRolloutPercentage is absent", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [{ slug: "feature-c", isEnabled: true, evaluationKey: "evaluation-key", segments: [] }],
             contentHash: "",
         };
@@ -247,7 +247,7 @@ describe("When an enabled toggle is missing required client evaluation fields", 
     });
 
     test("Returns PARSE_ERROR when all three fields are absent", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [{ slug: "feature-d", isEnabled: true }],
             contentHash: "",
         };
@@ -259,7 +259,7 @@ describe("When an enabled toggle is missing required client evaluation fields", 
     });
 
     test("Does not return PARSE_ERROR for a disabled toggle with absent fields", () => {
-        const toggles: V1FeatureToggles = {
+        const toggles: V2FeatureToggles = {
             evaluations: [{ slug: "feature-e", isEnabled: false }],
             contentHash: "",
         };
