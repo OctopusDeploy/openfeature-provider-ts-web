@@ -71,7 +71,7 @@ export class OctopusFeatureClient {
 
     async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
         const config: AxiosRequestConfig = {
-            url: `${this.serverUri}/api/featuretoggles/v3/`,
+            url: `${this.serverUri}/api/toggles/evaluations/v3/`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
