@@ -6,10 +6,11 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: true,
+                    evaluationKey: "evaluation-key",
                     segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -24,10 +25,11 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: true,
+                    evaluationKey: "evaluation-key",
                     segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -42,10 +44,8 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: false,
-                    segments: [],
                 },
             ],
             contentHash: "",
@@ -60,10 +60,8 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "notaslug",
                     slug: "not-a-slug",
                     isEnabled: false,
-                    segments: [],
                 },
             ],
             contentHash: "",
@@ -86,10 +84,8 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "notaslug",
                     slug: "not-a-slug",
                     isEnabled: false,
-                    segments: [],
                 },
             ],
             contentHash: "",
@@ -112,10 +108,11 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: true,
+                    evaluationKey: "evaluation-key",
                     segments: [{ key: "region", value: "us" }],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -143,10 +140,11 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: true,
+                    evaluationKey: "evaluation-key",
                     segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -164,13 +162,14 @@ describe("Given a set of feature toggles", () => {
         const toggles: V1FeatureToggles = {
             evaluations: [
                 {
-                    name: "enabledfeature",
                     slug: "enabled-feature",
                     isEnabled: true,
+                    evaluationKey: "evaluation-key",
                     segments: [
                         { key: "region", value: "us" },
                         { key: "license", value: "trial" },
                     ],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -207,5 +206,66 @@ describe("Given a set of feature toggles", () => {
             const result = context.evaluate("enabled-feature", false, {});
             expect(result).toStrictEqual({ value: false });
         });
+    });
+});
+
+describe("When an enabled toggle is missing required client evaluation fields", () => {
+    test("Returns PARSE_ERROR when evaluationKey is absent", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [{ slug: "feature-a", isEnabled: true, segments: [], clientRolloutPercentage: 100 }],
+            contentHash: "",
+        };
+        const context = new OctopusFeatureContext(toggles);
+        const result = context.evaluate("feature-a", false, {});
+        expect(result.errorCode).toBe(ErrorCode.PARSE_ERROR);
+        expect(result.errorMessage).toContain("missing necessary information for client-side evaluation");
+        expect(result.value).toBe(false);
+    });
+
+    test("Returns PARSE_ERROR when segments is absent", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [{ slug: "feature-b", isEnabled: true, evaluationKey: "evaluation-key", clientRolloutPercentage: 100 }],
+            contentHash: "",
+        };
+        const context = new OctopusFeatureContext(toggles);
+        const result = context.evaluate("feature-b", false, {});
+        expect(result.errorCode).toBe(ErrorCode.PARSE_ERROR);
+        expect(result.errorMessage).toContain("missing necessary information for client-side evaluation");
+        expect(result.value).toBe(false);
+    });
+
+    test("Returns PARSE_ERROR when clientRolloutPercentage is absent", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [{ slug: "feature-c", isEnabled: true, evaluationKey: "evaluation-key", segments: [] }],
+            contentHash: "",
+        };
+        const context = new OctopusFeatureContext(toggles);
+        const result = context.evaluate("feature-c", false, {});
+        expect(result.errorCode).toBe(ErrorCode.PARSE_ERROR);
+        expect(result.errorMessage).toContain("missing necessary information for client-side evaluation");
+        expect(result.value).toBe(false);
+    });
+
+    test("Returns PARSE_ERROR when all three fields are absent", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [{ slug: "feature-d", isEnabled: true }],
+            contentHash: "",
+        };
+        const context = new OctopusFeatureContext(toggles);
+        const result = context.evaluate("feature-d", true, {});
+        expect(result.errorCode).toBe(ErrorCode.PARSE_ERROR);
+        expect(result.errorMessage).toContain("missing necessary information for client-side evaluation");
+        expect(result.value).toBe(true);
+    });
+
+    test("Does not return PARSE_ERROR for a disabled toggle with absent fields", () => {
+        const toggles: V1FeatureToggles = {
+            evaluations: [{ slug: "feature-e", isEnabled: false }],
+            contentHash: "",
+        };
+        const context = new OctopusFeatureContext(toggles);
+        const result = context.evaluate("feature-e", true, {});
+        expect(result.errorCode).toBeUndefined();
+        expect(result.value).toBe(false);
     });
 });

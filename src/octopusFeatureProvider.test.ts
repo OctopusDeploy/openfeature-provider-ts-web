@@ -38,10 +38,11 @@ describe("Context is available for segment evaluation immediately after provider
             new OctopusFeatureContext({
                 evaluations: [
                     {
-                        name: "segmented-feature",
                         slug: "segmented-feature",
                         isEnabled: true,
+                        evaluationKey: "evaluation-key",
                         segments: [{ key: "serverUri", value: "app.example.com" }],
+                        clientRolloutPercentage: 100,
                     },
                 ],
                 contentHash: "",
