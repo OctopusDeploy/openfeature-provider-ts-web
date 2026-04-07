@@ -40,7 +40,7 @@ export class OctopusFeatureContext {
             };
         }
 
-        if (missingRequiredFieldsForClientEvaluation(evaluation)) {
+        if (missingRequiredPropertiesForClientSideEvaluation(evaluation)) {
             return {
                 value: defaultValue,
                 errorCode: ErrorCode.PARSE_ERROR,
@@ -85,11 +85,12 @@ export class OctopusFeatureContext {
 
     evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: EvaluationContext): boolean {
         const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
-        return evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
+        const result = evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
+        return result;
     }
 }
 
-function missingRequiredFieldsForClientEvaluation(evaluation: V1FeatureToggleEvaluation): boolean {
+function missingRequiredPropertiesForClientSideEvaluation(evaluation: V1FeatureToggleEvaluation): boolean {
     if (!evaluation.isEnabled) {
         return false;
     }
