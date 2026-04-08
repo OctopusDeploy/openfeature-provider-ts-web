@@ -89,7 +89,7 @@ export class OctopusFeatureContext {
             return false;
         }
 
-        // evaluationKey and clientRolloutPercentage are guaranteed to be present here via missingRequiredPropertiesForClientSideEvaluation
+        // evaluationKey and clientRolloutPercentage are guaranteed to be present here via missingRequiredPropertiesForClientSideEvaluation check
         const evaluationKey = evaluation.evaluationKey!;
         const rolloutPercentage = evaluation.clientRolloutPercentage!;
         const targetingKey = context?.targetingKey;
