@@ -46,9 +46,6 @@ describe("Given a set of feature toggles", () => {
                 {
                     slug: "test-feature",
                     isEnabled: false,
-                    evaluationKey: "evaluation-key",
-                    segments: [],
-                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -64,10 +61,7 @@ describe("Given a set of feature toggles", () => {
             evaluations: [
                 {
                     slug: "this-is-clearly-not-a-slug",
-                    isEnabled: true,
-                    evaluationKey: "evaluation-key",
-                    segments: [],
-                    clientRolloutPercentage: 100,
+                    isEnabled: false,
                 },
             ],
             contentHash: "",
@@ -92,9 +86,6 @@ describe("Given a set of feature toggles", () => {
                 {
                     slug: "testfeature",
                     isEnabled: false,
-                    evaluationKey: "evaluation-key",
-                    segments: [],
-                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
