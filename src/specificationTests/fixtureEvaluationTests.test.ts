@@ -61,9 +61,7 @@ afterAll(async () => {
     await server.stop();
 });
 
-// Skipped: rollout percentage evaluation (hashing) not yet implemented.
-// Re-enable when the follow-up PR adds that logic.
-test.skip.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
+test.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
     const token = server.configure(testResponse);
     const provider = new OctopusFeatureProvider({
         clientIdentifier: token,

@@ -1,5 +1,6 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
 import { ErrorCode } from "@openfeature/core";
+import murmur from "murmurhash3js-revisited";
 
 export interface V2FeatureToggles {
     evaluations: V2FeatureToggleEvaluation[];
@@ -84,10 +85,36 @@ export class OctopusFeatureContext {
     }
 
     evaluateSegments(evaluation: V2FeatureToggleEvaluation, context: EvaluationContext): boolean {
+        if (!evaluation.isEnabled) {
+            return false;
+        }
+
+        // evaluationKey and clientRolloutPercentage are guaranteed to be present here via missingRequiredPropertiesForClientSideEvaluation
+        const evaluationKey = evaluation.evaluationKey!;
+        const rolloutPercentage = evaluation.clientRolloutPercentage!;
+        const targetingKey = context?.targetingKey;
+
+        if (!targetingKey) {
+            if (rolloutPercentage < 100) {
+                return false;
+            }
+            // rolloutPercentage == 100: fall through to segment check
+        } else {
+            if (getNormalizedNumber(evaluationKey, targetingKey) > rolloutPercentage) {
+                return false;
+            }
+        }
+
         const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
-        const result = evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
-        return result;
+        return !hasSegments || this.matchesSegment(context, evaluation.segments!);
     }
+}
+
+export function getNormalizedNumber(evaluationKey: string, targetingKey: string): number {
+    const bytes = new TextEncoder().encode(`${evaluationKey}:${targetingKey}`);
+    const hash = murmur.x86.hash32(bytes, 0);
+    const unsignedHash = hash >>> 0;
+    return (unsignedHash % 100) + 1;
 }
 
 function missingRequiredPropertiesForClientSideEvaluation(evaluation: V2FeatureToggleEvaluation): boolean {

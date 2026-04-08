@@ -29,6 +29,7 @@
   "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
+    "@types/murmurhash3js-revisited": "^3.0.3",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "axios-mock-adapter": "^2.1.0",
     "eslint": "^8.57.0",
@@ -46,7 +47,8 @@
   "dependencies": {
     "@openfeature/web-sdk": "1.5.0",
     "axios": "^1.12.2",
-    "axios-retry": "4.5.0"
+    "axios-retry": "4.5.0",
+    "murmurhash3js-revisited": "^3.0.0"
   },
   "jest-junit": {
     "outputDirectory": "reports",
