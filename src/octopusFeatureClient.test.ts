@@ -25,7 +25,7 @@ describe("OctopusFeatureClient", () => {
 
         await client.getEvaluationContext();
 
-        expect(mockAdapter.history.get[0].url).toMatch(/\/featuretoggles\/v3\/$/);
+        expect(mockAdapter.history.get[0].url).toMatch(/\/toggles\/evaluations\/v3\/$/);
     });
 
     test("Should include releaseVersionOverride in HTTP header if provided in configuration", async () => {

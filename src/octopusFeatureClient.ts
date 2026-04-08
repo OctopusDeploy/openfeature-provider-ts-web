@@ -1,12 +1,12 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import axiosRetry from "axios-retry";
-import { V1FeatureToggleEvaluation, V1FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
+import { V2FeatureToggleEvaluation, V2FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
 
-interface V1CacheEntry {
-    schemaVersion: "v1";
-    contents: V1FeatureToggles;
+interface V2CacheEntry {
+    schemaVersion: "v2";
+    contents: V2FeatureToggles;
 }
 
 export class OctopusFeatureClient {
@@ -43,7 +43,7 @@ export class OctopusFeatureClient {
 
             try {
                 const cacheEntry = JSON.parse(rawCache);
-                if (this.isV1CacheEntry(cacheEntry)) {
+                if (this.isV2CacheEntry(cacheEntry)) {
                     return new OctopusFeatureContext(cacheEntry.contents);
                 }
             } catch (e) {
@@ -53,25 +53,25 @@ export class OctopusFeatureClient {
             return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
         }
 
-        const cacheEntry: V1CacheEntry = { schemaVersion: "v1", contents: manifest };
+        const cacheEntry: V2CacheEntry = { schemaVersion: "v2", contents: manifest };
         localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
 
         return new OctopusFeatureContext(manifest);
     }
 
-    isV1CacheEntry(entry: unknown): entry is V1CacheEntry {
-        const possibleV1CacheEntry = entry as V1CacheEntry;
+    isV2CacheEntry(entry: unknown): entry is V2CacheEntry {
+        const possibleV2CacheEntry = entry as V2CacheEntry;
         return (
-            possibleV1CacheEntry.schemaVersion === "v1" &&
-            possibleV1CacheEntry.contents !== undefined &&
-            possibleV1CacheEntry.contents.evaluations !== undefined &&
-            possibleV1CacheEntry.contents.contentHash !== undefined
+            possibleV2CacheEntry.schemaVersion === "v2" &&
+            possibleV2CacheEntry.contents !== undefined &&
+            possibleV2CacheEntry.contents.evaluations !== undefined &&
+            possibleV2CacheEntry.contents.contentHash !== undefined
         );
     }
 
-    async getFeatureManifest(): Promise<V1FeatureToggles | undefined> {
+    async getFeatureManifest(): Promise<V2FeatureToggles | undefined> {
         const config: AxiosRequestConfig = {
-            url: `${this.serverUri}/api/featuretoggles/v3/`,
+            url: `${this.serverUri}/api/toggles/evaluations/v3/`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
@@ -84,7 +84,7 @@ export class OctopusFeatureClient {
             config.headers!["X-Release-Version"] = this.releaseVersionOverride;
         }
 
-        const response = await this.axiosInstance.request<V1FeatureToggleEvaluation[]>(config);
+        const response = await this.axiosInstance.request<V2FeatureToggleEvaluation[]>(config);
 
         if (response.status == 404) {
             this.logger.warn(`Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri}`);

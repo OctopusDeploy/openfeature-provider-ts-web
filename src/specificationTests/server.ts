@@ -9,7 +9,7 @@ export class Server {
     start(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.server = http.createServer((req, res) => {
-                if (req.method === "GET" && req.url === "/api/featuretoggles/v3/") {
+                if (req.method === "GET" && req.url === "/api/toggles/evaluations/v3/") {
                     const authHeader = req.headers["authorization"];
                     if (authHeader && authHeader.startsWith("Bearer ")) {
                         const token = authHeader.slice("Bearer ".length);

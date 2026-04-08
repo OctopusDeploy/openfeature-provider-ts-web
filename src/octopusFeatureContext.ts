@@ -1,22 +1,23 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
 import { ErrorCode } from "@openfeature/core";
 
-export interface V1FeatureToggles {
-    evaluations: V1FeatureToggleEvaluation[];
+export interface V2FeatureToggles {
+    evaluations: V2FeatureToggleEvaluation[];
     contentHash: string;
 }
 
-export interface V1FeatureToggleEvaluation {
-    name: string;
+export interface V2FeatureToggleEvaluation {
     slug: string;
     isEnabled: boolean;
-    segments: { key: string; value: string }[];
+    evaluationKey?: string;
+    segments?: { key: string; value: string }[];
+    clientRolloutPercentage?: number;
 }
 
 export class OctopusFeatureContext {
-    toggles: V1FeatureToggles;
+    toggles: V2FeatureToggles;
 
-    constructor(toggles: V1FeatureToggles) {
+    constructor(toggles: V2FeatureToggles) {
         this.toggles = toggles;
     }
 
@@ -36,6 +37,14 @@ export class OctopusFeatureContext {
                 value: defaultValue,
                 errorCode: ErrorCode.FLAG_NOT_FOUND,
                 errorMessage: "The slug provided did not match any of your Octopus Feature Toggles. Please double check your slug and try again.",
+            };
+        }
+
+        if (missingRequiredPropertiesForClientSideEvaluation(evaluation)) {
+            return {
+                value: defaultValue,
+                errorCode: ErrorCode.PARSE_ERROR,
+                errorMessage: `Feature toggle ${slug} is missing necessary information for client-side evaluation.`,
             };
         }
 
@@ -74,8 +83,16 @@ export class OctopusFeatureContext {
         return result;
     }
 
-    evaluateSegments(evaluation: V1FeatureToggleEvaluation, context: EvaluationContext): boolean {
-        const result = evaluation.isEnabled && (Object.keys(evaluation.segments).length === 0 || this.matchesSegment(context, evaluation.segments));
+    evaluateSegments(evaluation: V2FeatureToggleEvaluation, context: EvaluationContext): boolean {
+        const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
+        const result = evaluation.isEnabled && (!hasSegments || this.matchesSegment(context, evaluation.segments!));
         return result;
     }
+}
+
+function missingRequiredPropertiesForClientSideEvaluation(evaluation: V2FeatureToggleEvaluation): boolean {
+    if (!evaluation.isEnabled) {
+        return false;
+    }
+    return evaluation.evaluationKey == null || evaluation.segments == null || evaluation.clientRolloutPercentage == null;
 }
