@@ -247,6 +247,81 @@ describe("Given a set of feature toggles", () => {
     });
 });
 
+describe("Rollout percentage evaluation", () => {
+    // "evaluation-key:targeting-key" hashes to bucket 13
+    const evaluationKey = "evaluation-key";
+    const targetingKey = "targeting-key";
+
+    test("Evaluates to true when targeting key falls within rollout percentage and no segments required", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 13 }],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey });
+        expect(result).toStrictEqual({ value: true });
+    });
+
+    test("Evaluates to false when targeting key falls outside rollout percentage and no segments required", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 12 }],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey });
+        expect(result).toStrictEqual({ value: false });
+    });
+
+    test("Evaluates to true when targeting key falls within rollout percentage and segment matches", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [
+                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "trial" }], clientRolloutPercentage: 13 },
+            ],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
+        expect(result).toStrictEqual({ value: true });
+    });
+
+    test("Evaluates to false when targeting key falls within rollout percentage but segment does not match", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [
+                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "enterprise" }], clientRolloutPercentage: 99 },
+            ],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
+        expect(result).toStrictEqual({ value: false });
+    });
+
+    test("Evaluates to false when targeting key falls outside rollout percentage and segment does not match", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [
+                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "enterprise" }], clientRolloutPercentage: 12 },
+            ],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
+        expect(result).toStrictEqual({ value: false });
+    });
+
+    test("Evaluates to false when no targeting key and rollout is less than 100%", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 99 }],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, {});
+        expect(result).toStrictEqual({ value: false });
+    });
+
+    test("Evaluates to true when no targeting key and rollout is 100%", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 100 }],
+            contentHash: "",
+        };
+        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, {});
+        expect(result).toStrictEqual({ value: true });
+    });
+});
+
 describe("When an enabled toggle is missing required client evaluation fields", () => {
     test("Returns PARSE_ERROR when evaluationKey is absent", () => {
         const toggles: V2FeatureToggles = {
@@ -433,80 +508,5 @@ describe("getNormalizedNumber produces consistent buckets across all provider li
 
     test.each(cases)("getNormalizedNumber('%s', '%s') === %i", (evaluationKey, targetingKey, expected) => {
         expect(getNormalizedNumber(evaluationKey, targetingKey)).toBe(expected);
-    });
-});
-
-describe("Rollout percentage evaluation", () => {
-    // "evaluation-key:targeting-key" hashes to bucket 13
-    const evaluationKey = "evaluation-key";
-    const targetingKey = "targeting-key";
-
-    test("Evaluates to true when targeting key falls within rollout percentage and no segments required", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 13 }],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey });
-        expect(result).toStrictEqual({ value: true });
-    });
-
-    test("Evaluates to false when targeting key falls outside rollout percentage and no segments required", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 12 }],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey });
-        expect(result).toStrictEqual({ value: false });
-    });
-
-    test("Evaluates to true when targeting key falls within rollout percentage and segment matches", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [
-                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "trial" }], clientRolloutPercentage: 13 },
-            ],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
-        expect(result).toStrictEqual({ value: true });
-    });
-
-    test("Evaluates to false when targeting key falls within rollout percentage but segment does not match", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [
-                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "enterprise" }], clientRolloutPercentage: 99 },
-            ],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
-        expect(result).toStrictEqual({ value: false });
-    });
-
-    test("Evaluates to false when targeting key falls outside rollout percentage and segment does not match", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [
-                { slug: "test-feature", isEnabled: true, evaluationKey, segments: [{ key: "license", value: "enterprise" }], clientRolloutPercentage: 12 },
-            ],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, { targetingKey, license: "trial" });
-        expect(result).toStrictEqual({ value: false });
-    });
-
-    test("Evaluates to false when no targeting key and rollout is less than 100%", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 99 }],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, {});
-        expect(result).toStrictEqual({ value: false });
-    });
-
-    test("Evaluates to true when no targeting key and rollout is 100%", () => {
-        const toggles: V2FeatureToggles = {
-            evaluations: [{ slug: "test-feature", isEnabled: true, evaluationKey, segments: [], clientRolloutPercentage: 100 }],
-            contentHash: "",
-        };
-        const result = new OctopusFeatureContext(toggles).evaluate("test-feature", false, {});
-        expect(result).toStrictEqual({ value: true });
     });
 });
