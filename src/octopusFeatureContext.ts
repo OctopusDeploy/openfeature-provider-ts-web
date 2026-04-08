@@ -112,8 +112,16 @@ export class OctopusFeatureContext {
 
 export function getNormalizedNumber(evaluationKey: string, targetingKey: string): number {
     const bytes = new TextEncoder().encode(`${evaluationKey}:${targetingKey}`);
+
+    // MurmurHash3 32-bit, seed 0. x86.hash32 processes tail bytes in little-endian order,
+    // matching the reference C spec and equivalent to .NET's MurmurHash.Create32() +
+    // BinaryPrimitives.ReadUInt32LittleEndian().
     const hash = murmur.x86.hash32(bytes, 0);
+
+    // JavaScript's >>> 0 reinterprets the signed int as an unsigned 32-bit value —
+    // equivalent to Integer.toUnsignedLong() in Java or casting to uint in C#.
     const unsignedHash = hash >>> 0;
+
     return (unsignedHash % 100) + 1;
 }
 
