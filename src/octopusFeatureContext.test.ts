@@ -6,7 +6,7 @@ describe("Given a set of feature toggles", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "test-feature",
                     isEnabled: true,
                     evaluationKey: "evaluation-key",
                     segments: [],
@@ -18,14 +18,14 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        expect(context.evaluate("enabled-feature", false, {})).toStrictEqual({ value: true });
+        expect(context.evaluate("test-feature", false, {})).toStrictEqual({ value: true });
     });
 
     test("Evaluates to true if feature is contained within the set and enabled, and evaluation casing differs", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "test-feature",
                     isEnabled: true,
                     evaluationKey: "evaluation-key",
                     segments: [],
@@ -37,15 +37,18 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        expect(context.evaluate("Enabled-Feature", false, {})).toStrictEqual({ value: true });
+        expect(context.evaluate("Test-Feature", false, {})).toStrictEqual({ value: true });
     });
 
     test("Evaluates to false if feature is contained within the set but is not enabled", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "test-feature",
                     isEnabled: false,
+                    evaluationKey: "evaluation-key",
+                    segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -53,15 +56,18 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        expect(context.evaluate("enabled-feature", false, {})).toStrictEqual({ value: false });
+        expect(context.evaluate("test-feature", false, {})).toStrictEqual({ value: false });
     });
 
     describe("When flag key provided is not a slug", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "not-a-slug",
-                    isEnabled: false,
+                    slug: "this-is-clearly-not-a-slug",
+                    isEnabled: true,
+                    evaluationKey: "evaluation-key",
+                    segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -69,7 +75,7 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        const result = context.evaluate("not a slug", true, {});
+        const result = context.evaluate("This is clearly not a slug!", true, {});
 
         test("Then error code is flag not found", () => {
             expect(result.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
@@ -84,8 +90,11 @@ describe("Given a set of feature toggles", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "not-a-slug",
+                    slug: "testfeature",
                     isEnabled: false,
+                    evaluationKey: "evaluation-key",
+                    segments: [],
+                    clientRolloutPercentage: 100,
                 },
             ],
             contentHash: "",
@@ -93,7 +102,7 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        const result = context.evaluate("does-not-exist", true, {});
+        const result = context.evaluate("anotherfeature", true, {});
 
         test("Then error code is flag not found", () => {
             expect(result.errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
@@ -108,10 +117,10 @@ describe("Given a set of feature toggles", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "testfeature",
                     isEnabled: true,
                     evaluationKey: "evaluation-key",
-                    segments: [{ key: "region", value: "us" }],
+                    segments: [{ key: "license", value: "trial" }],
                     clientRolloutPercentage: 100,
                 },
             ],
@@ -121,17 +130,17 @@ describe("Given a set of feature toggles", () => {
         const context = new OctopusFeatureContext(toggles);
 
         test("Evaluates to true if the segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+            const result = context.evaluate("testfeature", false, { license: "trial" });
             expect(result).toStrictEqual({ value: true });
         });
 
         test("Evaluates to false if an invalid segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, { locale: "en-us" });
+            const result = context.evaluate("testfeature", false, { other: "segment" });
             expect(result).toStrictEqual({ value: false });
         });
 
         test("Evaluates to false if no segment is specified", () => {
-            const result = context.evaluate("enabled-feature", false, {});
+            const result = context.evaluate("testfeature", false, {});
             expect(result).toStrictEqual({ value: false });
         });
     });
@@ -140,7 +149,7 @@ describe("Given a set of feature toggles", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "testfeature",
                     isEnabled: true,
                     evaluationKey: "evaluation-key",
                     segments: [],
@@ -153,7 +162,12 @@ describe("Given a set of feature toggles", () => {
         const context = new OctopusFeatureContext(toggles);
 
         test("Evaluates to true regardless of the segment specified", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+            const result = context.evaluate("testfeature", false, { license: "trial" });
+            expect(result).toStrictEqual({ value: true });
+        });
+
+        test("Evaluates to true when no context values are specified", () => {
+            const result = context.evaluate("testfeature", false, {});
             expect(result).toStrictEqual({ value: true });
         });
     });
@@ -162,12 +176,13 @@ describe("Given a set of feature toggles", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
-                    slug: "enabled-feature",
+                    slug: "testfeature",
                     isEnabled: true,
                     evaluationKey: "evaluation-key",
                     segments: [
-                        { key: "region", value: "us" },
                         { key: "license", value: "trial" },
+                        { key: "region", value: "au" },
+                        { key: "region", value: "us" },
                     ],
                     clientRolloutPercentage: 100,
                 },
@@ -177,33 +192,65 @@ describe("Given a set of feature toggles", () => {
 
         const context = new OctopusFeatureContext(toggles);
 
-        test("Evaluates to true if all segments are specified in context", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial" });
+        test("Evaluates to true if a matching context value is present for each toggled segment", () => {
+            const result = context.evaluate("testfeature", false, { license: "trial", region: "us" });
             expect(result).toStrictEqual({ value: true });
         });
 
-        test("Evaluates to false if all segments are specified in context, but one does not match the toggle", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "eu", license: "trial" });
+        test("Evaluates to false if a context value is present for each toggled segment but one does not match", () => {
+            const result = context.evaluate("testfeature", false, { license: "trial", region: "eu" });
             expect(result).toStrictEqual({ value: false });
         });
 
-        test("Evaluates to true if a superset of segments is specified in context", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us", license: "trial", color: "red" });
+        test("Evaluates to true if a matching context value is present for each toggled segment and an additional segment is present", () => {
+            const result = context.evaluate("testfeature", false, { license: "trial", region: "us", language: "english" });
             expect(result).toStrictEqual({ value: true });
         });
 
-        test("Evaluates to false if a subset of segments is specified in context", () => {
-            const result = context.evaluate("enabled-feature", false, { region: "us" });
+        test("Evaluates to false if a context value is present for only one of the toggled segments", () => {
+            const result = context.evaluate("testfeature", false, { license: "trial" });
             expect(result).toStrictEqual({ value: false });
         });
 
-        test("Evaluates to false if no context values match toggled segment values", () => {
-            const result = context.evaluate("enabled-feature", false, { locale: "en-us" });
+        test("Evaluates to false if no context values are present for any of the toggled segments", () => {
+            const result = context.evaluate("testfeature", true, { other: "segment" });
             expect(result).toStrictEqual({ value: false });
         });
 
-        test("Evaluates to false if no segment is specified in context", () => {
-            const result = context.evaluate("enabled-feature", false, {});
+        test("Evaluates to false if no context values are specified", () => {
+            const result = context.evaluate("testfeature", true, {});
+            expect(result).toStrictEqual({ value: false });
+        });
+    });
+
+    describe("When a feature is toggled on for a specific segment and context contains a null value for the segment key", () => {
+        const toggles: V2FeatureToggles = {
+            evaluations: [
+                {
+                    slug: "testfeature",
+                    isEnabled: true,
+                    evaluationKey: "evaluation-key",
+                    segments: [{ key: "license", value: "trial" }],
+                    clientRolloutPercentage: 100,
+                },
+            ],
+            contentHash: "",
+        };
+
+        const context = new OctopusFeatureContext(toggles);
+
+        test("Evaluates to false if the segment key is present but has a null value", () => {
+            const result = context.evaluate("testfeature", false, { license: null as unknown as string });
+            expect(result).toStrictEqual({ value: false });
+        });
+
+        test("Evaluates to false if a different segment key is specified", () => {
+            const result = context.evaluate("testfeature", false, { other: "segment" });
+            expect(result).toStrictEqual({ value: false });
+        });
+
+        test("Evaluates to false if no context values are specified", () => {
+            const result = context.evaluate("testfeature", false, {});
             expect(result).toStrictEqual({ value: false });
         });
     });
