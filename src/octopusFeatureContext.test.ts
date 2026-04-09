@@ -214,7 +214,7 @@ describe("Given a set of feature toggles", () => {
         });
     });
 
-    describe("When a feature is toggled on for a specific segment and context contains a null value for the segment key", () => {
+    describe("When a feature is toggled on for a specific segment and context is missing the segment key", () => {
         const toggles: V2FeatureToggles = {
             evaluations: [
                 {
