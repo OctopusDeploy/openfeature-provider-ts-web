@@ -19,7 +19,7 @@ describe("OctopusFeatureClient", () => {
         mockAdapter.reset();
     });
 
-    test("Should invoke the v3 endpoint", async () => {
+    test("Should invoke the toggles evaluations v3 endpoint", async () => {
         mockAdapter.onGet().reply(200, {});
         const client = new OctopusFeatureClient({ clientIdentifier: "a.b.c" });
 
