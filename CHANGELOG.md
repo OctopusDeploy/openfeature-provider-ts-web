@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.4...v3.0.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* Remove V2 toggle endpoint support ([#37](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/37))
+
+### Features
+
+* Add fractional evaluation support ([#49](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/49)) ([7ebe918](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/7ebe9184cbacc66a5fe81b7e43a777264e7774ae))
+* Use new evaluations endpoint ([#48](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/48)) ([48d8bf5](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/48d8bf5bdbae69bfaad7ee427fe4aa61e80b77eb))
+
+
+### Bug Fixes
+
+* store context parameter in initialize for segment evaluation  ([#41](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/41)) ([4e5dff4](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/4e5dff42386d37928417603a32530ccd6484284b))
+
+
+### Miscellaneous Chores
+
+* Remove V2 toggle endpoint support ([#37](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/37)) ([2e4d40f](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/2e4d40f1a46171b54dd7029a358377f151315378))
+
 ## [2.1.4](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.3...v2.1.4) (2025-09-23)
 
 
