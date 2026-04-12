@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.0...v3.0.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* Fix README punctuation ([3c1de8e](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/3c1de8ed51a9d3a5acb1b74b04ffaf5d9a81a447))
+
 ## [3.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v2.1.4...v3.0.0) (2026-04-09)
 
 

@@ -1,6 +1,6 @@
 {
     "name": "@octopusdeploy/openfeature",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "description": "The Octopus Deploy Feature Toggles OpenFeature Provider",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
