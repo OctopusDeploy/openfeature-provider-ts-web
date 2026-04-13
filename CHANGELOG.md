@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.1...v3.0.2) (2026-04-13)
+
+
+### Bug Fixes
+
+* **deps:** bump axios from 1.13.5 to 1.15.0 ([#55](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/55)) ([b3576dd](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/b3576ddc792bab4a382ee5651417ff34b559272c))
+
 ## [3.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.0...v3.0.1) (2026-04-12)
 
 
