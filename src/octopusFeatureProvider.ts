@@ -26,7 +26,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     metadata = {
-        name: OctopusFeatureProvider.name,
+        name: "octopus-ts-web-provider",
     };
 
     readonly runsOn = "client";
