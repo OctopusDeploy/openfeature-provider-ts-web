@@ -9,21 +9,29 @@ export class ProductMetadata {
     readonly name: string;
     readonly version: string | undefined;
 
+    constructor(name: string);
+    constructor(name: string, version: string);
     constructor(name: string, version?: string) {
-        const cleanedName = clean(name);
-        if (!cleanedName) {
-            throw new Error("Product name must contain at least one valid token character.");
-        }
-        this.name = cleanedName;
+        this.name = clean(name);
+        this.validateName();
 
         if (version !== undefined) {
-            const cleanedVersion = clean(version);
-            if (!cleanedVersion) {
-                throw new Error("Product version must contain at least one valid token character.");
-            }
-            this.version = cleanedVersion;
+            this.version = clean(version);
+            this.validateVersion();
         } else {
             this.version = undefined;
+        }
+    }
+
+    private validateName(): void {
+        if (!this.name) {
+            throw new Error("Product name must contain at least one valid token character.");
+        }
+    }
+
+    private validateVersion(): void {
+        if (!this.version) {
+            throw new Error("Product version must contain at least one valid token character.");
         }
     }
 }
