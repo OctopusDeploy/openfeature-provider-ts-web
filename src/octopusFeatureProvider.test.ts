@@ -1,4 +1,5 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
+import { ProductMetadata } from "./productMetadata";
 import { OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
@@ -19,6 +20,7 @@ describe.skip("octopusFeatureProvider", () => {
     test("use this to verify that the provider is happy end to end", async () => {
         const client = new OctopusFeatureProvider({
             clientIdentifier: "TODO",
+            productMetadata: new ProductMetadata("TestClient"),
         });
 
         await OpenFeature.setProviderAndWait(client);
@@ -51,7 +53,10 @@ describe("Context is available for segment evaluation immediately after provider
     });
 
     test("setContext before setProviderAndWait — SDK passes context to initialize", async () => {
-        const provider = new OctopusFeatureProvider({ clientIdentifier: "test" });
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
 
         await OpenFeature.setContext(context);
         await OpenFeature.setProviderAndWait(provider);
@@ -61,7 +66,10 @@ describe("Context is available for segment evaluation immediately after provider
     });
 
     test("setProviderAndWait with context — context passed directly to initialize", async () => {
-        const provider = new OctopusFeatureProvider({ clientIdentifier: "test" });
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
 
         await OpenFeature.setProviderAndWait(provider, context);
 
@@ -73,7 +81,10 @@ describe("Context is available for segment evaluation immediately after provider
     // so any flag evaluation (e.g. from React hooks) between these two calls will fail
     // segment matching. Prefer calling setContext before setProviderAndWait to avoid this.
     test("setProviderAndWait then setContext — context is not available until setContext completes", async () => {
-        const provider = new OctopusFeatureProvider({ clientIdentifier: "test" });
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
 
         await OpenFeature.setProviderAndWait(provider);
 

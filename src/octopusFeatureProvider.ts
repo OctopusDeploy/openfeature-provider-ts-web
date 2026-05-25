@@ -1,10 +1,14 @@
 import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { ProductMetadata } from "./productMetadata";
 
 export interface OctopusFeatureConfiguration {
     /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
     clientIdentifier: string;
+
+    /** Product name and optional version to include in the X-Octopus-Client request header */
+    productMetadata: ProductMetadata;
 
     serverUri?: string;
 

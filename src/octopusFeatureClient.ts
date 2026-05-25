@@ -3,6 +3,8 @@ import axiosRetry from "axios-retry";
 import { V2FeatureToggleEvaluation, V2FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
+import { ProductMetadata } from "./productMetadata";
+import { PROVIDER_VERSION } from "./version";
 
 interface V2CacheEntry {
     schemaVersion: "v2";
@@ -16,11 +18,13 @@ export class OctopusFeatureClient {
     private readonly axiosInstance: AxiosInstance;
     private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
     private readonly releaseVersionOverride?: string;
+    private readonly productMetadata: ProductMetadata;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.clientIdentifier = configuration.clientIdentifier;
         this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
         this.releaseVersionOverride = configuration.releaseVersionOverride;
+        this.productMetadata = configuration.productMetadata;
         this.logger = configuration.logger ?? new DefaultLogger();
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
@@ -78,6 +82,7 @@ export class OctopusFeatureClient {
             responseType: "json",
             headers: {
                 Authorization: `Bearer ${this.clientIdentifier}`,
+                "X-Octopus-Client": this.buildOctopusClientHeaderValue(),
             },
         };
         if (this.releaseVersionOverride) {
@@ -99,5 +104,13 @@ export class OctopusFeatureClient {
         }
 
         return { evaluations: response.data, contentHash: contentHash };
+    }
+
+    private buildOctopusClientHeaderValue(): string {
+        let value = this.productMetadata.name;
+        if (this.productMetadata.version) {
+            value += `/${this.productMetadata.version}`;
+        }
+        return `${value} openfeature-provider-ts-web/${PROVIDER_VERSION}`;
     }
 }
