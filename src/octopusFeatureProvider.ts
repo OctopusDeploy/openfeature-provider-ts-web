@@ -7,7 +7,7 @@ export interface OctopusFeatureConfiguration {
     /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
     clientIdentifier: string;
 
-    /** Product name and optional version to include in the X-Octopus-Client request header */
+    /** Metadata about the application using the OpenFeature provider. Used to populate header for telemetry. */
     productMetadata: ProductMetadata;
 
     serverUri?: string;
