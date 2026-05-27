@@ -3,6 +3,7 @@ import * as path from "path";
 import { ErrorCode } from "@openfeature/core";
 import { OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
+import { ProductMetadata } from "../productMetadata";
 import { Server } from "./server";
 
 interface Fixture {
@@ -66,6 +67,7 @@ test.each(testCases)("$testCase.description", async ({ testResponse, testCase })
     const provider = new OctopusFeatureProvider({
         clientIdentifier: token,
         serverUri: server.url,
+        productMetadata: new ProductMetadata("TestClient"),
     });
 
     await OpenFeature.setProviderAndWait(provider);

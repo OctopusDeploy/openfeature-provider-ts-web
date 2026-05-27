@@ -1,10 +1,14 @@
 import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { ProductMetadata } from "./productMetadata";
 
 export interface OctopusFeatureConfiguration {
     /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
     clientIdentifier: string;
+
+    /** Metadata about the application using the OpenFeature provider. Used to populate header for telemetry. */
+    productMetadata: ProductMetadata;
 
     serverUri?: string;
 
@@ -26,7 +30,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     metadata = {
-        name: OctopusFeatureProvider.name,
+        name: "octopus-ts-web-provider",
     };
 
     readonly runsOn = "client";
