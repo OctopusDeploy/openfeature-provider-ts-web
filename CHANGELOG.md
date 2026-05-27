@@ -1,5 +1,21 @@
 # Changelog
 
+## [4.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.2...v4.0.0) (2026-05-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* Send product metadata in custom header ([#62](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/62))
+
+### Features
+
+* Send product metadata in custom header ([#62](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/62)) ([51822cb](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/51822cbddf0a78860ae7d582bc783667c5eb71d5))
+
+
+### Bug Fixes
+
+* patch transitive axios vulnerability via npm audit fix ([#59](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/59)) ([68d10d8](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/68d10d853379a4dfaa76cb0311d3459b346b4948))
+
 ## [3.0.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.1...v3.0.2) (2026-04-13)
 
 
