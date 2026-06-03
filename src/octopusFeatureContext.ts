@@ -22,8 +22,12 @@ export class OctopusFeatureContext {
         this.toggles = toggles;
     }
 
+    findToggleBySlug(slug: string): V2FeatureToggleEvaluation | undefined {
+        return this.toggles.evaluations.find((feature) => feature.slug.toLowerCase() === slug.toLowerCase());
+    }
+
     evaluate(slug: string, defaultValue: boolean, context: EvaluationContext): ResolutionDetails<boolean> {
-        const evaluation = this.toggles.evaluations.find((feature) => feature.slug.toLowerCase() === slug.toLowerCase());
+        const evaluation = this.findToggleBySlug(slug);
 
         if (!evaluation) {
             return {
