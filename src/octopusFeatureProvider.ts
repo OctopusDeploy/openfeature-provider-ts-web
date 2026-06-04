@@ -70,6 +70,6 @@ export class OctopusFeatureProvider implements Provider {
         if (!this.evaluationContext.findToggleBySlug(flagKey)) {
             throw new FlagNotFoundError(flagKey);
         }
-        throw new TypeMismatchError("Octopus Feature Toggles only supports boolean toggles.");
+        throw new TypeMismatchError("Octopus only supports boolean flags.");
     }
 }
