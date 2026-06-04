@@ -23,14 +23,6 @@ export class OctopusFeatureContext {
     }
 
     evaluate(slug: string, defaultValue: boolean, context: EvaluationContext): ResolutionDetails<boolean> {
-        if (!slug.match(/^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)$/g)) {
-            return {
-                value: defaultValue,
-                errorCode: ErrorCode.FLAG_NOT_FOUND,
-                errorMessage: "Flag key provided was not a slug. Please ensure to provide the slug associated with your Octopus Feature Toggle.",
-            };
-        }
-
         const evaluation = this.toggles.evaluations.find((feature) => feature.slug.toLowerCase() === slug.toLowerCase());
 
         if (!evaluation) {
