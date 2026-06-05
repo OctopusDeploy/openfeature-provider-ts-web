@@ -101,6 +101,7 @@ describe("Context is available for segment evaluation immediately after provider
 
 describe("Flag type errors are surfaced correctly", () => {
     beforeEach(async () => {
+        await OpenFeature.setContext({});
         jest.mocked(OctopusFeatureClient).mockClear();
         jest.mocked(OctopusFeatureClient).prototype.getEvaluationContext = jest.fn().mockResolvedValue(
             new OctopusFeatureContext({
