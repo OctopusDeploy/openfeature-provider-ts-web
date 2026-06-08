@@ -1,6 +1,7 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
 import { OpenFeature } from "@openfeature/web-sdk";
+import { ErrorCode } from "@openfeature/core";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 
@@ -95,5 +96,59 @@ describe("Context is available for segment evaluation immediately after provider
 
         const resultAfterContext = OpenFeature.getClient().getBooleanValue("segmented-feature", false);
         expect(resultAfterContext).toBe(true);
+    });
+});
+
+describe("Flag type errors are surfaced correctly", () => {
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        jest.mocked(OctopusFeatureClient).mockClear();
+        jest.mocked(OctopusFeatureClient).prototype.getEvaluationContext = jest.fn().mockResolvedValue(
+            new OctopusFeatureContext({
+                evaluations: [
+                    {
+                        slug: "feature-a",
+                        isEnabled: true,
+                        evaluationKey: "key",
+                        segments: [],
+                        clientRolloutPercentage: 100,
+                    },
+                ],
+                contentHash: "",
+            })
+        );
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
+        await OpenFeature.setProviderAndWait(provider);
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("givenAKnownFlag_whenRequestedAsString_returnsTypeMismatch", () => {
+        expect(OpenFeature.getClient().getStringDetails("feature-a", "default").errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+    });
+
+    test("givenAnUnknownFlag_whenRequestedAsString_returnsFlagNotFound", () => {
+        expect(OpenFeature.getClient().getStringDetails("nonexistent", "default").errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    });
+
+    test("givenAKnownFlag_whenRequestedAsNumber_returnsTypeMismatch", () => {
+        expect(OpenFeature.getClient().getNumberDetails("feature-a", 0).errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+    });
+
+    test("givenAnUnknownFlag_whenRequestedAsNumber_returnsFlagNotFound", () => {
+        expect(OpenFeature.getClient().getNumberDetails("nonexistent", 0).errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
+    });
+
+    test("givenAKnownFlag_whenRequestedAsObject_returnsTypeMismatch", () => {
+        expect(OpenFeature.getClient().getObjectDetails("feature-a", {}).errorCode).toBe(ErrorCode.TYPE_MISMATCH);
+    });
+
+    test("givenAnUnknownFlag_whenRequestedAsObject_returnsFlagNotFound", () => {
+        expect(OpenFeature.getClient().getObjectDetails("nonexistent", {}).errorCode).toBe(ErrorCode.FLAG_NOT_FOUND);
     });
 });

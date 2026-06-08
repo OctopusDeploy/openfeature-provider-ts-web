@@ -1,4 +1,5 @@
 import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
+import { FlagNotFoundError, TypeMismatchError } from "@openfeature/core";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 import { ProductMetadata } from "./productMetadata";
@@ -54,14 +55,21 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
-        throw new Error("Octopus Features only support boolean toggles.");
+        return this.rejectNonBooleanEvaluation(flagKey);
     }
 
     resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number> {
-        throw new Error("Octopus Features only support boolean toggles.");
+        return this.rejectNonBooleanEvaluation(flagKey);
     }
 
     resolveObjectEvaluation<U extends JsonValue>(flagKey: string, defaultValue: U): ResolutionDetails<U> {
-        throw new Error("Octopus Features only support boolean toggles.");
+        return this.rejectNonBooleanEvaluation(flagKey);
+    }
+
+    private rejectNonBooleanEvaluation(flagKey: string): never {
+        if (!this.evaluationContext.findToggleBySlug(flagKey)) {
+            throw new FlagNotFoundError(flagKey);
+        }
+        throw new TypeMismatchError("Octopus only supports boolean flags.");
     }
 }
