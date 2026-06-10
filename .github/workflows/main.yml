@@ -1,0 +1,61 @@
+name: CI build
+
+# Controls when the action will run.
+on:
+  push:
+    # Triggers the workflow on pull request events and merges/pushes to main
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  schedule:
+    # Daily 5am australian/brisbane time
+    - cron: "0 19 * * *"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  OCTOPUS_SPACE: "Developer Experience"
+
+jobs:
+  test-build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required to obtain the ID token from GitHub Actions
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'true'
+
+      - name: Build, Test, Pack, and Deploy (CI)
+        uses: ./.github/actions/build-test-pack-deploy
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          prerelease-tag: "ci"
+          octopus-url: ${{ secrets.OCTOPUS_URL }}
+
+      - name: Prepare PR version suffix
+        if: github.event_name == 'pull_request'
+        id: pr-version
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          # Sanitize: replace special chars with hyphens, convert to lowercase
+          SANITIZED=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/^-*//' | sed 's/-*$//')
+          # Truncate to 20 characters
+          TRUNCATED=${SANITIZED:0:20}
+          # Remove trailing hyphens after truncation
+          TRUNCATED=$(echo "$TRUNCATED" | sed 's/-*$//')
+          echo "branch-name=$TRUNCATED" >> $GITHUB_OUTPUT
+
+      - name: Build, Test, Pack, and Deploy (PR)
+        uses: ./.github/actions/build-test-pack-deploy
+        if: github.event_name == 'pull_request'
+        with:
+          prerelease-tag: pr.${{ github.event.pull_request.number }}.${{ steps.pr-version.outputs.branch-name }}
+          octopus-url: ${{ secrets.OCTOPUS_URL }}

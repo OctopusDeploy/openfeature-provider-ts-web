@@ -1,0 +1,94 @@
+name: "Build, Test, Pack, and Deploy"
+description: "Builds, tests, packs the npm package, and pushes it to Octopus"
+
+inputs:
+  prerelease-tag:
+    description: "Optional prerelease tag (e.g., ci, pr.123.branch-name). If provided, generates a prerelease version. If empty, builds a release version."
+    required: false
+    default: ""
+  octopus-url:
+    description: "Octopus Deploy server URL"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: "npm"
+
+    - name: 🏗️ Install
+      shell: bash
+      run: npm ci
+
+    - name: 🧪 Test
+      shell: bash
+      run: npm test
+
+    - name: 🏗️ Build
+      shell: bash
+      run: npm run build
+
+    - name: 🔢 Compute version
+      id: version
+      shell: bash
+      run: |
+        BASE=$(node -p "require('./package.json').version")
+        if [ -n "${{ inputs.prerelease-tag }}" ]; then
+          VERSION="${BASE}-${{ inputs.prerelease-tag }}.$(date -u +%Y%m%dT%H%M%S).${GITHUB_SHA:0:9}"
+        else
+          VERSION="$BASE"
+        fi
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "Version: $VERSION"
+
+    - name: 🔁 Stamp prerelease version
+      if: inputs.prerelease-tag != ''
+      shell: bash
+      # Only package.json is stamped; src/version.ts stays at the release base (mirrors .NET,
+      # where --version-suffix moves the package version but leaves the assembly version).
+      # dist/ is unaffected, so no rebuild is needed.
+      # --ignore-scripts skips the repo's preversion/version lifecycle hooks (e.g. preversion runs
+      # the linter); stamping is a pure version-number write and must not trigger other gates.
+      run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version --ignore-scripts
+
+    - name: 📦 Pack
+      id: pack
+      shell: bash
+      run: |
+        FILE=$(npm pack | tail -n 1)
+        [ -f "$FILE" ] || { echo "Error: npm pack did not produce $FILE"; exit 1; }
+        echo "name=$FILE" >> "$GITHUB_OUTPUT"
+        echo "Package: $FILE"
+
+    # We don't push to Octopus from forks, so we upload the package as an artifact instead
+    - name: 📤 Publish npm package
+      uses: actions/upload-artifact@v7
+      if: github.event.pull_request.head.repo.fork == true
+      with:
+        name: ${{ steps.pack.outputs.name }}
+        path: ${{ steps.pack.outputs.name }}
+
+    - name: Login to Octopus Deploy 🐙
+      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      uses: OctopusDeploy/login@v2
+      with:
+        server: ${{ inputs.octopus-url }}
+        service_account_id: 42e00747-07e1-4214-979c-af3381e6d951
+
+    - name: Push to Octopus 🐙
+      uses: OctopusDeploy/push-package-action@v4
+      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      with:
+        packages: |
+          ${{ steps.pack.outputs.name }}
+
+    - name: Create Release in Octopus 🐙
+      uses: OctopusDeploy/create-release-action@v4
+      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      with:
+        project: "OpenFeature TS Provider"
+        packages: |
+          octopusdeploy-openfeature:${{ steps.version.outputs.version }}
