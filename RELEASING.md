@@ -7,15 +7,16 @@ Versioning and publishing are automated. Release Please owns the version and cha
 ```mermaid
 flowchart TD
     PR["Merge PR to main<br/>(conventional commit)"]
+    TRIG["Push to main / Pull request / Nightly / Manual"]
 
     PR --> RP["release.yml: release-please"]
-    PR -. "push / PR / nightly / manual" .-> CI["main.yml"]
+    TRIG -. "triggers" .-> CI["main.yml"]
 
     RP -->|"opens / updates"| RPR["Release PR<br/>bumps package.json + src/version.ts + CHANGELOG"]
     RPR -->|"merged"| RP2["release.yml: release-please"]
     RP2 --> TAG["Git tag + GitHub Release"]
-    RP2 -->|"release_created"| ACTR["Build · test · pack<br/>(release version)"]
-    CI --> ACTP["Build · test · pack<br/>(prerelease version: ci / pr.N.branch)"]
+    RP2 -->|"release_created"| ACTR["Build + test + pack<br/>(release version)"]
+    CI --> ACTP["Build + test + pack<br/>(prerelease version: ci / pr.N.branch)"]
 
     ACTR --> OCT["Octopus Deploy"]
     ACTP --> OCT
