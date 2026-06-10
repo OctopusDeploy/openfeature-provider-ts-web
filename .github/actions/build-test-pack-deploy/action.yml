@@ -60,8 +60,16 @@ runs:
       run: |
         FILE=$(npm pack | tail -n 1)
         [ -f "$FILE" ] || { echo "Error: npm pack did not produce $FILE"; exit 1; }
-        echo "name=$FILE" >> "$GITHUB_OUTPUT"
-        echo "Package: $FILE"
+        # npm pack joins the package id and version with a hyphen
+        # (octopusdeploy-openfeature-3.0.2-pr....tgz). Octopus parses package filenames by splitting
+        # on the first "-<digit>" run, so it reads the id as "octopusdeploy-openfeature-3" and the
+        # version as "0.2-pr...". Rename so the id/version separator is a dot, which Octopus treats as
+        # the canonical separator, yielding the correct id "octopusdeploy-openfeature".
+        PKG_ID=$(node -p "require('./package.json').name.replace('@','').replace('/','-')")
+        DEST="${PKG_ID}.${{ steps.version.outputs.version }}.tgz"
+        mv "$FILE" "$DEST"
+        echo "name=$DEST" >> "$GITHUB_OUTPUT"
+        echo "Package: $DEST"
 
     # We don't push to Octopus from forks, so we upload the package as an artifact instead
     - name: Publish npm package
