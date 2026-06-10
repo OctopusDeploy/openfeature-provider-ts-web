@@ -24,6 +24,7 @@ jobs:
     permissions:
       id-token: write # Required to obtain the ID token from GitHub Actions
       contents: read
+      checks: write # Required to publish the test report
 
     steps:
       - name: Checkout code
