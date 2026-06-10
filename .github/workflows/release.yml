@@ -36,7 +36,8 @@ jobs:
     if: ${{ fromJSON(needs.release-please.outputs.release_created || false) }}
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           submodules: 'true'
 

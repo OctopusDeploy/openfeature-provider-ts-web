@@ -1,9 +1,7 @@
 name: CI build
 
-# Controls when the action will run.
 on:
   push:
-    # Triggers the workflow on pull request events and merges/pushes to main
     branches:
       - main
 
@@ -12,10 +10,9 @@ on:
       - main
 
   schedule:
-    # Daily 5am australian/brisbane time
-    - cron: "0 19 * * *"
+    - cron: "0 5 * * *"
+      timezone: "Australia/Brisbane"
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
@@ -29,7 +26,8 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           submodules: 'true'
 
