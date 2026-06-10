@@ -68,6 +68,7 @@ runs:
         PKG_ID=$(node -p "require('./package.json').name.replace('@','').replace('/','-')")
         DEST="${PKG_ID}.${{ steps.version.outputs.version }}.tgz"
         mv "$FILE" "$DEST"
+        echo "id=$PKG_ID" >> "$GITHUB_OUTPUT"
         echo "name=$DEST" >> "$GITHUB_OUTPUT"
         echo "Package: $DEST"
 
@@ -100,4 +101,4 @@ runs:
         project: "OpenFeature TypeScript Web Provider"
         release_number: ${{ steps.version.outputs.version }}
         packages: |
-          octopusdeploy-openfeature:${{ steps.version.outputs.version }}
+          ${{ steps.pack.outputs.id }}:${{ steps.version.outputs.version }}
