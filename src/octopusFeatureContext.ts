@@ -7,6 +7,9 @@ export interface V2FeatureToggles {
     contentHash: string;
 }
 
+export interface Test {
+}
+
 export interface V2FeatureToggleEvaluation {
     slug: string;
     isEnabled: boolean;
