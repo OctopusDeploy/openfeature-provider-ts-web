@@ -1,0 +1,27 @@
+name: Renovate update dependencies
+on:
+  schedule:
+    # UTC 10:00 PM Sunday - Thursday (AEST 8:00 AM, Monday - Friday)
+    - cron: "0 22 * * 0-4"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  renovate:
+    name: Renovate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Renovate
+        uses: renovatebot/github-action@b50d2ba2bd928235abdcc14d06dfafc217f1c565 # v46.1.18
+        with:
+          configurationFile: renovate-config.js
+          token: ${{ secrets.RENOVATE_GITHUB_TOKEN }}
+        env:
+          RENOVATE_DRY_RUN: ${{ inputs.dry-run && 'full' || null }}
