@@ -14,7 +14,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Node
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       with:
         node-version: 24
         cache: "npm"
@@ -82,7 +82,7 @@ runs:
 
     # We don't push to Octopus from forks, so we upload the package as an artifact instead
     - name: Publish npm package
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       if: github.event.pull_request.head.repo.fork == true
       with:
         name: ${{ steps.pack.outputs.name }}
@@ -90,20 +90,20 @@ runs:
 
     - name: Login to Octopus Deploy
       if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
-      uses: OctopusDeploy/login@v2
+      uses: OctopusDeploy/login@e39e03d07630f363bdccd6c7ad4eb28e0ea8a184 # v2
       with:
         server: ${{ inputs.octopus-url }}
         service_account_id: 42e00747-07e1-4214-979c-af3381e6d951
 
     - name: Push to Octopus
-      uses: OctopusDeploy/push-package-action@v4
+      uses: OctopusDeploy/push-package-action@c97226f7dc0e4fa3bd2fba9b5b30b2ac8a32048c # v4
       if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
       with:
         packages: |
           ${{ steps.pack.outputs.name }}
 
     - name: Create Release in Octopus
-      uses: OctopusDeploy/create-release-action@v4
+      uses: OctopusDeploy/create-release-action@f4d652ab820942f2c32b66984f29c67285cab2b4 # v4
       if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
       with:
         project: "OpenFeature TypeScript Web Provider"
