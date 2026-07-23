@@ -96,7 +96,7 @@ runs:
         service_account_id: 42e00747-07e1-4214-979c-af3381e6d951
 
     - name: Push to Octopus
-      uses: OctopusDeploy/push-package-action@c97226f7dc0e4fa3bd2fba9b5b30b2ac8a32048c # v4
+      uses: OctopusDeploy/push-package-action@39ed2af62de5aeb10692eb62cae1e3a333f0c2f5 # v4
       if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
       with:
         packages: |
