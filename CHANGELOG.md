@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v4.0.0...v4.0.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **deps:** bump form-data from 4.0.5 to 4.0.6 ([#70](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/70)) ([7d44fe8](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/7d44fe8f0bb6279990812fd8dac8c1f87ad2edff))
+
 ## [4.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.2...v4.0.0) (2026-06-14)
 
 
