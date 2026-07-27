@@ -29,6 +29,12 @@ module.exports = {
 
   packageRules: [
     {
+      // OpenFeature SDK updates are worth releasing as a minor version, even if not breaking
+      matchPackageNames: ["@openfeature/web-sdk"],
+      matchUpdateTypes: ["minor", "patch"],
+      semanticCommitType: "feat",
+    },
+    {
       // Dev-time dependencies don't ship in the published package.
       matchDepTypes: ["devDependencies"],
       semanticCommitType: "chore",
