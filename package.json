@@ -45,7 +45,7 @@
         "typescript": "^5.4.5"
     },
     "dependencies": {
-        "@openfeature/web-sdk": "1.5.0",
+        "@openfeature/web-sdk": "1.9.0",
         "axios": "^1.16.0",
         "axios-retry": "4.5.0",
         "murmurhash3js-revisited": "3.0.0"
