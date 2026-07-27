@@ -20,7 +20,7 @@ module.exports = {
   semanticCommitType: "fix",
   semanticCommitScope: "deps",
 
-  extends: [
+  globalExtends: [
     "config:recommended",
     "helpers:pinGitHubActionDigests", // Pin all GitHub Actions to a commit SHA.
   ],
@@ -28,6 +28,12 @@ module.exports = {
   enabledManagers: ["npm", "github-actions"],
 
   packageRules: [
+    {
+      // OpenFeature SDK updates are worth releasing as a minor version, even if not breaking
+      matchPackageNames: ["@openfeature/web-sdk"],
+      matchUpdateTypes: ["minor", "patch"],
+      semanticCommitType: "feat",
+    },
     {
       // Dev-time dependencies don't ship in the published package.
       matchDepTypes: ["devDependencies"],
