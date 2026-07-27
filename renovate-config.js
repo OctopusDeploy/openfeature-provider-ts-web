@@ -20,7 +20,7 @@ module.exports = {
   semanticCommitType: "fix",
   semanticCommitScope: "deps",
 
-  extends: [
+  globalExtends: [
     "config:recommended",
     "helpers:pinGitHubActionDigests", // Pin all GitHub Actions to a commit SHA.
   ],
