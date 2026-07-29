@@ -30,7 +30,7 @@
     "devDependencies": {
         "@types/jest": "^29.5.14",
         "@types/murmurhash3js-revisited": "^3.0.3",
-        "@typescript-eslint/eslint-plugin": "^7.13.0",
+        "@typescript-eslint/eslint-plugin": "^8.0.0",
         "axios-mock-adapter": "^2.1.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
