@@ -56,9 +56,7 @@ describe("OctopusFeatureClient", () => {
 
         await client.getEvaluationContext();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(
-            `MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`
-        );
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
 
     test("Should include X-Octopus-Client header with product name and version", async () => {
@@ -70,9 +68,7 @@ describe("OctopusFeatureClient", () => {
 
         await client.getEvaluationContext();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(
-            `MyProduct/2024.1.0 openfeature-provider-ts-web/${PROVIDER_VERSION}`
-        );
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct/2024.1.0 openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
 
     test("Should strip unsupported chars from product name in X-Octopus-Client header", async () => {
@@ -84,8 +80,6 @@ describe("OctopusFeatureClient", () => {
 
         await client.getEvaluationContext();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(
-            `MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`
-        );
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
 });
