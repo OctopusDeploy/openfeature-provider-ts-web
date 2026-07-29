@@ -5,7 +5,7 @@ module.exports = {
         es6: true,
     },
     extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
-    ignorePatterns: ["node_modules/", ".eslintrc.js", "dist/", "jest.config.js"],
+    ignorePatterns: ["node_modules/", ".eslintrc.js", "dist/", "jest.config.js", "renovate-config.js"],
     parser: "@typescript-eslint/parser",
     parserOptions: {
         project: ["./tsconfig.json"],
