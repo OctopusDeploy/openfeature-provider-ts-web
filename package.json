@@ -28,9 +28,9 @@
     },
     "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
     "devDependencies": {
+        "@eslint/js": "^8.57.1",
         "@types/jest": "^29.5.14",
         "@types/murmurhash3js-revisited": "^3.0.3",
-        "@typescript-eslint/eslint-plugin": "^8.0.0",
         "axios-mock-adapter": "^2.1.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
@@ -42,7 +42,8 @@
         "jest-localstorage-mock": "^2.4.26",
         "prettier": "^3.3.2",
         "ts-jest": "^29.4.4",
-        "typescript": "^5.4.5"
+        "typescript": "^5.4.5",
+        "typescript-eslint": "^8.65.0"
     },
     "dependencies": {
         "@openfeature/web-sdk": "1.10.0",
