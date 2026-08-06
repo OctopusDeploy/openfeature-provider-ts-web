@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.1.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v4.0.0...v4.1.0) (2026-08-06)
+
+
+### Features
+
+* **deps:** update dependency @openfeature/web-sdk to v1.10.0 ([#101](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/101)) ([08c15e7](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/08c15e7a7bdb30c3414550812c695868c0120359))
+* **deps:** update dependency @openfeature/web-sdk to v1.9.0 ([#94](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/94)) ([502d877](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/502d8778c6c9f050a0f2964786868304d99fc367))
+
+
+### Bug Fixes
+
+* **deps:** bump form-data from 4.0.5 to 4.0.6 ([#70](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/70)) ([7d44fe8](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/7d44fe8f0bb6279990812fd8dac8c1f87ad2edff))
+* **deps:** resolve brace-expansion and js-yaml security alerts ([#92](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/92)) ([d39340f](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/d39340f697fbf527032f859e178a0562839b215f))
+
 ## [4.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.2...v4.0.0) (2026-06-14)
 
 
