@@ -7,8 +7,6 @@ import { ClientSideCondition } from "./conditions/clientSideCondition";
  * @internal
  */
 export class ClientSideRule {
-    // Declared non-optional, but nothing enforces that on a deserialised payload — evaluation
-    // validates before reading either.
     constructor(
         readonly name: string,
         readonly conditions: readonly ClientSideCondition[]

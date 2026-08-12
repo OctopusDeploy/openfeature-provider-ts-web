@@ -7,8 +7,6 @@ import { ClientSideCondition } from "./clientSideCondition";
  * rule containing an unknown condition can never match — a newer server capability is safely treated
  * as "not met" by an older client.
  *
- * The raw payload of an unknown condition is not retained, only its discriminator.
- *
  * @internal
  */
 export class UnknownCondition extends ClientSideCondition {

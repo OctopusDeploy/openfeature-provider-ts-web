@@ -40,7 +40,7 @@ describe("ContextAttributeIsOneOfCondition", () => {
         expect(condition.values).toEqual(["1234", undefined]);
     });
 
-    test("Preserves empty values, which evaluation reports rather than parsing", () => {
+    test("Preserves empty values", () => {
         const condition = parseCondition(JSON.parse(`{ "type": "context-attribute-is-one-of", "key": "user-id", "values": [] }`));
 
         expect(condition).toStrictEqual(new ContextAttributeIsOneOfCondition("user-id", []));

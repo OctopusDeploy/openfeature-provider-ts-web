@@ -9,14 +9,9 @@ import { ClientSideRule } from "./clientSideRule";
  * - Deferred to the client — `evaluationKey` and `rules` are populated and the provider library must
  *   evaluate the remaining client-side conditions.
  *
- * Properties that do not apply to the returned shape are omitted from the JSON. A flag in neither
- * shape, or in both, is reported when it is evaluated rather than when it is read.
- *
  * @internal
  */
 export class ServerSideEvaluation {
-    // `slug` is declared non-optional, but nothing enforces that on a deserialised payload —
-    // evaluation validates before reading it.
     constructor(
         readonly slug: string,
         readonly value?: boolean,

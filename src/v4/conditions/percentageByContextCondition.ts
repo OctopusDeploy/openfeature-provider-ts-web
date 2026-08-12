@@ -8,8 +8,7 @@ import { ClientSideCondition } from "./clientSideCondition";
 export class PercentageByContextCondition extends ClientSideCondition {
     /**
      * @param percentage The rollout percentage, 0–100. Optional so an absent `percentage` stays
-     * distinguishable from an explicit 0, which is a legitimate "nobody". A percentage outside the
-     * range is preserved rather than rejected here; evaluation reports it.
+     * distinguishable from an explicit 0, which is a legitimate "nobody".
      */
     constructor(readonly percentage?: number) {
         super();

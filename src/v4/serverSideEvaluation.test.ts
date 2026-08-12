@@ -5,10 +5,10 @@ import { UnknownCondition } from "./conditions/unknownCondition";
 import { parseServerSideEvaluation, parseServerSideEvaluations } from "./parseServerSideEvaluation";
 import { ServerSideEvaluation } from "./serverSideEvaluation";
 
-// Deserialisation of a v4 evaluation response: both flag shapes and the array the endpoint returns.
+// Deserialisation of a v4 evaluation response: both evaluation shapes and the array the endpoint returns.
 // Individual conditions are covered by conditions/parseCondition.test.ts.
 describe("ServerSideEvaluation", () => {
-    test("A server-resolved flag deserialises slug, value and reason", () => {
+    test("A server-resolved evaluation deserialises slug, value and reason", () => {
         const json = `
             {
                 "slug": "my-feature",
@@ -17,12 +17,12 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        expect(flag).toStrictEqual(new ServerSideEvaluation("my-feature", true, "The flag is enabled for this environment.", undefined, undefined));
+        expect(evaluation).toStrictEqual(new ServerSideEvaluation("my-feature", true, "The flag is enabled for this environment.", undefined, undefined));
     });
 
-    test("A deferred flag deserialises rules with polymorphic conditions", () => {
+    test("A deferred evaluation deserialises rules with polymorphic conditions", () => {
         const json = `
             {
                 "slug": "my-feature",
@@ -39,9 +39,9 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        expect(flag).toStrictEqual(
+        expect(evaluation).toStrictEqual(
             new ServerSideEvaluation("my-feature", undefined, undefined, "0f8fad5b-d9cb-469f-a165-70867728950e", [
                 new ClientSideRule("Rule 1", [new PercentageByContextCondition(50), new ContextAttributeIsOneOfCondition("user-id", ["1234", "5678"])]),
             ])
@@ -65,14 +65,14 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        const conditions = flag!.rules![0].conditions;
+        const conditions = evaluation!.rules![0].conditions;
         expect(conditions[0]).toStrictEqual(new PercentageByContextCondition(50));
         expect(conditions[1]).toStrictEqual(new UnknownCondition("some-future-condition"));
     });
 
-    test("An evaluations response deserialises as an array of flags", () => {
+    test("An evaluation response deserialises as an array of evaluations", () => {
         const json = `
             [
                 { "slug": "resolved-feature", "value": false, "reason": "The flag is disabled for this environment." },
@@ -86,28 +86,28 @@ describe("ServerSideEvaluation", () => {
             ]
         `;
 
-        const flags = parseServerSideEvaluations(JSON.parse(json));
+        const evaluations = parseServerSideEvaluations(JSON.parse(json));
 
-        expect(flags).toHaveLength(2);
+        expect(evaluations).toHaveLength(2);
 
-        expect(flags[0].slug).toBe("resolved-feature");
-        expect(flags[0].value).toBe(false);
-        expect(flags[0].rules).toBeUndefined();
+        expect(evaluations[0].slug).toBe("resolved-feature");
+        expect(evaluations[0].value).toBe(false);
+        expect(evaluations[0].rules).toBeUndefined();
 
-        expect(flags[1].slug).toBe("deferred-feature");
-        expect(flags[1].value).toBeUndefined();
-        expect(flags[1].rules).toHaveLength(1);
-        expect(flags[1].rules![0].conditions[0]).toStrictEqual(new PercentageByContextCondition(10));
+        expect(evaluations[1].slug).toBe("deferred-feature");
+        expect(evaluations[1].value).toBeUndefined();
+        expect(evaluations[1].rules).toHaveLength(1);
+        expect(evaluations[1].rules![0].conditions[0]).toStrictEqual(new PercentageByContextCondition(10));
     });
 
-    test("A flag without a slug deserialises rather than failing the response", () => {
-        const flag = parseServerSideEvaluation(JSON.parse(`{ "value": true, "reason": "The flag is enabled for this environment." }`));
+    test("An evaluation without a slug deserialises rather than failing the response", () => {
+        const evaluation = parseServerSideEvaluation(JSON.parse(`{ "value": true, "reason": "The flag is enabled for this environment." }`));
 
-        expect(flag?.slug).toBeUndefined();
-        expect(flag?.value).toBe(true);
+        expect(evaluation?.slug).toBeUndefined();
+        expect(evaluation?.value).toBe(true);
     });
 
-    test("Every flag deserialises when one of them is missing its slug", () => {
+    test("Every evaluation deserialises when one of them is missing its slug", () => {
         const json = `
             [
                 { "value": true, "reason": "The flag is enabled for this environment." },
@@ -115,14 +115,14 @@ describe("ServerSideEvaluation", () => {
             ]
         `;
 
-        const flags = parseServerSideEvaluations(JSON.parse(json));
+        const evaluations = parseServerSideEvaluations(JSON.parse(json));
 
-        expect(flags).toHaveLength(2);
-        expect(flags[0].slug).toBeUndefined();
-        expect(flags[1].slug).toBe("well-formed-feature");
+        expect(evaluations).toHaveLength(2);
+        expect(evaluations[0].slug).toBeUndefined();
+        expect(evaluations[1].slug).toBe("well-formed-feature");
     });
 
-    test("A flag in both shapes at once is preserved, which evaluation reports rather than parsing", () => {
+    test("An evaluation in both shapes at once is preserved, which evaluation reports rather than parsing", () => {
         const json = `
             {
                 "slug": "my-feature",
@@ -133,16 +133,16 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        expect(flag?.value).toBe(true);
-        expect(flag?.rules).toHaveLength(1);
+        expect(evaluation?.value).toBe(true);
+        expect(evaluation?.rules).toHaveLength(1);
     });
 
-    test("A flag in neither shape is preserved, which evaluation reports rather than parsing", () => {
-        const flag = parseServerSideEvaluation(JSON.parse(`{ "slug": "my-feature" }`));
+    test("An evaluation in neither shape is preserved, which evaluation reports rather than parsing", () => {
+        const evaluation = parseServerSideEvaluation(JSON.parse(`{ "slug": "my-feature" }`));
 
-        expect(flag).toStrictEqual(new ServerSideEvaluation("my-feature", undefined, undefined, undefined, undefined));
+        expect(evaluation).toStrictEqual(new ServerSideEvaluation("my-feature", undefined, undefined, undefined, undefined));
     });
 
     test("A rule that is not an object reads as a missing rule", () => {
@@ -154,10 +154,10 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        expect(flag?.rules?.[0]).toBeUndefined();
-        expect(flag?.rules?.[1]).toStrictEqual(new ClientSideRule("Rule 1", [new PercentageByContextCondition(50)]));
+        expect(evaluation?.rules?.[0]).toBeUndefined();
+        expect(evaluation?.rules?.[1]).toStrictEqual(new ClientSideRule("Rule 1", [new PercentageByContextCondition(50)]));
     });
 
     test("Ignores properties it does not model, at every level", () => {
@@ -176,25 +176,25 @@ describe("ServerSideEvaluation", () => {
             }
         `;
 
-        const flag = parseServerSideEvaluation(JSON.parse(json));
+        const evaluation = parseServerSideEvaluation(JSON.parse(json));
 
-        expect(flag).toStrictEqual(
+        expect(evaluation).toStrictEqual(
             new ServerSideEvaluation("feature-with-extra-fields", undefined, undefined, "evaluation-key", [
                 new ClientSideRule("Client-side targeting", [new ContextAttributeIsOneOfCondition("license-type", ["free"])]),
             ])
         );
     });
 
-    test("A flag that is not an object is dropped from the response", () => {
+    test("An evaluation that is not an object is dropped from the response", () => {
         const json = `[null, "my-feature", { "slug": "well-formed-feature", "value": true, "reason": "The flag is enabled for this environment." }]`;
 
-        const flags = parseServerSideEvaluations(JSON.parse(json));
+        const evaluations = parseServerSideEvaluations(JSON.parse(json));
 
-        expect(flags).toHaveLength(1);
-        expect(flags[0].slug).toBe("well-formed-feature");
+        expect(evaluations).toHaveLength(1);
+        expect(evaluations[0].slug).toBe("well-formed-feature");
     });
 
-    test("A response that is not an array holds no flags", () => {
+    test("A response that is not an array holds no evaluations", () => {
         expect(parseServerSideEvaluations(JSON.parse(`{ "slug": "my-feature" }`))).toEqual([]);
         expect(parseServerSideEvaluations(JSON.parse(`null`))).toEqual([]);
         expect(parseServerSideEvaluations(undefined)).toEqual([]);
