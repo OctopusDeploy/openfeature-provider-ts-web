@@ -204,13 +204,13 @@ describe("ServerSideEvaluation", () => {
     });
 
     describe("evaluate", () => {
-        test("A server-resolved flag surfaces its value and reason unchanged", () => {
-            const evaluation = new ServerSideEvaluation("my-feature", true, "The flag is enabled for this environment.");
+        test.each([
+            [true, "The flag is enabled for this environment."],
+            [false, "The flag is disabled for this environment."],
+        ])("A server-resolved flag surfaces its value and reason unchanged: %s", (value, reason) => {
+            const evaluation = new ServerSideEvaluation("my-feature", value, reason);
 
-            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey))).toEqual({
-                value: true,
-                reason: "The flag is enabled for this environment.",
-            });
+            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey))).toEqual({ value, reason });
         });
 
         test("A deferred flag is enabled by the first rule that matches", () => {
