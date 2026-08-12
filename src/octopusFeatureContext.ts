@@ -1,6 +1,6 @@
 import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
 import { ErrorCode } from "@openfeature/core";
-import murmur from "murmurhash3js-revisited";
+import { getNormalizedNumber } from "./v4/percentageRollout";
 
 export interface V2FeatureToggles {
     evaluations: V2FeatureToggleEvaluation[];
@@ -104,21 +104,6 @@ export class OctopusFeatureContext {
         const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
         return !hasSegments || this.matchesSegment(context, evaluation.segments!);
     }
-}
-
-export function getNormalizedNumber(evaluationKey: string, targetingKey: string): number {
-    const bytes = new TextEncoder().encode(`${evaluationKey}:${targetingKey}`);
-
-    // MurmurHash3 32-bit, seed 0. x86.hash32 processes tail bytes in little-endian order,
-    // matching the reference C spec and equivalent to .NET's MurmurHash.Create32() +
-    // BinaryPrimitives.ReadUInt32LittleEndian().
-    const hash = murmur.x86.hash32(bytes, 0);
-
-    // JavaScript's >>> 0 reinterprets the signed int as an unsigned 32-bit value —
-    // equivalent to Integer.toUnsignedLong() in Java or casting to uint in C#.
-    const unsignedHash = hash >>> 0;
-
-    return (unsignedHash % 100) + 1;
 }
 
 function missingRequiredPropertiesForClientSideEvaluation(evaluation: V2FeatureToggleEvaluation): boolean {

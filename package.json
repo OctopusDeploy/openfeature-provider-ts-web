@@ -4,8 +4,12 @@
     "description": "The Octopus Deploy Feature Toggles OpenFeature Provider",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "files": [
+        "dist",
+        "CHANGELOG.md"
+    ],
     "scripts": {
-        "build": "tsc --p tsconfig.json",
+        "build": "tsc --p tsconfig.build.json",
         "lint:fix": "eslint . --fix",
         "lint": "eslint .",
         "prepare": "npm run build",

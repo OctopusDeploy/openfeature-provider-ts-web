@@ -1,3 +1,4 @@
+import { ParseError } from "@openfeature/web-sdk";
 import { ClientSideCondition } from "./clientSideCondition";
 
 /**
@@ -15,5 +16,13 @@ export class UnknownCondition extends ClientSideCondition {
      */
     constructor(readonly type?: string) {
         super();
+    }
+
+    matches(): boolean {
+        if (this.type === undefined) {
+            throw new ParseError("A condition is missing a type.");
+        }
+
+        return false;
     }
 }
