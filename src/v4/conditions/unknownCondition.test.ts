@@ -1,3 +1,4 @@
+import { ParseError } from "@openfeature/web-sdk";
 import { parseCondition } from "./parseCondition";
 import { UnknownCondition } from "./unknownCondition";
 
@@ -25,5 +26,16 @@ describe("UnknownCondition", () => {
 
         expect(condition.type).toBe("not-a-real-condition");
         expect(Object.keys(condition)).toEqual(["type"]);
+    });
+
+    describe("matches", () => {
+        test("An unrecognised type never matches", () => {
+            expect(new UnknownCondition("some-future-condition").matches()).toBe(false);
+        });
+
+        test("No type at all throws a parse error", () => {
+            // No server version emits a condition without a type, unlike one with a type we do not know.
+            expect(() => new UnknownCondition(undefined).matches()).toThrow(new ParseError("A condition is missing a type."));
+        });
     });
 });

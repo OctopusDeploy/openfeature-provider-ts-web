@@ -1,3 +1,5 @@
+import { ParseError } from "@openfeature/web-sdk";
+import * as Contexts from "../../testing/contexts";
 import { parseCondition } from "./parseCondition";
 import { PercentageByContextCondition } from "./percentageByContextCondition";
 
@@ -42,5 +44,44 @@ describe("PercentageByContextCondition", () => {
         const condition = parseCondition(JSON.parse(`{ "type": "percentage-by-context", "percentage": 50, "cats": "dogs" }`));
 
         expect(condition).toStrictEqual(new PercentageByContextCondition(50));
+    });
+
+    describe("matches", () => {
+        test("A targeting key inside the rollout matches", () => {
+            const condition = new PercentageByContextCondition(Contexts.TargetingKeyBucket);
+
+            expect(condition.matches(Contexts.forRules(Contexts.TargetingKey))).toBe(true);
+        });
+
+        test("A targeting key outside the rollout does not match", () => {
+            const condition = new PercentageByContextCondition(Contexts.TargetingKeyBucket - 1);
+
+            expect(condition.matches(Contexts.forRules(Contexts.TargetingKey))).toBe(false);
+        });
+
+        test("Nothing matches at 0%, as the lowest bucket is 1", () => {
+            expect(new PercentageByContextCondition(0).matches(Contexts.forRules(Contexts.TargetingKey))).toBe(false);
+        });
+
+        test("Without a targeting key, only a full rollout matches", () => {
+            expect(new PercentageByContextCondition(100).matches(Contexts.forRules())).toBe(true);
+            expect(new PercentageByContextCondition(99).matches(Contexts.forRules())).toBe(false);
+            expect(new PercentageByContextCondition(50).matches(Contexts.forRules(""))).toBe(false);
+        });
+
+        test("With no context at all, only a full rollout matches", () => {
+            expect(new PercentageByContextCondition(100).matches(Contexts.withoutOpenFeatureContext())).toBe(true);
+            expect(new PercentageByContextCondition(99).matches(Contexts.withoutOpenFeatureContext())).toBe(false);
+        });
+
+        test.each([
+            [undefined, "A condition is missing a percentage value."],
+            [101, "A condition has a percentage of 101."],
+            [-1, "A condition has a percentage of -1."],
+        ])("An absent or out-of-range percentage of %s throws a parse error", (percentage, expectedProblem) => {
+            const condition = new PercentageByContextCondition(percentage);
+
+            expect(() => condition.matches(Contexts.forRules(Contexts.TargetingKey))).toThrow(new ParseError(expectedProblem));
+        });
     });
 });

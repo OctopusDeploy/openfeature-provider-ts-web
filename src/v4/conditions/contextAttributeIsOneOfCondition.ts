@@ -1,7 +1,9 @@
+import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
 import { ClientSideCondition } from "./clientSideCondition";
+import { isOneOf } from "./contextAttributes";
 
 /**
- * Matches when the context attribute `key` is one of `values`.
+ * Matches when the context attribute `key` is one of `values`. A missing attribute does not match.
  *
  * @internal
  */
@@ -11,5 +13,9 @@ export class ContextAttributeIsOneOfCondition extends ClientSideCondition {
         readonly values: readonly string[]
     ) {
         super();
+    }
+
+    matches(context: ClientSideEvaluationContext): boolean {
+        return isOneOf(context, this.key, this.values);
     }
 }
