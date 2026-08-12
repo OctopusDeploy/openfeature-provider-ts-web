@@ -234,7 +234,7 @@ describe("ServerSideEvaluation", () => {
             });
         });
 
-        test("Rules are combined with or, so a later rule can still enable the flag", () => {
+        test("Rules are combined with OR, so a later rule can still enable the flag", () => {
             const evaluation = deferredTo(
                 new ClientSideRule("Nobody", [new PercentageByContextCondition(0)]),
                 new ClientSideRule("Everybody", [new PercentageByContextCondition(100)])

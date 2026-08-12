@@ -1,4 +1,3 @@
-import { ErrorCode } from "@openfeature/core";
 import { ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "../testing/contexts";
 import { parseServerSideEvaluation } from "./parseServerSideEvaluation";
@@ -92,14 +91,12 @@ describe("A malformed evaluation", () => {
             "A condition is missing a key.",
         ],
     ])("throws a parse error describing the problem: %s", (json, expectedProblem) => {
-        expect(() => flag(json).evaluate(matchingContext())).toThrow(new ParseError(expectedProblem));
-    });
+        const evaluate = () => flag(json).evaluate(matchingContext());
 
-    test("reports the problem as a parse error the OpenFeature SDK can turn into the default value", () => {
-        const evaluate = () => flag(`{ "slug": "my-feature" }`).evaluate(matchingContext());
-
+        // The class is what the OpenFeature SDK turns into the caller's default value, and matching an
+        // error instance compares only the message, so both are asserted.
         expect(evaluate).toThrow(ParseError);
-        expect(evaluate).toThrow(expect.objectContaining({ code: ErrorCode.PARSE_ERROR }));
+        expect(evaluate).toThrow(new ParseError(expectedProblem));
     });
 
     test("costs only its own flag, leaving the rest of the response usable", () => {

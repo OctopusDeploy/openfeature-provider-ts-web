@@ -86,7 +86,7 @@ describe("ClientSideRule", () => {
             expect(rule.matches(Contexts.forRules(undefined, { plan: "pro" }))).toBe(true);
         });
 
-        test("Conditions are combined with and", () => {
+        test("Conditions are combined with AND", () => {
             const rule = new ClientSideRule("Rule 1", [new PercentageByContextCondition(100), new ContextAttributeIsOneOfCondition("plan", ["pro"])]);
 
             expect(rule.matches(Contexts.forRules(Contexts.TargetingKey, { plan: "pro" }))).toBe(true);
