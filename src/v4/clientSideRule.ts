@@ -15,7 +15,6 @@ export class ClientSideRule {
     ) {}
 
     matches(context: ClientSideEvaluationContext): boolean {
-
         if (this.name === undefined) {
             throw new ParseError("A rule has no name.");
         }
