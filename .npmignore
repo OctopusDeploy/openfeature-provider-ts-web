@@ -8,3 +8,4 @@ src
 jest**
 tsconfig.json
 **.test.*
+dist/testing
