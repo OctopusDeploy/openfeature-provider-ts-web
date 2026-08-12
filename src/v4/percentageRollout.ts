@@ -17,9 +17,6 @@ export function includes(evaluationKey: string, targetingKey: string, percentage
 /**
  * A deterministic bucket in the inclusive range 1–100 for the given evaluation and targeting keys.
  *
- * Exported rather than kept private so the shared cross-library vectors can assert on the bucket
- * itself, as the other provider libraries do.
- *
  * @internal
  */
 export function getNormalizedNumber(evaluationKey: string, targetingKey: string): number {

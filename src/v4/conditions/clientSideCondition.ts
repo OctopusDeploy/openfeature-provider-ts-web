@@ -8,8 +8,7 @@ import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
  */
 export abstract class ClientSideCondition {
     /**
-     * Whether this condition is met. A condition that did not arrive in a shape its type can evaluate
-     * throws `ParseError` rather than reading a value it was not sent.
+     * Whether this condition is met.
      */
     abstract matches(context: ClientSideEvaluationContext): boolean;
 }

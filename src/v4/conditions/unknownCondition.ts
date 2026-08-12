@@ -19,8 +19,6 @@ export class UnknownCondition extends ClientSideCondition {
     }
 
     matches(): boolean {
-        // No server version emits a condition without a type, so unlike an unrecognised type this is a
-        // response that could not have been sent.
         if (this.type === undefined) {
             throw new ParseError("A condition is missing a type.");
         }

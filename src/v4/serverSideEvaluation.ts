@@ -55,9 +55,8 @@ export class ServerSideEvaluation {
         }
 
         const ruleContext = { evaluationKey: this.evaluationKey, openFeatureContext: context };
-        const rules: readonly (ClientSideRule | undefined)[] = this.rules;
 
-        for (const rule of rules) {
+        for (const rule of this.rules) {
             if (rule === undefined) {
                 throw new ParseError("The flag has a missing rule.");
             }

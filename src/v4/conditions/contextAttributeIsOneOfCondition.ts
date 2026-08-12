@@ -3,7 +3,8 @@ import { ClientSideCondition } from "./clientSideCondition";
 import { isOneOf } from "./contextAttributes";
 
 /**
- * Matches when the context attribute `key` is one of `values`. A missing attribute does not match.
+ * Matches when the context attribute `key` is one of `values`. Keys and values compare case-insensitively. A missing
+ * attribute does not match.
  *
  * @internal
  */

@@ -3,9 +3,8 @@ import { ClientSideCondition } from "./clientSideCondition";
 import { isOneOf } from "./contextAttributes";
 
 /**
- * Matches when the context attribute `key` is not one of `values`. A missing attribute matches,
- * mirroring the Feature Flags service's `TenantIsNotOneOf`, where an untenanted caller always
- * matches.
+ * Matches when the context attribute `key` is not one of `values`. Keys and values compare case-insensitively. A
+ * missing attribute matches.
  *
  * @internal
  */
