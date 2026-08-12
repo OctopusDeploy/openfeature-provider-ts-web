@@ -4,7 +4,7 @@ import { ErrorCode } from "@openfeature/core";
 import { OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { ProductMetadata } from "../productMetadata";
-import { Server } from "../testing/server";
+import { Server } from "./server";
 
 interface Fixture {
     response: unknown;
