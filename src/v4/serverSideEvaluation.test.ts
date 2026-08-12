@@ -1,3 +1,4 @@
+import * as Contexts from "../testing/contexts";
 import { ClientSideRule } from "./clientSideRule";
 import { ContextAttributeIsOneOfCondition } from "./conditions/contextAttributeIsOneOfCondition";
 import { PercentageByContextCondition } from "./conditions/percentageByContextCondition";
@@ -199,4 +200,58 @@ describe("ServerSideEvaluation", () => {
         expect(parseServerSideEvaluations(JSON.parse(`null`))).toEqual([]);
         expect(parseServerSideEvaluations(undefined)).toEqual([]);
     });
+
+    describe("evaluate", () => {
+        test("A server-resolved flag surfaces its value and reason unchanged", () => {
+            const evaluation = new ServerSideEvaluation("my-feature", true, "The flag is enabled for this environment.");
+
+            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey))).toEqual({
+                value: true,
+                reason: "The flag is enabled for this environment.",
+            });
+        });
+
+        test("A deferred flag is enabled by the first rule that matches", () => {
+            const evaluation = deferredTo(
+                new ClientSideRule("Beta ring", [new ContextAttributeIsOneOfCondition("ring", ["beta"])]),
+                new ClientSideRule("Trial licences", [new ContextAttributeIsOneOfCondition("license", ["trial"])])
+            );
+
+            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey, { license: "trial" }))).toEqual({
+                value: true,
+                reason: "Matched rule 'Trial licences'.",
+            });
+        });
+
+        test("A deferred flag whose rules all fail is disabled", () => {
+            const evaluation = deferredTo(new ClientSideRule("Beta ring", [new ContextAttributeIsOneOfCondition("ring", ["beta"])]));
+
+            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey, { ring: "stable" }))).toEqual({
+                value: false,
+                reason: "Did not match any rules.",
+            });
+        });
+
+        test("Rules are combined with or, so a later rule can still enable the flag", () => {
+            const evaluation = deferredTo(
+                new ClientSideRule("Nobody", [new PercentageByContextCondition(0)]),
+                new ClientSideRule("Everybody", [new PercentageByContextCondition(100)])
+            );
+
+            expect(evaluation.evaluate(Contexts.openFeature(Contexts.TargetingKey))).toEqual({
+                value: true,
+                reason: "Matched rule 'Everybody'.",
+            });
+        });
+
+        test("A deferred flag evaluates without a context, which no rule requiring one can match", () => {
+            const evaluation = deferredTo(new ClientSideRule("Beta ring", [new ContextAttributeIsOneOfCondition("ring", ["beta"])]));
+
+            expect(evaluation.evaluate(undefined)).toEqual({ value: false, reason: "Did not match any rules." });
+        });
+    });
 });
+
+function deferredTo(...rules: ClientSideRule[]): ServerSideEvaluation {
+    return new ServerSideEvaluation("my-feature", undefined, undefined, Contexts.EvaluationKey, rules);
+}
