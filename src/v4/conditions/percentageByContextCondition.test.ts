@@ -1,4 +1,4 @@
-import { ParseError } from "@openfeature/web-sdk";
+import { EvaluationContext, ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "../../testing/contexts";
 import { parseCondition } from "./parseCondition";
 import { PercentageByContextCondition } from "./percentageByContextCondition";
@@ -74,6 +74,16 @@ describe("PercentageByContextCondition", () => {
         test("With no context at all, only a full rollout matches", () => {
             expect(new PercentageByContextCondition(100).matches(Contexts.withoutOpenFeatureContext())).toBe(true);
             expect(new PercentageByContextCondition(99).matches(Contexts.withoutOpenFeatureContext())).toBe(false);
+        });
+
+        // Cast rather than built by the helpers: the declared type rules a null out, so it only arrives
+        // from an untyped JavaScript caller. Absent rather than something to bucket on, as the .NET and
+        // Java providers treat it — hashing it would bucket every such caller on the string "null".
+        test("A null targeting key is treated as absent, not hashed", () => {
+            const context = { evaluationKey: Contexts.EvaluationKey, openFeatureContext: { targetingKey: null } as unknown as EvaluationContext };
+
+            expect(new PercentageByContextCondition(100).matches(context)).toBe(true);
+            expect(new PercentageByContextCondition(99).matches(context)).toBe(false);
         });
 
         test.each([

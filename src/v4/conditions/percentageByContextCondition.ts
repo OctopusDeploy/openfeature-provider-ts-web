@@ -33,7 +33,9 @@ export class PercentageByContextCondition extends ClientSideCondition {
         const targetingKey = context.openFeatureContext?.targetingKey;
 
         // Nothing to bucket, so only a full rollout matches — as the server treats an untenanted caller.
-        if (targetingKey === undefined || targetingKey === "") {
+        // Falsy rather than a check against undefined and "": the declared type rules out null, but an
+        // untyped JavaScript caller can still supply one, and hashing it would bucket on "null".
+        if (!targetingKey) {
             return percentage >= 100;
         }
 

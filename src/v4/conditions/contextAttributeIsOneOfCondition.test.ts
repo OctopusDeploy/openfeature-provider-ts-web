@@ -1,4 +1,4 @@
-import { ParseError } from "@openfeature/web-sdk";
+import { EvaluationContext, ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "../../testing/contexts";
 import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition";
 import { parseCondition } from "./parseCondition";
@@ -96,6 +96,15 @@ describe("ContextAttributeIsOneOfCondition", () => {
 
         test("Does not match when the caller supplied no context", () => {
             expect(condition.matches(Contexts.withoutOpenFeatureContext())).toBe(false);
+        });
+
+        // Cast rather than built by the helpers: the declared type rules a null out, so it only arrives
+        // from an untyped JavaScript caller. The lookup this shares with the is-not-one-of condition
+        // treats it as absent, as the .NET and Java providers do.
+        test("Does not match when the context is null", () => {
+            const context = { evaluationKey: Contexts.EvaluationKey, openFeatureContext: null as unknown as EvaluationContext };
+
+            expect(condition.matches(context)).toBe(false);
         });
 
         // Deserialised rather than constructed: key and values are declared non-optional, so these

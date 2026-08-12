@@ -25,7 +25,9 @@ export function isOneOf(context: ClientSideEvaluationContext, key: string | unde
 
     const openFeatureContext = context.openFeatureContext;
 
-    if (openFeatureContext === undefined) {
+    // Falsy rather than a check against undefined: the declared type rules out null, but an untyped
+    // JavaScript caller can still supply one.
+    if (!openFeatureContext) {
         return false;
     }
 
