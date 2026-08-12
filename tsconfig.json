@@ -7,8 +7,6 @@
         "module": "CommonJS",
         "moduleResolution": "node",
         "declaration": true,
-        // Declarations tagged @internal are omitted from the emitted .d.ts files. Tagging a type
-        // removes it from the published API surface, so the tag is not documentation.
         "stripInternal": true,
         "esModuleInterop": true,
         "strict": true,
