@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
-import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { OctopusFeatureContext } from "./featureFlagEvaluator";
 import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";

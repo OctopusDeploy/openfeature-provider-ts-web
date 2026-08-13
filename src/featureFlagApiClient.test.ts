@@ -1,4 +1,4 @@
-import { OctopusFeatureClient } from "./octopusFeatureClient";
+import { OctopusFeatureClient } from "./featureFlagApiClient";
 import { ProductMetadata } from "./productMetadata";
 import { silentLogger } from "./testing/logger";
 import { PROVIDER_VERSION } from "./version";

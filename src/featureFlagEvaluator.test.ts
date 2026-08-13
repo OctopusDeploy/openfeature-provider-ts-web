@@ -1,7 +1,7 @@
 import { FlagNotFoundError, ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "./testing/contexts";
 import { silentLogger } from "./testing/logger";
-import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { OctopusFeatureContext } from "./featureFlagEvaluator";
 import { ClientSideRule } from "./v4/clientSideRule";
 import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition";
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation";

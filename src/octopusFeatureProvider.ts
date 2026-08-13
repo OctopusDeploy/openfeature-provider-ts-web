@@ -1,6 +1,6 @@
 import { DefaultLogger, EvaluationContext, FlagNotFoundError, JsonValue, Logger, Provider, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
-import { OctopusFeatureClient } from "./octopusFeatureClient";
-import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { OctopusFeatureClient } from "./featureFlagApiClient";
+import { OctopusFeatureContext } from "./featureFlagEvaluator";
 import { ProductMetadata } from "./productMetadata";
 
 export interface OctopusFeatureConfiguration {
