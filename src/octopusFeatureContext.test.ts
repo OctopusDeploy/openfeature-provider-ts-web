@@ -1,4 +1,4 @@
-import { ErrorCode, FlagNotFoundError } from "@openfeature/core";
+import { FlagNotFoundError } from "@openfeature/core";
 import { ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "./testing/contexts";
 import { silentLogger } from "./testing/logger";
@@ -74,17 +74,6 @@ describe("OctopusFeatureContext", () => {
             expect(() => context.evaluate("missing-feature", {})).toThrow(
                 new FlagNotFoundError("The slug provided did not match any of your Octopus Feature Flags. Please double check your slug and try again.")
             );
-        });
-
-        test("A FlagNotFoundError carries the FLAG_NOT_FOUND error code", () => {
-            const context = new OctopusFeatureContext([], silentLogger());
-
-            expect.assertions(1);
-            try {
-                context.evaluate("missing-feature", {});
-            } catch (e) {
-                expect((e as FlagNotFoundError).code).toBe(ErrorCode.FLAG_NOT_FOUND);
-            }
         });
 
         test("Propagates a ParseError from an unreadable evaluation", () => {

@@ -8,15 +8,13 @@ import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
 import { PROVIDER_VERSION } from "./version";
 
 interface FeatureManifest {
-    // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry) — parsed
-    // into ServerSideEvaluation instances at the one place that needs them, in getEvaluationContext.
+    // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry).
     evaluations: unknown;
     contentHash: string;
 }
 
 interface V3CacheEntry {
-    // This counts cache shapes, not endpoint versions: "v2" shipped a payload change under the same
-    // /v3/ route, so bumping in lockstep with the API here would be a lie the next time that happens.
+    // Note: This counts cache shapes, not endpoint versions.
     schemaVersion: "v3";
     contents: FeatureManifest;
 }
@@ -71,11 +69,10 @@ export class OctopusFeatureClient {
                 return new OctopusFeatureContext(parseServerSideEvaluations(cacheEntry.contents.evaluations), this.logger);
             }
 
-            // A cache entry from a previous schema version is a miss, not something to reshape: a v3
-            // payload cannot be turned into v4 rules. Removed rather than left orphaned.
+            // The cached entry is from an old cache schema version.
             localStorage.removeItem(this.localStorageKey);
         } catch (e) {
-            this.logger.warn(`An error occurred parsing feature toggles returned from Octopus: ${JSON.stringify(e)}`);
+            this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
         }
 
         return this.emptyContext();

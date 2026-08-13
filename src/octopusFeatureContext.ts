@@ -19,8 +19,6 @@ export interface V2FeatureToggleEvaluation {
 }
 
 export class OctopusFeatureContext {
-    // Slugs already warned about, folded the same way as the lookup below, so a typo'd slug re-rendered
-    // thousands of times costs one console line rather than thousands.
     private readonly warnedSlugs = new Set<string>();
 
     constructor(
@@ -36,20 +34,15 @@ export class OctopusFeatureContext {
         const evaluation = this.findToggleBySlug(slug);
 
         if (!evaluation) {
-            this.warnUnrecognisedSlugOnce(slug);
+            const key = slug.toUpperCase();
+            if (!this.warnedSlugs.has(key)) {
+                this.logger.warn(`The slug '${slug}' did not match any of your Octopus Feature Flags. Please double check your slug and try again.`);
+                this.warnedSlugs.add(key);
+            }
+
             throw new FlagNotFoundError("The slug provided did not match any of your Octopus Feature Flags. Please double check your slug and try again.");
         }
 
         return evaluation.evaluate(context);
-    }
-
-    private warnUnrecognisedSlugOnce(slug: string): void {
-        const key = slug.toUpperCase();
-        if (this.warnedSlugs.has(key)) {
-            return;
-        }
-
-        this.warnedSlugs.add(key);
-        this.logger.warn(`The slug '${slug}' did not match any of your Octopus Feature Flags. This will only be logged once per slug.`);
     }
 }

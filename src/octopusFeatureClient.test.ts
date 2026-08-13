@@ -84,9 +84,6 @@ describe("OctopusFeatureClient", () => {
     });
 
     describe("the manifest cache", () => {
-        // jest-localstorage-mock's getItem/setItem close over instance state via jest.fn(impl), which
-        // jest.config.js's resetMocks strips before every test. A plain in-memory Storage sidesteps
-        // that entirely, since resetMocks only touches mocks it created.
         beforeEach(() => {
             const store = new Map<string, string>();
             global.localStorage = {
