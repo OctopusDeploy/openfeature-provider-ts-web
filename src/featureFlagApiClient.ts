@@ -16,6 +16,7 @@ interface RawEvaluationResponse {
 }
 
 interface EvaluationCacheEntry {
+    // Note: This counts cache shapes, not endpoint or manifest versions.
     cacheSchemaVersion: 3;
     contents: RawEvaluationResponse;
 }

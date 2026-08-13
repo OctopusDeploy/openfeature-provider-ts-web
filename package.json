@@ -23,7 +23,8 @@
     "keywords": [
         "octopus deploy",
         "openfeature",
-        "feature flags"
+        "feature flags",
+        "feature toggles"
     ],
     "author": "Octopus Deploy",
     "license": "Apache-2.0",
