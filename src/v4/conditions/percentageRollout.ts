@@ -5,8 +5,8 @@ import murmur from "murmurhash3js-revisited";
  * the targeting key keeps a bucket stable across evaluations, while giving each flag an independent
  * spread of targeting keys.
  *
- * The v3 path shares this implementation, so a rollout lands on the same users across versions and
- * provider libraries.
+ * Every provider library shares this implementation, so a rollout lands on the same users whichever
+ * one a product uses.
  *
  * @internal
  */

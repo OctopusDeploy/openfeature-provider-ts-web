@@ -1,7 +1,7 @@
 {
     "name": "@octopusdeploy/openfeature",
     "version": "4.0.0",
-    "description": "The Octopus Deploy Feature Toggles OpenFeature Provider",
+    "description": "The Octopus Feature Flags OpenFeature Provider",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
@@ -23,6 +23,7 @@
     "keywords": [
         "octopus deploy",
         "openfeature",
+        "feature flags",
         "feature toggles"
     ],
     "author": "Octopus Deploy",

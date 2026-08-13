@@ -1,36 +1,31 @@
 import { EvaluationContext, FlagNotFoundError, Logger, ResolutionDetails } from "@openfeature/web-sdk";
+import { EvaluationResponse } from "./evaluationResponse";
 import { equalsIgnoringCase } from "./equalsIgnoringCase";
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
 
-// Superseded by ServerSideEvaluation below. Left in place, unreferenced, for BMBB-781 to remove along
-// with the rest of the v3 "toggle" vocabulary.
-export interface V2FeatureToggles {
-    evaluations: V2FeatureToggleEvaluation[];
-    contentHash: string;
-}
-
-export interface V2FeatureToggleEvaluation {
-    slug: string;
-    isEnabled: boolean;
-    evaluationKey?: string;
-    segments?: { key: string; value: string }[];
-    clientRolloutPercentage?: number;
-}
-
-export class OctopusFeatureContext {
+/**
+ * Holds one evaluation response and resolves a flag from it, applying any client-side rules the server deferred.
+ *
+ * @internal
+ */
+export class FeatureFlagEvaluator {
     private readonly warnedSlugs = new Set<string>();
 
     constructor(
-        private readonly evaluations: readonly ServerSideEvaluation[],
+        private readonly response: EvaluationResponse,
         private readonly logger: Logger
     ) {}
 
-    findToggleBySlug(slug: string): ServerSideEvaluation | undefined {
-        return this.evaluations.find((evaluation) => typeof evaluation.slug === "string" && equalsIgnoringCase(evaluation.slug, slug));
+    static empty(logger: Logger): FeatureFlagEvaluator {
+        return new FeatureFlagEvaluator({ evaluations: [], contentHash: "" }, logger);
+    }
+
+    findEvaluationBySlug(slug: string): ServerSideEvaluation | undefined {
+        return this.response.evaluations.find((evaluation) => typeof evaluation.slug === "string" && equalsIgnoringCase(evaluation.slug, slug));
     }
 
     evaluate(slug: string, context: EvaluationContext): ResolutionDetails<boolean> {
-        const evaluation = this.findToggleBySlug(slug);
+        const evaluation = this.findEvaluationBySlug(slug);
 
         if (!evaluation) {
             const key = slug.toUpperCase();

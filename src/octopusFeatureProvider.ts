@@ -1,33 +1,18 @@
 import { DefaultLogger, EvaluationContext, FlagNotFoundError, JsonValue, Logger, Provider, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
-import { OctopusFeatureClient } from "./octopusFeatureClient";
-import { OctopusFeatureContext } from "./octopusFeatureContext";
-import { ProductMetadata } from "./productMetadata";
-
-export interface OctopusFeatureConfiguration {
-    /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
-    clientIdentifier: string;
-
-    /** Metadata about the application using the OpenFeature provider. Used to populate header for telemetry. */
-    productMetadata: ProductMetadata;
-
-    serverUri?: string;
-
-    logger?: Logger;
-
-    /** Overrides the application release version embedded in the ClientIdentifier */
-    releaseVersionOverride?: string;
-}
+import { FeatureFlagApiClient } from "./featureFlagApiClient";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
 
 export class OctopusFeatureProvider implements Provider {
     private readonly logger: Logger;
-    private client: OctopusFeatureClient;
-    private evaluationContext: OctopusFeatureContext;
+    private client: FeatureFlagApiClient;
+    private evaluator: FeatureFlagEvaluator;
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         this.logger = configuration.logger ?? new DefaultLogger();
-        this.client = new OctopusFeatureClient(configuration);
-        this.evaluationContext = new OctopusFeatureContext([], this.logger);
+        this.client = new FeatureFlagApiClient(configuration);
+        this.evaluator = FeatureFlagEvaluator.empty(this.logger);
         this.context = {};
     }
 
@@ -40,7 +25,7 @@ export class OctopusFeatureProvider implements Provider {
     hooks = [];
 
     async initialize(context?: EvaluationContext): Promise<void> {
-        this.evaluationContext = await this.client.getEvaluationContext();
+        this.evaluator = await this.client.getEvaluator();
         if (context) {
             this.context = context;
         }
@@ -51,7 +36,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
-        return this.evaluationContext.evaluate(flagKey, this.context);
+        return this.evaluator.evaluate(flagKey, this.context);
     }
 
     resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {
@@ -67,7 +52,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     private rejectNonBooleanEvaluation(flagKey: string): never {
-        if (!this.evaluationContext.findToggleBySlug(flagKey)) {
+        if (!this.evaluator.findEvaluationBySlug(flagKey)) {
             throw new FlagNotFoundError(flagKey);
         }
         throw new TypeMismatchError("Octopus only supports boolean flags.");

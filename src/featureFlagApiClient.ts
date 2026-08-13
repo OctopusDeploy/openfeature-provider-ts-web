@@ -1,25 +1,28 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
-import { OctopusFeatureContext } from "./octopusFeatureContext";
-import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
+import { EvaluationResponse } from "./evaluationResponse";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
+import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames";
 import { ProductMetadata } from "./productMetadata";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
 import { PROVIDER_VERSION } from "./version";
 
-interface FeatureManifest {
-    // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry).
+interface RawEvaluationResponse {
+    // Unparsed, exactly as received from the v4 endpoint (or retrieved from a cache entry).
     evaluations: unknown;
     contentHash: string;
 }
 
-interface V3CacheEntry {
-    // Note: This counts cache shapes, not endpoint versions.
-    schemaVersion: "v3";
-    contents: FeatureManifest;
+interface EvaluationCacheEntry {
+    // Note: This counts cache shapes, not endpoint or manifest versions.
+    cacheSchemaVersion: 3;
+    contents: RawEvaluationResponse;
 }
 
-export class OctopusFeatureClient {
+/** @internal */
+export class FeatureFlagApiClient {
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
     private readonly logger: Logger;
@@ -39,34 +42,44 @@ export class OctopusFeatureClient {
             retries: 3,
             onRetry: (retryCount, error) =>
                 this.logger.warn(
-                    `Failed to retrieve feature toggles ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
+                    `Failed to retrieve feature flags ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
                 ),
         });
     }
 
-    async getEvaluationContext(): Promise<OctopusFeatureContext> {
-        const manifest = await this.getFeatureManifest();
+    async getEvaluator(): Promise<FeatureFlagEvaluator> {
+        const raw = await this.fetchEvaluations();
 
-        if (manifest === undefined) {
-            return this.getEvaluationContextFromCache();
+        if (raw === undefined) {
+            return FeatureFlagEvaluator.empty(this.logger);
         }
 
-        const cacheEntry: V3CacheEntry = { schemaVersion: "v3", contents: manifest };
-        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
-
-        return new OctopusFeatureContext(parseServerSideEvaluations(manifest.evaluations), this.logger);
+        return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
     }
 
-    private getEvaluationContextFromCache(): OctopusFeatureContext {
+    private async fetchEvaluations(): Promise<RawEvaluationResponse | undefined> {
+        const raw = await this.fetchEvaluationsFromServer();
+
+        if (raw === undefined) {
+            return this.readCachedEvaluations();
+        }
+
+        const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
+        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
+
+        return raw;
+    }
+
+    private readCachedEvaluations(): RawEvaluationResponse | undefined {
         const rawCache = localStorage.getItem(this.localStorageKey);
         if (rawCache === null) {
-            return this.emptyContext();
+            return undefined;
         }
 
         try {
             const cacheEntry = JSON.parse(rawCache);
-            if (this.isV3CacheEntry(cacheEntry)) {
-                return new OctopusFeatureContext(parseServerSideEvaluations(cacheEntry.contents.evaluations), this.logger);
+            if (this.isCurrentCacheEntry(cacheEntry)) {
+                return cacheEntry.contents;
             }
 
             // The cached entry is from an old cache schema version.
@@ -75,24 +88,20 @@ export class OctopusFeatureClient {
             this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
         }
 
-        return this.emptyContext();
+        return undefined;
     }
 
-    private emptyContext(): OctopusFeatureContext {
-        return new OctopusFeatureContext([], this.logger);
-    }
-
-    private isV3CacheEntry(entry: unknown): entry is V3CacheEntry {
-        const possibleV3CacheEntry = entry as V3CacheEntry;
+    private isCurrentCacheEntry(entry: unknown): entry is EvaluationCacheEntry {
+        const possibleCacheEntry = entry as EvaluationCacheEntry;
         return (
-            possibleV3CacheEntry.schemaVersion === "v3" &&
-            possibleV3CacheEntry.contents !== undefined &&
-            possibleV3CacheEntry.contents.evaluations !== undefined &&
-            possibleV3CacheEntry.contents.contentHash !== undefined
+            possibleCacheEntry.cacheSchemaVersion === 3 &&
+            possibleCacheEntry.contents !== undefined &&
+            possibleCacheEntry.contents.evaluations !== undefined &&
+            possibleCacheEntry.contents.contentHash !== undefined
         );
     }
 
-    async getFeatureManifest(): Promise<FeatureManifest | undefined> {
+    private async fetchEvaluationsFromServer(): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
@@ -101,11 +110,11 @@ export class OctopusFeatureClient {
             responseType: "json",
             headers: {
                 Authorization: `Bearer ${this.clientIdentifier}`,
-                "X-Octopus-Client": this.buildOctopusClientHeaderValue(),
+                [octopusHttpHeaderNames.octopusClient]: this.buildOctopusClientHeaderValue(),
             },
         };
         if (this.releaseVersionOverride) {
-            config.headers!["X-Release-Version"] = this.releaseVersionOverride;
+            config.headers![octopusHttpHeaderNames.releaseVersion] = this.releaseVersionOverride;
         }
 
         const response = await this.requestEvaluations(config);
@@ -115,9 +124,9 @@ export class OctopusFeatureClient {
         }
 
         // @ts-ignore
-        const contentHash = response.headers.get("ContentHash");
+        const contentHash = response.headers.get(octopusHttpHeaderNames.contentHash);
         if (!contentHash) {
-            this.logger.warn(`Feature toggle response from ${this.serverUri} did not contain expected ContentHash header.`);
+            this.logger.warn(`Feature flag response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
         }
 
@@ -125,7 +134,7 @@ export class OctopusFeatureClient {
     }
 
     /**
-     * Reports no manifest, rather than rejecting, when the request fails: an unreachable server, or any
+     * Reports no evaluations, rather than rejecting, when the request fails: an unreachable server, or any
      * unsuccessful status once axios-retry has given up.
      */
     private async requestEvaluations(config: AxiosRequestConfig): Promise<AxiosResponse<unknown> | undefined> {
@@ -146,4 +155,8 @@ export class OctopusFeatureClient {
         }
         return `${value} openfeature-provider-ts-web/${PROVIDER_VERSION}`;
     }
+}
+
+function parseEvaluationResponse(raw: RawEvaluationResponse): EvaluationResponse {
+    return { evaluations: parseServerSideEvaluations(raw.evaluations), contentHash: raw.contentHash };
 }

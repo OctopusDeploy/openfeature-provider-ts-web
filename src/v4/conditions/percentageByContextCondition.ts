@@ -1,6 +1,6 @@
 import { ParseError } from "@openfeature/web-sdk";
 import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
-import { includes } from "../percentageRollout";
+import { includes } from "./percentageRollout";
 import { ClientSideCondition } from "./clientSideCondition";
 
 /**
