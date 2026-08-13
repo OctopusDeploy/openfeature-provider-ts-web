@@ -2,21 +2,6 @@ import { EvaluationContext, FlagNotFoundError, Logger, ResolutionDetails } from 
 import { equalsIgnoringCase } from "./equalsIgnoringCase";
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
 
-// Superseded by ServerSideEvaluation below. Left in place, unreferenced, for BMBB-781 to remove along
-// with the rest of the v3 "toggle" vocabulary.
-export interface V2FeatureToggles {
-    evaluations: V2FeatureToggleEvaluation[];
-    contentHash: string;
-}
-
-export interface V2FeatureToggleEvaluation {
-    slug: string;
-    isEnabled: boolean;
-    evaluationKey?: string;
-    segments?: { key: string; value: string }[];
-    clientRolloutPercentage?: number;
-}
-
 export class OctopusFeatureContext {
     private readonly warnedSlugs = new Set<string>();
 
