@@ -1,7 +1,6 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
-import { OpenFeature } from "@openfeature/web-sdk";
-import { ErrorCode } from "@openfeature/core";
+import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 import { silentLogger } from "./testing/logger";

@@ -1,5 +1,4 @@
-import { EvaluationContext, Logger, ResolutionDetails } from "@openfeature/web-sdk";
-import { FlagNotFoundError } from "@openfeature/core";
+import { EvaluationContext, FlagNotFoundError, Logger, ResolutionDetails } from "@openfeature/web-sdk";
 import { equalsIgnoringCase } from "./equalsIgnoringCase";
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
 

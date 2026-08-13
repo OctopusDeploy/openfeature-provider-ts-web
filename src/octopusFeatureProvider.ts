@@ -1,5 +1,4 @@
-import { DefaultLogger, EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
-import { FlagNotFoundError, TypeMismatchError } from "@openfeature/core";
+import { DefaultLogger, EvaluationContext, FlagNotFoundError, JsonValue, Logger, Provider, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 import { ProductMetadata } from "./productMetadata";

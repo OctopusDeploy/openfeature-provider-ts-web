@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ErrorCode } from "@openfeature/core";
-import { OpenFeature } from "@openfeature/web-sdk";
+import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { ProductMetadata } from "../productMetadata";
 import { Server } from "./server";

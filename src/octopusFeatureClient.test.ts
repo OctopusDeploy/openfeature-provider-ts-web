@@ -1,5 +1,6 @@
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { ProductMetadata } from "./productMetadata";
+import { silentLogger } from "./testing/logger";
 import { PROVIDER_VERSION } from "./version";
 import axios from "axios";
 import axiosRetry from "axios-retry";
@@ -84,6 +85,8 @@ describe("OctopusFeatureClient", () => {
     });
 
     describe("the manifest cache", () => {
+        const mockedLocalStorage = global.localStorage;
+
         beforeEach(() => {
             const store = new Map<string, string>();
             global.localStorage = {
@@ -104,12 +107,31 @@ describe("OctopusFeatureClient", () => {
             };
         });
 
+        // The store above stands in for the jest-localstorage-mock global, which resetMocks strips of its
+        // implementation before every test. Put it back so nothing added after this block inherits it.
+        afterEach(() => {
+            global.localStorage = mockedLocalStorage;
+        });
+
         function newClient(): OctopusFeatureClient {
-            return new OctopusFeatureClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient") });
+            return new OctopusFeatureClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger: silentLogger() });
         }
 
         function cachedManifest(): unknown {
             return JSON.parse(localStorage.getItem("octopus-openfeature-ts-feature-manifest")!);
+        }
+
+        function cacheEvaluationFor(slug: string): void {
+            localStorage.setItem(
+                "octopus-openfeature-ts-feature-manifest",
+                JSON.stringify({
+                    schemaVersion: "v3",
+                    contents: {
+                        evaluations: [{ slug, value: true, reason: "The flag is enabled for this environment." }],
+                        contentHash: "cached-hash",
+                    },
+                })
+            );
         }
 
         test("Writes a v3 cache entry after a successful fetch", async () => {
@@ -135,23 +157,57 @@ describe("OctopusFeatureClient", () => {
             expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached v3 entry when the fetch does not return a manifest", async () => {
-            // No ContentHash header, so getFeatureManifest() reports no manifest without retrying.
+        test("Falls back to a cached v3 entry when the response has no ContentHash header", async () => {
             mockAdapter.onGet().reply(200, []);
-            localStorage.setItem(
-                "octopus-openfeature-ts-feature-manifest",
-                JSON.stringify({
-                    schemaVersion: "v3",
-                    contents: {
-                        evaluations: [{ slug: "cached-feature", value: true, reason: "The flag is enabled for this environment." }],
-                        contentHash: "cached-hash",
-                    },
-                })
-            );
+            cacheEvaluationFor("cached-feature");
 
             const context = await newClient().getEvaluationContext();
 
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        test("Falls back to a cached v3 entry when the server cannot be reached", async () => {
+            mockAdapter.onGet().networkError();
+            cacheEvaluationFor("cached-feature");
+
+            const context = await newClient().getEvaluationContext();
+
+            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        test("Falls back to a cached v3 entry when the flags are not found", async () => {
+            mockAdapter.onGet().reply(404);
+            cacheEvaluationFor("cached-feature");
+
+            const context = await newClient().getEvaluationContext();
+
+            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        test("Falls back to a cached v3 entry when the server keeps failing", async () => {
+            mockAdapter.onGet().reply(500);
+            cacheEvaluationFor("cached-feature");
+
+            const context = await newClient().getEvaluationContext();
+
+            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        test("Leaves the cache entry in place when the fetch fails", async () => {
+            mockAdapter.onGet().networkError();
+            cacheEvaluationFor("cached-feature");
+
+            await newClient().getEvaluationContext();
+
+            expect(cachedManifest()).toMatchObject({ schemaVersion: "v3", contents: { contentHash: "cached-hash" } });
+        });
+
+        test("Falls back to an empty context when the fetch fails and there is no cache entry", async () => {
+            mockAdapter.onGet().networkError();
+
+            const context = await newClient().getEvaluationContext();
+
+            expect(context.findToggleBySlug("anything")).toBeUndefined();
         });
 
         test("Treats a cache entry from a previous schema version as a miss and removes it", async () => {

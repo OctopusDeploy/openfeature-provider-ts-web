@@ -1,5 +1,4 @@
-import { FlagNotFoundError } from "@openfeature/core";
-import { ParseError } from "@openfeature/web-sdk";
+import { FlagNotFoundError, ParseError } from "@openfeature/web-sdk";
 import * as Contexts from "./testing/contexts";
 import { silentLogger } from "./testing/logger";
 import { OctopusFeatureContext } from "./octopusFeatureContext";

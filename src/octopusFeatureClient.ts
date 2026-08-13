@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
@@ -108,10 +108,9 @@ export class OctopusFeatureClient {
             config.headers!["X-Release-Version"] = this.releaseVersionOverride;
         }
 
-        const response = await this.axiosInstance.request<unknown>(config);
+        const response = await this.requestEvaluations(config);
 
-        if (response.status == 404) {
-            this.logger.warn(`Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri}`);
+        if (response === undefined) {
             return undefined;
         }
 
@@ -123,6 +122,21 @@ export class OctopusFeatureClient {
         }
 
         return { evaluations: response.data, contentHash: contentHash };
+    }
+
+    /**
+     * Reports no manifest, rather than rejecting, when the request fails: an unreachable server, or any
+     * unsuccessful status once axios-retry has given up.
+     */
+    private async requestEvaluations(config: AxiosRequestConfig): Promise<AxiosResponse<unknown> | undefined> {
+        try {
+            return await this.axiosInstance.request<unknown>(config);
+        } catch (e) {
+            this.logger.warn(
+                `Failed to retrieve feature manifest during initialization. Falling back to cached evaluations, if present.\n${JSON.stringify(e)}`
+            );
+            return undefined;
+        }
     }
 
     private buildOctopusClientHeaderValue(): string {
