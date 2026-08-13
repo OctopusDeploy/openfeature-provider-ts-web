@@ -1,4 +1,5 @@
 import { ParseError } from "@openfeature/web-sdk";
+import { equalsIgnoringCase } from "../../equalsIgnoringCase";
 import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
 
 /**
@@ -40,12 +41,4 @@ export function isOneOf(context: ClientSideEvaluationContext, key: string | unde
 
         return typeof attribute === "string" && values.some((value) => equalsIgnoringCase(value!, attribute));
     });
-}
-
-/**
- * Stands in for .NET's OrdinalIgnoreCase, which folds with invariant uppercase. The two agree on
- * every ASCII input; they part on JavaScript's full case mappings, where "ß" uppercases to "SS" .
- */
-function equalsIgnoringCase(left: string, right: string): boolean {
-    return left.toUpperCase() === right.toUpperCase();
 }
