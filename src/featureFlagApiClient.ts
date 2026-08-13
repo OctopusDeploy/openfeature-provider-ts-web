@@ -1,13 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
-import { OctopusFeatureContext } from "./featureFlagEvaluator";
-import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
+import { EvaluationResponse } from "./evaluationResponse";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
+import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames";
 import { ProductMetadata } from "./productMetadata";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
 import { PROVIDER_VERSION } from "./version";
 
-interface FeatureManifest {
+interface RawEvaluationResponse {
     // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry).
     evaluations: unknown;
     contentHash: string;
@@ -16,10 +18,11 @@ interface FeatureManifest {
 interface V3CacheEntry {
     // Note: This counts cache shapes, not endpoint versions.
     schemaVersion: "v3";
-    contents: FeatureManifest;
+    contents: RawEvaluationResponse;
 }
 
-export class OctopusFeatureClient {
+/** @internal */
+export class FeatureFlagApiClient {
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
     private readonly logger: Logger;
@@ -44,29 +47,40 @@ export class OctopusFeatureClient {
         });
     }
 
-    async getEvaluationContext(): Promise<OctopusFeatureContext> {
-        const manifest = await this.getFeatureManifest();
+    async getEvaluator(): Promise<FeatureFlagEvaluator> {
+        const response = await this.getServerSideEvaluations();
 
-        if (manifest === undefined) {
-            return this.getEvaluationContextFromCache();
+        if (response === undefined) {
+            return this.getEvaluatorFromCache();
         }
 
-        const cacheEntry: V3CacheEntry = { schemaVersion: "v3", contents: manifest };
-        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
-
-        return new OctopusFeatureContext(parseServerSideEvaluations(manifest.evaluations), this.logger);
+        return new FeatureFlagEvaluator(response, this.logger);
     }
 
-    private getEvaluationContextFromCache(): OctopusFeatureContext {
+    /** Caches the response, unparsed, so a later fallback replays it through the same parser. */
+    private async getServerSideEvaluations(): Promise<EvaluationResponse | undefined> {
+        const raw = await this.fetchEvaluations();
+
+        if (raw === undefined) {
+            return undefined;
+        }
+
+        const cacheEntry: V3CacheEntry = { schemaVersion: "v3", contents: raw };
+        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
+
+        return parseEvaluationResponse(raw);
+    }
+
+    private getEvaluatorFromCache(): FeatureFlagEvaluator {
         const rawCache = localStorage.getItem(this.localStorageKey);
         if (rawCache === null) {
-            return this.emptyContext();
+            return FeatureFlagEvaluator.empty(this.logger);
         }
 
         try {
             const cacheEntry = JSON.parse(rawCache);
             if (this.isV3CacheEntry(cacheEntry)) {
-                return new OctopusFeatureContext(parseServerSideEvaluations(cacheEntry.contents.evaluations), this.logger);
+                return new FeatureFlagEvaluator(parseEvaluationResponse(cacheEntry.contents), this.logger);
             }
 
             // The cached entry is from an old cache schema version.
@@ -75,11 +89,7 @@ export class OctopusFeatureClient {
             this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
         }
 
-        return this.emptyContext();
-    }
-
-    private emptyContext(): OctopusFeatureContext {
-        return new OctopusFeatureContext([], this.logger);
+        return FeatureFlagEvaluator.empty(this.logger);
     }
 
     private isV3CacheEntry(entry: unknown): entry is V3CacheEntry {
@@ -92,7 +102,7 @@ export class OctopusFeatureClient {
         );
     }
 
-    async getFeatureManifest(): Promise<FeatureManifest | undefined> {
+    private async fetchEvaluations(): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
@@ -101,11 +111,11 @@ export class OctopusFeatureClient {
             responseType: "json",
             headers: {
                 Authorization: `Bearer ${this.clientIdentifier}`,
-                "X-Octopus-Client": this.buildOctopusClientHeaderValue(),
+                [octopusHttpHeaderNames.octopusClient]: this.buildOctopusClientHeaderValue(),
             },
         };
         if (this.releaseVersionOverride) {
-            config.headers!["X-Release-Version"] = this.releaseVersionOverride;
+            config.headers![octopusHttpHeaderNames.releaseVersion] = this.releaseVersionOverride;
         }
 
         const response = await this.requestEvaluations(config);
@@ -115,7 +125,7 @@ export class OctopusFeatureClient {
         }
 
         // @ts-ignore
-        const contentHash = response.headers.get("ContentHash");
+        const contentHash = response.headers.get(octopusHttpHeaderNames.contentHash);
         if (!contentHash) {
             this.logger.warn(`Feature toggle response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
@@ -125,7 +135,7 @@ export class OctopusFeatureClient {
     }
 
     /**
-     * Reports no manifest, rather than rejecting, when the request fails: an unreachable server, or any
+     * Reports no evaluations, rather than rejecting, when the request fails: an unreachable server, or any
      * unsuccessful status once axios-retry has given up.
      */
     private async requestEvaluations(config: AxiosRequestConfig): Promise<AxiosResponse<unknown> | undefined> {
@@ -146,4 +156,8 @@ export class OctopusFeatureClient {
         }
         return `${value} openfeature-provider-ts-web/${PROVIDER_VERSION}`;
     }
+}
+
+function parseEvaluationResponse(raw: RawEvaluationResponse): EvaluationResponse {
+    return { evaluations: parseServerSideEvaluations(raw.evaluations), contentHash: raw.contentHash };
 }

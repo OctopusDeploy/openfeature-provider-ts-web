@@ -1,4 +1,4 @@
-import { OctopusFeatureClient } from "./featureFlagApiClient";
+import { FeatureFlagApiClient } from "./featureFlagApiClient";
 import { ProductMetadata } from "./productMetadata";
 import { silentLogger } from "./testing/logger";
 import { PROVIDER_VERSION } from "./version";
@@ -8,7 +8,7 @@ import MockAdapter from "axios-mock-adapter";
 
 axiosRetry(axios, { retries: 3 });
 
-describe("OctopusFeatureClient", () => {
+describe("FeatureFlagApiClient", () => {
     let mockAdapter: MockAdapter;
     beforeEach(() => {
         localStorage.clear();
@@ -24,12 +24,12 @@ describe("OctopusFeatureClient", () => {
 
     test("Should invoke the v4 feature flag evaluations endpoint", async () => {
         mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
-        const client = new OctopusFeatureClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
         });
 
-        await client.getEvaluationContext();
+        await client.getEvaluator();
 
         expect(mockAdapter.history.get[0].url).toMatch(/\/feature-flags\/evaluations\/v4\/$/);
     });
@@ -37,49 +37,49 @@ describe("OctopusFeatureClient", () => {
     test("Should include releaseVersionOverride in HTTP header if provided in configuration", async () => {
         const releaseVersionOverride = "1.2.3";
         mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
-        const client = new OctopusFeatureClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
             releaseVersionOverride,
         });
 
-        await client.getEvaluationContext();
+        await client.getEvaluator();
 
         expect(mockAdapter.history.get[0].headers!["X-Release-Version"]).toEqual(releaseVersionOverride);
     });
 
     test("Should include X-Octopus-Client header with product name only", async () => {
         mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
-        const client = new OctopusFeatureClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct"),
         });
 
-        await client.getEvaluationContext();
+        await client.getEvaluator();
 
         expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
 
     test("Should include X-Octopus-Client header with product name and version", async () => {
         mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
-        const client = new OctopusFeatureClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
         });
 
-        await client.getEvaluationContext();
+        await client.getEvaluator();
 
         expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct/2024.1.0 openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
 
     test("Should strip unsupported chars from product name in X-Octopus-Client header", async () => {
         mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
-        const client = new OctopusFeatureClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("My Product"),
         });
 
-        await client.getEvaluationContext();
+        await client.getEvaluator();
 
         expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
     });
@@ -113,8 +113,8 @@ describe("OctopusFeatureClient", () => {
             global.localStorage = mockedLocalStorage;
         });
 
-        function newClient(): OctopusFeatureClient {
-            return new OctopusFeatureClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger: silentLogger() });
+        function newClient(): FeatureFlagApiClient {
+            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger: silentLogger() });
         }
 
         function cachedManifest(): unknown {
@@ -139,7 +139,7 @@ describe("OctopusFeatureClient", () => {
                 ContentHash: "aGFzaA==",
             });
 
-            await newClient().getEvaluationContext();
+            await newClient().getEvaluator();
 
             expect(cachedManifest()).toEqual({
                 schemaVersion: "v3",
@@ -152,7 +152,7 @@ describe("OctopusFeatureClient", () => {
                 ContentHash: "aGFzaA==",
             });
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
             expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
@@ -161,7 +161,7 @@ describe("OctopusFeatureClient", () => {
             mockAdapter.onGet().reply(200, []);
             cacheEvaluationFor("cached-feature");
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
@@ -170,7 +170,7 @@ describe("OctopusFeatureClient", () => {
             mockAdapter.onGet().networkError();
             cacheEvaluationFor("cached-feature");
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
@@ -179,7 +179,7 @@ describe("OctopusFeatureClient", () => {
             mockAdapter.onGet().reply(404);
             cacheEvaluationFor("cached-feature");
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
@@ -188,7 +188,7 @@ describe("OctopusFeatureClient", () => {
             mockAdapter.onGet().reply(500);
             cacheEvaluationFor("cached-feature");
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
@@ -197,7 +197,7 @@ describe("OctopusFeatureClient", () => {
             mockAdapter.onGet().networkError();
             cacheEvaluationFor("cached-feature");
 
-            await newClient().getEvaluationContext();
+            await newClient().getEvaluator();
 
             expect(cachedManifest()).toMatchObject({ schemaVersion: "v3", contents: { contentHash: "cached-hash" } });
         });
@@ -205,9 +205,9 @@ describe("OctopusFeatureClient", () => {
         test("Falls back to an empty context when the fetch fails and there is no cache entry", async () => {
             mockAdapter.onGet().networkError();
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
-            expect(context.findToggleBySlug("anything")).toBeUndefined();
+            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
         });
 
         test("Treats a cache entry from a previous schema version as a miss and removes it", async () => {
@@ -217,27 +217,27 @@ describe("OctopusFeatureClient", () => {
                 JSON.stringify({ schemaVersion: "v2", contents: { evaluations: [], contentHash: "cached-hash" } })
             );
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
-            expect(context.findToggleBySlug("anything")).toBeUndefined();
+            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
             expect(localStorage.getItem("octopus-openfeature-ts-feature-manifest")).toBeNull();
         });
 
         test("Falls back to an empty context when there is no cache entry at all", async () => {
             mockAdapter.onGet().reply(200, []);
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
-            expect(context.findToggleBySlug("anything")).toBeUndefined();
+            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
         });
 
         test("Falls back to an empty context when the cache entry is not valid JSON", async () => {
             mockAdapter.onGet().reply(200, []);
             localStorage.setItem("octopus-openfeature-ts-feature-manifest", "not json");
 
-            const context = await newClient().getEvaluationContext();
+            const context = await newClient().getEvaluator();
 
-            expect(context.findToggleBySlug("anything")).toBeUndefined();
+            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
         });
     });
 });

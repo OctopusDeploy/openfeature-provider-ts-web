@@ -1,8 +1,8 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
 import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
-import { OctopusFeatureClient } from "./featureFlagApiClient";
-import { OctopusFeatureContext } from "./featureFlagEvaluator";
+import { FeatureFlagApiClient } from "./featureFlagApiClient";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
 import { silentLogger } from "./testing/logger";
 import { ClientSideRule } from "./v4/clientSideRule";
 import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition";
@@ -39,19 +39,20 @@ describe("Context is available for segment evaluation immediately after provider
 
     beforeEach(async () => {
         await OpenFeature.setContext({});
-        jest.mocked(OctopusFeatureClient).mockClear();
-        jest.mocked(OctopusFeatureClient).prototype.getEvaluationContext = jest
-            .fn()
-            .mockResolvedValue(
-                new OctopusFeatureContext(
-                    [
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockResolvedValue(
+            new FeatureFlagEvaluator(
+                {
+                    evaluations: [
                         new ServerSideEvaluation("segmented-feature", undefined, undefined, "evaluation-key", [
                             new ClientSideRule("Client-side targeting", [new ContextAttributeIsOneOfCondition("serverUri", ["app.example.com"])]),
                         ]),
                     ],
-                    silentLogger()
-                )
-            );
+                    contentHash: "",
+                },
+                silentLogger()
+            )
+        );
     });
 
     test("setContext before setProviderAndWait — SDK passes context to initialize", async () => {
@@ -103,11 +104,14 @@ describe("Context is available for segment evaluation immediately after provider
 describe("Flag type errors are surfaced correctly", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
-        jest.mocked(OctopusFeatureClient).mockClear();
-        jest.mocked(OctopusFeatureClient).prototype.getEvaluationContext = jest
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
             .fn()
             .mockResolvedValue(
-                new OctopusFeatureContext([new ServerSideEvaluation("feature-a", true, "The flag is enabled for this environment.")], silentLogger())
+                new FeatureFlagEvaluator(
+                    { evaluations: [new ServerSideEvaluation("feature-a", true, "The flag is enabled for this environment.")], contentHash: "" },
+                    silentLogger()
+                )
             );
         const provider = new OctopusFeatureProvider({
             clientIdentifier: "test",
@@ -148,10 +152,10 @@ describe("Flag type errors are surfaced correctly", () => {
 describe("Unsuccessful boolean evaluations surface the OpenFeature error contract", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
-        jest.mocked(OctopusFeatureClient).mockClear();
-        jest.mocked(OctopusFeatureClient).prototype.getEvaluationContext = jest
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
             .fn()
-            .mockResolvedValue(new OctopusFeatureContext([new ServerSideEvaluation("feature-a", true)], silentLogger())); // value with no reason: malformed
+            .mockResolvedValue(new FeatureFlagEvaluator({ evaluations: [new ServerSideEvaluation("feature-a", true)], contentHash: "" }, silentLogger())); // value with no reason: malformed
         const provider = new OctopusFeatureProvider({
             clientIdentifier: "test",
             productMetadata: new ProductMetadata("TestClient"),
