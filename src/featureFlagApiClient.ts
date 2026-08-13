@@ -47,39 +47,38 @@ export class FeatureFlagApiClient {
     }
 
     async getEvaluator(): Promise<FeatureFlagEvaluator> {
-        const response = await this.getServerSideEvaluations();
-
-        if (response === undefined) {
-            return this.getEvaluatorFromCache();
-        }
-
-        return new FeatureFlagEvaluator(response, this.logger);
-    }
-
-    /** Caches the response, unparsed, so a later fallback replays it through the same parser. */
-    private async getServerSideEvaluations(): Promise<EvaluationResponse | undefined> {
         const raw = await this.fetchEvaluations();
 
         if (raw === undefined) {
-            return undefined;
+            return FeatureFlagEvaluator.empty(this.logger);
+        }
+
+        return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
+    }
+
+    private async fetchEvaluations(): Promise<RawEvaluationResponse | undefined> {
+        const raw = await this.fetchEvaluationsFromServer();
+
+        if (raw === undefined) {
+            return this.readCachedEvaluations();
         }
 
         const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
         localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
 
-        return parseEvaluationResponse(raw);
+        return raw;
     }
 
-    private getEvaluatorFromCache(): FeatureFlagEvaluator {
+    private readCachedEvaluations(): RawEvaluationResponse | undefined {
         const rawCache = localStorage.getItem(this.localStorageKey);
         if (rawCache === null) {
-            return FeatureFlagEvaluator.empty(this.logger);
+            return undefined;
         }
 
         try {
             const cacheEntry = JSON.parse(rawCache);
             if (this.isCurrentCacheEntry(cacheEntry)) {
-                return new FeatureFlagEvaluator(parseEvaluationResponse(cacheEntry.contents), this.logger);
+                return cacheEntry.contents;
             }
 
             // The cached entry is from an old cache schema version.
@@ -88,7 +87,7 @@ export class FeatureFlagApiClient {
             this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
         }
 
-        return FeatureFlagEvaluator.empty(this.logger);
+        return undefined;
     }
 
     private isCurrentCacheEntry(entry: unknown): entry is EvaluationCacheEntry {
@@ -101,7 +100,7 @@ export class FeatureFlagApiClient {
         );
     }
 
-    private async fetchEvaluations(): Promise<RawEvaluationResponse | undefined> {
+    private async fetchEvaluationsFromServer(): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
