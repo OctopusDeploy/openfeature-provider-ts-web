@@ -1,5 +1,4 @@
-import { EvaluationContext, JsonValue, Logger, Provider, ResolutionDetails } from "@openfeature/web-sdk";
-import { FlagNotFoundError, TypeMismatchError } from "@openfeature/core";
+import { DefaultLogger, EvaluationContext, FlagNotFoundError, JsonValue, Logger, Provider, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
 import { OctopusFeatureClient } from "./octopusFeatureClient";
 import { OctopusFeatureContext } from "./octopusFeatureContext";
 import { ProductMetadata } from "./productMetadata";
@@ -20,13 +19,15 @@ export interface OctopusFeatureConfiguration {
 }
 
 export class OctopusFeatureProvider implements Provider {
+    private readonly logger: Logger;
     private client: OctopusFeatureClient;
     private evaluationContext: OctopusFeatureContext;
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
+        this.logger = configuration.logger ?? new DefaultLogger();
         this.client = new OctopusFeatureClient(configuration);
-        this.evaluationContext = new OctopusFeatureContext({ evaluations: [], contentHash: "" });
+        this.evaluationContext = new OctopusFeatureContext([], this.logger);
         this.context = {};
     }
 
@@ -50,8 +51,7 @@ export class OctopusFeatureProvider implements Provider {
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {
-        const isFeatureEnabled = this.evaluationContext.evaluate(flagKey, defaultValue, this.context);
-        return isFeatureEnabled;
+        return this.evaluationContext.evaluate(flagKey, this.context);
     }
 
     resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string> {

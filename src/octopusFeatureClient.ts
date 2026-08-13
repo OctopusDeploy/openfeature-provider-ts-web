@@ -1,14 +1,22 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
-import { V2FeatureToggleEvaluation, V2FeatureToggles, OctopusFeatureContext } from "./octopusFeatureContext";
-import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { DefaultLogger, Logger } from "@openfeature/web-sdk";
+import { OctopusFeatureContext } from "./octopusFeatureContext";
+import { OctopusFeatureConfiguration } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
+import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
 import { PROVIDER_VERSION } from "./version";
 
-interface V2CacheEntry {
-    schemaVersion: "v2";
-    contents: V2FeatureToggles;
+interface FeatureManifest {
+    // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry).
+    evaluations: unknown;
+    contentHash: string;
+}
+
+interface V3CacheEntry {
+    // Note: This counts cache shapes, not endpoint versions.
+    schemaVersion: "v3";
+    contents: FeatureManifest;
 }
 
 export class OctopusFeatureClient {
@@ -40,42 +48,53 @@ export class OctopusFeatureClient {
         const manifest = await this.getFeatureManifest();
 
         if (manifest === undefined) {
-            const rawCache = localStorage.getItem(this.localStorageKey);
-            if (rawCache === null) {
-                return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
-            }
-
-            try {
-                const cacheEntry = JSON.parse(rawCache);
-                if (this.isV2CacheEntry(cacheEntry)) {
-                    return new OctopusFeatureContext(cacheEntry.contents);
-                }
-            } catch (e) {
-                this.logger.warn(`An error occurred parsing feature toggles returned from Octopus: ${JSON.stringify(e)}`);
-            }
-
-            return new OctopusFeatureContext({ evaluations: [], contentHash: "" });
+            return this.getEvaluationContextFromCache();
         }
 
-        const cacheEntry: V2CacheEntry = { schemaVersion: "v2", contents: manifest };
+        const cacheEntry: V3CacheEntry = { schemaVersion: "v3", contents: manifest };
         localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
 
-        return new OctopusFeatureContext(manifest);
+        return new OctopusFeatureContext(parseServerSideEvaluations(manifest.evaluations), this.logger);
     }
 
-    isV2CacheEntry(entry: unknown): entry is V2CacheEntry {
-        const possibleV2CacheEntry = entry as V2CacheEntry;
+    private getEvaluationContextFromCache(): OctopusFeatureContext {
+        const rawCache = localStorage.getItem(this.localStorageKey);
+        if (rawCache === null) {
+            return this.emptyContext();
+        }
+
+        try {
+            const cacheEntry = JSON.parse(rawCache);
+            if (this.isV3CacheEntry(cacheEntry)) {
+                return new OctopusFeatureContext(parseServerSideEvaluations(cacheEntry.contents.evaluations), this.logger);
+            }
+
+            // The cached entry is from an old cache schema version.
+            localStorage.removeItem(this.localStorageKey);
+        } catch (e) {
+            this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
+        }
+
+        return this.emptyContext();
+    }
+
+    private emptyContext(): OctopusFeatureContext {
+        return new OctopusFeatureContext([], this.logger);
+    }
+
+    private isV3CacheEntry(entry: unknown): entry is V3CacheEntry {
+        const possibleV3CacheEntry = entry as V3CacheEntry;
         return (
-            possibleV2CacheEntry.schemaVersion === "v2" &&
-            possibleV2CacheEntry.contents !== undefined &&
-            possibleV2CacheEntry.contents.evaluations !== undefined &&
-            possibleV2CacheEntry.contents.contentHash !== undefined
+            possibleV3CacheEntry.schemaVersion === "v3" &&
+            possibleV3CacheEntry.contents !== undefined &&
+            possibleV3CacheEntry.contents.evaluations !== undefined &&
+            possibleV3CacheEntry.contents.contentHash !== undefined
         );
     }
 
-    async getFeatureManifest(): Promise<V2FeatureToggles | undefined> {
+    async getFeatureManifest(): Promise<FeatureManifest | undefined> {
         const config: AxiosRequestConfig = {
-            url: `${this.serverUri}/api/toggles/evaluations/v3/`,
+            url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
@@ -89,10 +108,9 @@ export class OctopusFeatureClient {
             config.headers!["X-Release-Version"] = this.releaseVersionOverride;
         }
 
-        const response = await this.axiosInstance.request<V2FeatureToggleEvaluation[]>(config);
+        const response = await this.requestEvaluations(config);
 
-        if (response.status == 404) {
-            this.logger.warn(`Failed to retrieve feature toggles for client identifier ${this.clientIdentifier} from ${this.serverUri}`);
+        if (response === undefined) {
             return undefined;
         }
 
@@ -104,6 +122,21 @@ export class OctopusFeatureClient {
         }
 
         return { evaluations: response.data, contentHash: contentHash };
+    }
+
+    /**
+     * Reports no manifest, rather than rejecting, when the request fails: an unreachable server, or any
+     * unsuccessful status once axios-retry has given up.
+     */
+    private async requestEvaluations(config: AxiosRequestConfig): Promise<AxiosResponse<unknown> | undefined> {
+        try {
+            return await this.axiosInstance.request<unknown>(config);
+        } catch (e) {
+            this.logger.warn(
+                `Failed to retrieve feature manifest during initialization. Falling back to cached evaluations, if present.\n${JSON.stringify(e)}`
+            );
+            return undefined;
+        }
     }
 
     private buildOctopusClientHeaderValue(): string {

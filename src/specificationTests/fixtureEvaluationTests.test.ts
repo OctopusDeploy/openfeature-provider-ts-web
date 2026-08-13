@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { ErrorCode } from "@openfeature/core";
-import { OpenFeature } from "@openfeature/web-sdk";
+import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider";
 import { ProductMetadata } from "../productMetadata";
 import { Server } from "./server";
@@ -25,11 +24,12 @@ interface Case {
 interface Configuration {
     slug: string;
     defaultValue: boolean;
-    context?: Record<string, string>;
+    context?: Record<string, string | null>;
 }
 
 interface Expected {
     value: boolean;
+    reason?: string;
     errorCode?: ErrorCode;
 }
 
@@ -40,8 +40,9 @@ function loadTestCases(): TestEntry[] {
     const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
     for (const file of fixtureFiles) {
         const json = fs.readFileSync(path.join(fixturesDir, file), "utf-8");
-        // Unlike in the other client libraries, we parse and re-serialize here.
         const fixture: Fixture = JSON.parse(json);
+
+        // Unlike in the other client libraries, we can safely parse and re-serialize here.
         const testResponse = JSON.stringify(fixture.response);
 
         for (const c of fixture.cases) {
@@ -77,4 +78,7 @@ test.each(testCases)("$testCase.description", async ({ testResponse, testCase })
 
     expect(result.value).toBe(testCase.expected.value);
     expect(result.errorCode).toBe(testCase.expected.errorCode);
+    if (testCase.expected.reason !== undefined) {
+        expect(result.reason).toBe(testCase.expected.reason);
+    }
 });

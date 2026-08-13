@@ -1,7 +1,9 @@
-import { EvaluationContext, ResolutionDetails } from "@openfeature/web-sdk";
-import { ErrorCode } from "@openfeature/core";
-import { getNormalizedNumber } from "./v4/percentageRollout";
+import { EvaluationContext, FlagNotFoundError, Logger, ResolutionDetails } from "@openfeature/web-sdk";
+import { equalsIgnoringCase } from "./equalsIgnoringCase";
+import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
 
+// Superseded by ServerSideEvaluation below. Left in place, unreferenced, for BMBB-781 to remove along
+// with the rest of the v3 "toggle" vocabulary.
 export interface V2FeatureToggles {
     evaluations: V2FeatureToggleEvaluation[];
     contentHash: string;
@@ -16,99 +18,30 @@ export interface V2FeatureToggleEvaluation {
 }
 
 export class OctopusFeatureContext {
-    toggles: V2FeatureToggles;
+    private readonly warnedSlugs = new Set<string>();
 
-    constructor(toggles: V2FeatureToggles) {
-        this.toggles = toggles;
+    constructor(
+        private readonly evaluations: readonly ServerSideEvaluation[],
+        private readonly logger: Logger
+    ) {}
+
+    findToggleBySlug(slug: string): ServerSideEvaluation | undefined {
+        return this.evaluations.find((evaluation) => typeof evaluation.slug === "string" && equalsIgnoringCase(evaluation.slug, slug));
     }
 
-    findToggleBySlug(slug: string): V2FeatureToggleEvaluation | undefined {
-        return this.toggles.evaluations.find((feature) => feature.slug.toLowerCase() === slug.toLowerCase());
-    }
-
-    evaluate(slug: string, defaultValue: boolean, context: EvaluationContext): ResolutionDetails<boolean> {
+    evaluate(slug: string, context: EvaluationContext): ResolutionDetails<boolean> {
         const evaluation = this.findToggleBySlug(slug);
 
         if (!evaluation) {
-            return {
-                value: defaultValue,
-                errorCode: ErrorCode.FLAG_NOT_FOUND,
-                errorMessage: "The slug provided did not match any of your Octopus Feature Toggles. Please double check your slug and try again.",
-            };
-        }
-
-        if (missingRequiredPropertiesForClientSideEvaluation(evaluation)) {
-            return {
-                value: defaultValue,
-                errorCode: ErrorCode.PARSE_ERROR,
-                errorMessage: `Feature toggle ${slug} is missing necessary information for client-side evaluation.`,
-            };
-        }
-
-        return { value: this.evaluateSegments(evaluation, context) };
-    }
-
-    matchesSegment(context: EvaluationContext, segments: { key: string; value: string }[]): boolean {
-        if (!context) return false;
-
-        // Group segments by key
-        const groupedSegments = segments.reduce(
-            (groups, segment) => {
-                if (!groups[segment.key]) {
-                    groups[segment.key] = [];
-                }
-                groups[segment.key].push(segment.value);
-                return groups;
-            },
-            {} as Record<string, string[]>
-        );
-
-        // Check if all segment groups have at least one matching context entry
-        const result = Object.keys(groupedSegments).every((segmentKey) => {
-            const group = groupedSegments[segmentKey];
-            return group.some((segment) =>
-                Object.keys(context).some((contextKey) => {
-                    const contextValue = context[contextKey];
-                    if (typeof contextValue === "string") {
-                        return contextKey === segmentKey && contextValue === segment;
-                    }
-                    return false;
-                })
-            );
-        });
-
-        return result;
-    }
-
-    evaluateSegments(evaluation: V2FeatureToggleEvaluation, context: EvaluationContext): boolean {
-        if (!evaluation.isEnabled) {
-            return false;
-        }
-
-        // evaluationKey and clientRolloutPercentage are guaranteed to be present here via missingRequiredPropertiesForClientSideEvaluation check
-        const evaluationKey = evaluation.evaluationKey!;
-        const rolloutPercentage = evaluation.clientRolloutPercentage!;
-        const targetingKey = context?.targetingKey;
-
-        if (!targetingKey) {
-            if (rolloutPercentage < 100) {
-                return false;
+            const key = slug.toUpperCase();
+            if (!this.warnedSlugs.has(key)) {
+                this.logger.warn(`The slug '${slug}' did not match any of your Octopus Feature Flags. Please double check your slug and try again.`);
+                this.warnedSlugs.add(key);
             }
-            // rolloutPercentage == 100: fall through to segment check
-        } else {
-            if (getNormalizedNumber(evaluationKey, targetingKey) > rolloutPercentage) {
-                return false;
-            }
+
+            throw new FlagNotFoundError("The slug provided did not match any of your Octopus Feature Flags. Please double check your slug and try again.");
         }
 
-        const hasSegments = evaluation.segments != null && evaluation.segments.length > 0;
-        return !hasSegments || this.matchesSegment(context, evaluation.segments!);
+        return evaluation.evaluate(context);
     }
-}
-
-function missingRequiredPropertiesForClientSideEvaluation(evaluation: V2FeatureToggleEvaluation): boolean {
-    if (!evaluation.isEnabled) {
-        return false;
-    }
-    return evaluation.evaluationKey == null || evaluation.segments == null || evaluation.clientRolloutPercentage == null;
 }
