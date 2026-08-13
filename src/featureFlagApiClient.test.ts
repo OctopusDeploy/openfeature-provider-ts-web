@@ -125,7 +125,7 @@ describe("FeatureFlagApiClient", () => {
             localStorage.setItem(
                 "octopus-openfeature-ts-feature-manifest",
                 JSON.stringify({
-                    schemaVersion: "v3",
+                    cacheSchemaVersion: 3,
                     contents: {
                         evaluations: [{ slug, value: true, reason: "The flag is enabled for this environment." }],
                         contentHash: "cached-hash",
@@ -134,7 +134,7 @@ describe("FeatureFlagApiClient", () => {
             );
         }
 
-        test("Writes a v3 cache entry after a successful fetch", async () => {
+        test("Writes a cache entry after a successful fetch", async () => {
             mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
                 ContentHash: "aGFzaA==",
             });
@@ -142,7 +142,7 @@ describe("FeatureFlagApiClient", () => {
             await newClient().getEvaluator();
 
             expect(cachedManifest()).toEqual({
-                schemaVersion: "v3",
+                cacheSchemaVersion: 3,
                 contents: { evaluations: [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], contentHash: "aGFzaA==" },
             });
         });
@@ -157,7 +157,7 @@ describe("FeatureFlagApiClient", () => {
             expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached v3 entry when the response has no ContentHash header", async () => {
+        test("Falls back to a cached entry when the response has no ContentHash header", async () => {
             mockAdapter.onGet().reply(200, []);
             cacheEvaluationFor("cached-feature");
 
@@ -166,7 +166,7 @@ describe("FeatureFlagApiClient", () => {
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached v3 entry when the server cannot be reached", async () => {
+        test("Falls back to a cached entry when the server cannot be reached", async () => {
             mockAdapter.onGet().networkError();
             cacheEvaluationFor("cached-feature");
 
@@ -175,7 +175,7 @@ describe("FeatureFlagApiClient", () => {
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached v3 entry when the flags are not found", async () => {
+        test("Falls back to a cached entry when the flags are not found", async () => {
             mockAdapter.onGet().reply(404);
             cacheEvaluationFor("cached-feature");
 
@@ -184,7 +184,7 @@ describe("FeatureFlagApiClient", () => {
             expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached v3 entry when the server keeps failing", async () => {
+        test("Falls back to a cached entry when the server keeps failing", async () => {
             mockAdapter.onGet().reply(500);
             cacheEvaluationFor("cached-feature");
 
@@ -199,10 +199,10 @@ describe("FeatureFlagApiClient", () => {
 
             await newClient().getEvaluator();
 
-            expect(cachedManifest()).toMatchObject({ schemaVersion: "v3", contents: { contentHash: "cached-hash" } });
+            expect(cachedManifest()).toMatchObject({ cacheSchemaVersion: 3, contents: { contentHash: "cached-hash" } });
         });
 
-        test("Falls back to an empty context when the fetch fails and there is no cache entry", async () => {
+        test("Falls back to an empty evaluator when the fetch fails and there is no cache entry", async () => {
             mockAdapter.onGet().networkError();
 
             const context = await newClient().getEvaluator();
@@ -223,7 +223,7 @@ describe("FeatureFlagApiClient", () => {
             expect(localStorage.getItem("octopus-openfeature-ts-feature-manifest")).toBeNull();
         });
 
-        test("Falls back to an empty context when there is no cache entry at all", async () => {
+        test("Falls back to an empty evaluator when there is no cache entry at all", async () => {
             mockAdapter.onGet().reply(200, []);
 
             const context = await newClient().getEvaluator();
@@ -231,7 +231,7 @@ describe("FeatureFlagApiClient", () => {
             expect(context.findEvaluationBySlug("anything")).toBeUndefined();
         });
 
-        test("Falls back to an empty context when the cache entry is not valid JSON", async () => {
+        test("Falls back to an empty evaluator when the cache entry is not valid JSON", async () => {
             mockAdapter.onGet().reply(200, []);
             localStorage.setItem("octopus-openfeature-ts-feature-manifest", "not json");
 

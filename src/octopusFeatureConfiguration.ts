@@ -2,7 +2,7 @@ import { Logger } from "@openfeature/web-sdk";
 import { ProductMetadata } from "./productMetadata";
 
 export interface OctopusFeatureConfiguration {
-    /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureToggles.ClientIdentifier */
+    /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureFlags.ClientIdentifier */
     clientIdentifier: string;
 
     /** Metadata about the application using the OpenFeature provider. Used to populate header for telemetry. */

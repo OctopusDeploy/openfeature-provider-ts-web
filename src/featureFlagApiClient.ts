@@ -15,9 +15,9 @@ interface RawEvaluationResponse {
     contentHash: string;
 }
 
-interface V3CacheEntry {
+interface EvaluationCacheEntry {
     // Note: This counts cache shapes, not endpoint versions.
-    schemaVersion: "v3";
+    cacheSchemaVersion: 3;
     contents: RawEvaluationResponse;
 }
 
@@ -42,7 +42,7 @@ export class FeatureFlagApiClient {
             retries: 3,
             onRetry: (retryCount, error) =>
                 this.logger.warn(
-                    `Failed to retrieve feature toggles ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
+                    `Failed to retrieve feature flags ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
                 ),
         });
     }
@@ -65,7 +65,7 @@ export class FeatureFlagApiClient {
             return undefined;
         }
 
-        const cacheEntry: V3CacheEntry = { schemaVersion: "v3", contents: raw };
+        const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
         localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
 
         return parseEvaluationResponse(raw);
@@ -79,7 +79,7 @@ export class FeatureFlagApiClient {
 
         try {
             const cacheEntry = JSON.parse(rawCache);
-            if (this.isV3CacheEntry(cacheEntry)) {
+            if (this.isCurrentCacheEntry(cacheEntry)) {
                 return new FeatureFlagEvaluator(parseEvaluationResponse(cacheEntry.contents), this.logger);
             }
 
@@ -92,13 +92,13 @@ export class FeatureFlagApiClient {
         return FeatureFlagEvaluator.empty(this.logger);
     }
 
-    private isV3CacheEntry(entry: unknown): entry is V3CacheEntry {
-        const possibleV3CacheEntry = entry as V3CacheEntry;
+    private isCurrentCacheEntry(entry: unknown): entry is EvaluationCacheEntry {
+        const possibleCacheEntry = entry as EvaluationCacheEntry;
         return (
-            possibleV3CacheEntry.schemaVersion === "v3" &&
-            possibleV3CacheEntry.contents !== undefined &&
-            possibleV3CacheEntry.contents.evaluations !== undefined &&
-            possibleV3CacheEntry.contents.contentHash !== undefined
+            possibleCacheEntry.cacheSchemaVersion === 3 &&
+            possibleCacheEntry.contents !== undefined &&
+            possibleCacheEntry.contents.evaluations !== undefined &&
+            possibleCacheEntry.contents.contentHash !== undefined
         );
     }
 
@@ -127,7 +127,7 @@ export class FeatureFlagApiClient {
         // @ts-ignore
         const contentHash = response.headers.get(octopusHttpHeaderNames.contentHash);
         if (!contentHash) {
-            this.logger.warn(`Feature toggle response from ${this.serverUri} did not contain expected ContentHash header.`);
+            this.logger.warn(`Feature flag response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
         }
 

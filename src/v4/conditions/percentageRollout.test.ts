@@ -1,8 +1,8 @@
-import { rolloutVectors } from "../testing/rolloutVectors";
+import { rolloutVectors } from "../../testing/rolloutVectors";
 import { getNormalizedNumber, includes } from "./percentageRollout";
 
-// The bucketing shared by the v3 and v4 evaluation paths. The vectors are duplicated verbatim across
-// every provider library, so a divergence here is a divergence in who a rollout turns a flag on for.
+// The vectors are duplicated verbatim across every provider library, so a divergence here is a
+// divergence in who a rollout turns a flag on for.
 describe("percentageRollout", () => {
     test.each(rolloutVectors)("getNormalizedNumber('%s', '%s') === %i", (evaluationKey, targetingKey, expected) => {
         expect(getNormalizedNumber(evaluationKey, targetingKey)).toBe(expected);
