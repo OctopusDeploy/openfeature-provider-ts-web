@@ -10,13 +10,12 @@ import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
 import { PROVIDER_VERSION } from "./version";
 
 interface RawEvaluationResponse {
-    // Unparsed, exactly as received from the v4 endpoint (or replayed from a cache entry).
+    // Unparsed, exactly as received from the v4 endpoint (or retrieved from a cache entry).
     evaluations: unknown;
     contentHash: string;
 }
 
 interface EvaluationCacheEntry {
-    // Note: This counts cache shapes, not endpoint versions.
     cacheSchemaVersion: 3;
     contents: RawEvaluationResponse;
 }

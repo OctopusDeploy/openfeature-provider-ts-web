@@ -1,7 +1,7 @@
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
 
 /**
- * One parsed response from the evaluations endpoint.
+ * Parsed response from the evaluations endpoint.
  *
  * @internal
  */
