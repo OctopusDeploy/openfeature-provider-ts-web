@@ -1,5 +1,34 @@
 # Changelog
 
+## [5.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v4.0.0...v5.0.0) (2026-08-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Tidy v3 references, "toggles" and align types with other providers ([#120](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/120))
+* Segment/context attribute matching should be case-insensitive
+
+### Features
+
+* Add support for upcoming rules-based evaluations ([0b2e8f1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/0b2e8f10c6b24598071e09d5360eb8aff10123c6))
+* Add v4 evaluation response types ([#115](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/115)) ([ce12a9a](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/ce12a9a4ca101d8f715ceef8539417e71102c3c7))
+* **deps:** update dependency @openfeature/web-sdk to v1.10.0 ([#101](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/101)) ([08c15e7](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/08c15e7a7bdb30c3414550812c695868c0120359))
+* **deps:** update dependency @openfeature/web-sdk to v1.9.0 ([#94](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/94)) ([502d877](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/502d8778c6c9f050a0f2964786868304d99fc367))
+* Implement v4 client-side evaluation ([#116](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/116)) ([58fa9de](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/58fa9def92c6937eec7968b4767e9aa505466fe5))
+* Increase the number of failure cases that will fall back to the local storage cache ([0b2e8f1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/0b2e8f10c6b24598071e09d5360eb8aff10123c6))
+
+
+### Bug Fixes
+
+* **deps:** bump form-data from 4.0.5 to 4.0.6 ([#70](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/70)) ([7d44fe8](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/7d44fe8f0bb6279990812fd8dac8c1f87ad2edff))
+* **deps:** resolve brace-expansion and js-yaml security alerts ([#92](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/92)) ([d39340f](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/d39340f697fbf527032f859e178a0562839b215f))
+* Segment/context attribute matching should be case-insensitive ([0b2e8f1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/0b2e8f10c6b24598071e09d5360eb8aff10123c6))
+
+
+### Code Refactoring
+
+* Tidy v3 references, "toggles" and align types with other providers ([#120](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/120)) ([59da185](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/59da18504a181602843c7fdaf1ba215e3de273d7))
+
 ## [4.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v3.0.2...v4.0.0) (2026-06-14)
 
 
