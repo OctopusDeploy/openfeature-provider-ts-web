@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
-import { DefaultLogger, Logger } from "@openfeature/web-sdk";
+import { DefaultLogger, Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
 import { EvaluationResponse } from "./evaluationResponse";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
@@ -47,11 +47,18 @@ export class FeatureFlagApiClient {
         });
     }
 
+    /**
+     * @throws {ProviderNotReadyError} when the server returned nothing usable and no cached evaluations are available.
+     * An evaluator built from nothing cannot tell an unknown slug from an outage, so the caller is told it has no
+     * evaluations rather than being handed an empty one.
+     */
     async getEvaluator(): Promise<FeatureFlagEvaluator> {
         const raw = await this.fetchEvaluations();
 
         if (raw === undefined) {
-            return FeatureFlagEvaluator.empty(this.logger);
+            throw new ProviderNotReadyError(
+                `Unable to retrieve feature flags for client identifier ${this.clientIdentifier} from ${this.serverUri}, and no cached evaluations are available.`
+            );
         }
 
         return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
@@ -64,10 +71,20 @@ export class FeatureFlagApiClient {
             return this.readCachedEvaluations();
         }
 
-        const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
-        localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
+        this.cacheEvaluations(raw);
 
         return raw;
+    }
+
+    private cacheEvaluations(raw: RawEvaluationResponse): void {
+        const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
+        try {
+            localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
+        } catch (e) {
+            // A full or unavailable local storage costs us the fallback on the next page load, but the evaluations we
+            // just fetched are still good, so this must not fail initialization.
+            this.logger.warn(`Failed to cache feature flag evaluations: ${JSON.stringify(e)}`);
+        }
     }
 
     private readCachedEvaluations(): RawEvaluationResponse | undefined {

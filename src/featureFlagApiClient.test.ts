@@ -5,6 +5,7 @@ import { PROVIDER_VERSION } from "./version";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
+import { ProviderNotReadyError } from "@openfeature/web-sdk";
 
 axiosRetry(axios, { retries: 3 });
 
@@ -202,42 +203,61 @@ describe("FeatureFlagApiClient", () => {
             expect(cachedManifest()).toMatchObject({ cacheSchemaVersion: 3, contents: { contentHash: "cached-hash" } });
         });
 
-        test("Falls back to an empty evaluator when the fetch fails and there is no cache entry", async () => {
-            mockAdapter.onGet().networkError();
+        test("Still resolves when the evaluations cannot be cached", async () => {
+            mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
+                ContentHash: "aGFzaA==",
+            });
+            global.localStorage.setItem = () => {
+                throw new Error("QuotaExceededError");
+            };
 
             const context = await newClient().getEvaluator();
 
-            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
+            expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Treats a cache entry from a previous schema version as a miss and removes it", async () => {
+        test("Removes a cache entry from a previous schema version, treating it as a miss", async () => {
             mockAdapter.onGet().reply(200, []);
             localStorage.setItem(
                 "octopus-openfeature-ts-feature-manifest",
                 JSON.stringify({ schemaVersion: "v2", contents: { evaluations: [], contentHash: "cached-hash" } })
             );
 
-            const context = await newClient().getEvaluator();
+            await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
 
-            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
             expect(localStorage.getItem("octopus-openfeature-ts-feature-manifest")).toBeNull();
         });
 
-        test("Falls back to an empty evaluator when there is no cache entry at all", async () => {
-            mockAdapter.onGet().reply(200, []);
+        // An evaluator built from nothing cannot tell an unknown slug from an outage, so the provider must fail to
+        // initialize rather than report itself ready with no flags. See BMBB-795.
+        describe("when there is nothing to evaluate against", () => {
+            test.each([
+                ["the server cannot be reached", () => mockAdapter.onGet().networkError()],
+                ["the server keeps failing", () => mockAdapter.onGet().reply(500)],
+                ["the flags are not found", () => mockAdapter.onGet().reply(404)],
+                ["the response has no ContentHash header", () => mockAdapter.onGet().reply(200, [])],
+            ])("Rejects when %s and there is no cache entry", async (_, arrangeResponse) => {
+                arrangeResponse();
 
-            const context = await newClient().getEvaluator();
+                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+            });
 
-            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
-        });
+            test("Rejects when the cache entry is not valid JSON", async () => {
+                mockAdapter.onGet().networkError();
+                localStorage.setItem("octopus-openfeature-ts-feature-manifest", "not json");
 
-        test("Falls back to an empty evaluator when the cache entry is not valid JSON", async () => {
-            mockAdapter.onGet().reply(200, []);
-            localStorage.setItem("octopus-openfeature-ts-feature-manifest", "not json");
+                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+            });
 
-            const context = await newClient().getEvaluator();
+            test("Rejects when the cache entry is from a previous schema version", async () => {
+                mockAdapter.onGet().networkError();
+                localStorage.setItem(
+                    "octopus-openfeature-ts-feature-manifest",
+                    JSON.stringify({ schemaVersion: "v2", contents: { evaluations: [], contentHash: "cached-hash" } })
+                );
 
-            expect(context.findEvaluationBySlug("anything")).toBeUndefined();
+                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+            });
         });
     });
 });
