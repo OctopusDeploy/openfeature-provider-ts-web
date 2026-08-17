@@ -5,7 +5,7 @@ import { PROVIDER_VERSION } from "./version";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
-import { ProviderNotReadyError } from "@openfeature/web-sdk";
+import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
 
 axiosRetry(axios, { retries: 3 });
 
@@ -114,8 +114,8 @@ describe("FeatureFlagApiClient", () => {
             global.localStorage = mockedLocalStorage;
         });
 
-        function newClient(): FeatureFlagApiClient {
-            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger: silentLogger() });
+        function newClient(logger: Logger = silentLogger()): FeatureFlagApiClient {
+            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger });
         }
 
         function cachedManifest(): unknown {
@@ -214,6 +214,22 @@ describe("FeatureFlagApiClient", () => {
             const context = await newClient().getEvaluator();
 
             expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        // The warning is the only trace a failed write leaves: this start succeeds either way, and what was really
+        // lost is the fallback on the next page load.
+        test("Warns when the evaluations cannot be cached", async () => {
+            mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
+                ContentHash: "aGFzaA==",
+            });
+            global.localStorage.setItem = () => {
+                throw new Error("QuotaExceededError");
+            };
+            const logger = silentLogger();
+
+            await newClient(logger).getEvaluator();
+
+            expect(logger.warn).toHaveBeenCalledTimes(1);
         });
 
         test("Removes a cache entry from a previous schema version, treating it as a miss", async () => {
