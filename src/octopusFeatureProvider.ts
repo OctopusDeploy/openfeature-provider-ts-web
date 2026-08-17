@@ -24,8 +24,8 @@ export class OctopusFeatureProvider implements Provider {
     /**
      * Retrieves the feature flag evaluations, falling back to those cached by an earlier page load.
      *
-     * @throws {ProviderNotReadyError} when neither is available, so that the SDK reports the provider as errored
-     * rather than READY with nothing to evaluate against.
+     * @throws {ProviderNotReadyError} when neither is available, failing initialization rather than completing with
+     * nothing to evaluate against.
      */
     async initialize(context?: EvaluationContext): Promise<void> {
         if (context) {
