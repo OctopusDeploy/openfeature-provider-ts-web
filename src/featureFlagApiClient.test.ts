@@ -232,8 +232,8 @@ describe("FeatureFlagApiClient", () => {
             expect(localStorage.getItem("octopus-openfeature-ts-feature-manifest")).toBeNull();
         });
 
-        // An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which reads
-        // as a misspelled slug. Rejecting instead keeps an outage distinguishable from a typo.
+        // An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which
+        // evaluates the same as a misspelled slug. Rejecting instead keeps an outage distinguishable from a typo.
         describe("when there is nothing to evaluate against", () => {
             test.each([
                 ["the server cannot be reached", () => mockAdapter.onGet().networkError()],

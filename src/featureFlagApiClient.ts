@@ -49,8 +49,8 @@ export class FeatureFlagApiClient {
 
     /**
      * @throws {ProviderNotReadyError} when the server returned nothing usable and no cached evaluations are available.
-     * An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which reads as a
-     * misspelled slug, so the caller is told it has no evaluations rather than being handed an empty one.
+     * An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which evaluates
+     * the same as a misspelled slug, so the caller is told it has no evaluations rather than being handed an empty one.
      */
     async getEvaluator(): Promise<FeatureFlagEvaluator> {
         const raw = await this.fetchEvaluations();
