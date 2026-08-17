@@ -203,22 +203,9 @@ describe("FeatureFlagApiClient", () => {
             expect(cachedManifest()).toMatchObject({ cacheSchemaVersion: 3, contents: { contentHash: "cached-hash" } });
         });
 
-        test("Still resolves when the evaluations cannot be cached", async () => {
-            mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
-                ContentHash: "aGFzaA==",
-            });
-            global.localStorage.setItem = () => {
-                throw new Error("QuotaExceededError");
-            };
-
-            const context = await newClient().getEvaluator();
-
-            expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-        });
-
         // The warning is the only trace a failed write leaves: this start succeeds either way, and what was really
         // lost is the fallback on the next page load.
-        test("Warns when the evaluations cannot be cached", async () => {
+        test("Still resolves when the evaluations cannot be cached, warning that they were not", async () => {
             mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
                 ContentHash: "aGFzaA==",
             });
@@ -227,8 +214,9 @@ describe("FeatureFlagApiClient", () => {
             };
             const logger = silentLogger();
 
-            await newClient(logger).getEvaluator();
+            const context = await newClient(logger).getEvaluator();
 
+            expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
             expect(logger.warn).toHaveBeenCalledTimes(1);
         });
 
