@@ -11,7 +11,11 @@
         "esModuleInterop": true,
         "strict": true,
         "downlevelIteration": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        // ts-jest resolves imports from CommonJS dependencies (axios-retry, axios-mock-adapter) in an implied CJS mode, which
+        // selects axios' index.d.cts, while our own sources select index.d.ts. As of axios 1.19.0 those two declaration files
+        // are no longer mutually assignable, so pin every axios import to a single copy of its types.
+        "paths": { "axios": ["./node_modules/axios"] }
     },
     "exclude": ["node_modules", "dist"],
     "include": ["src/**/*"]
