@@ -1,6 +1,6 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
-import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
+import { ErrorCode, OpenFeature, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
 import { silentLogger } from "./testing/logger";
@@ -177,5 +177,82 @@ describe("Unsuccessful boolean evaluations surface the OpenFeature error contrac
         const result = OpenFeature.getClient().getBooleanDetails("feature-a", false);
 
         expect(result).toMatchObject({ value: false, errorCode: ErrorCode.PARSE_ERROR, reason: "ERROR" });
+    });
+});
+
+describe("A provider that retrieved no evaluations", () => {
+    const buildProvider = () =>
+        new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+            logger: silentLogger(),
+        });
+
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+            .fn()
+            .mockRejectedValue(new ProviderNotReadyError("Unable to retrieve feature flags, and no cached evaluations are available."));
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("Fails initialization rather than reporting itself ready", async () => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toThrow(ProviderNotReadyError);
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
+    });
+
+    test("Reports PROVIDER_NOT_READY rather than passing an outage off as an unrecognised slug", async () => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toThrow(ProviderNotReadyError);
+
+        const result = OpenFeature.getClient().getBooleanDetails("feature-a", false);
+
+        expect(result).toMatchObject({ value: false, errorCode: ErrorCode.PROVIDER_NOT_READY, reason: "ERROR" });
+    });
+
+    test.each([
+        ["string", (flagKey: string) => OpenFeature.getClient().getStringDetails(flagKey, "default")],
+        ["number", (flagKey: string) => OpenFeature.getClient().getNumberDetails(flagKey, 0)],
+        ["object", (flagKey: string) => OpenFeature.getClient().getObjectDetails(flagKey, {})],
+    ])("Reports PROVIDER_NOT_READY for %s evaluations too", async (_, evaluate) => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toThrow(ProviderNotReadyError);
+
+        expect(evaluate("feature-a").errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+});
+
+describe("A provider served from the cache", () => {
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockResolvedValue(
+            new FeatureFlagEvaluator(
+                {
+                    evaluations: [new ServerSideEvaluation("cached-feature", true, "The flag is enabled for this environment.")],
+                    contentHash: "cached-hash",
+                },
+                silentLogger()
+            )
+        );
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("Becomes ready and evaluates the cached flags", async () => {
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
+
+        await OpenFeature.setProviderAndWait(provider);
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
+        expect(OpenFeature.getClient().getBooleanValue("cached-feature", false)).toBe(true);
     });
 });
