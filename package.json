@@ -47,7 +47,7 @@
         "jest-localstorage-mock": "^2.4.26",
         "prettier": "^3.3.2",
         "ts-jest": "^29.4.4",
-        "typescript": "^5.4.5",
+        "typescript": "^7.0.0",
         "typescript-eslint": "^8.65.0"
     },
     "dependencies": {
