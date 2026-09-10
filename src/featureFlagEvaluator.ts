@@ -16,10 +16,6 @@ export class FeatureFlagEvaluator {
         private readonly logger: Logger
     ) {}
 
-    static empty(logger: Logger): FeatureFlagEvaluator {
-        return new FeatureFlagEvaluator({ evaluations: [], contentHash: "" }, logger);
-    }
-
     findEvaluationBySlug(slug: string): ServerSideEvaluation | undefined {
         return this.response.evaluations.find((evaluation) => typeof evaluation.slug === "string" && equalsIgnoringCase(evaluation.slug, slug));
     }

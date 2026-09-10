@@ -47,12 +47,6 @@ describe("FeatureFlagEvaluator", () => {
         });
     });
 
-    describe("empty", () => {
-        test("Matches no slugs", () => {
-            expect(FeatureFlagEvaluator.empty(silentLogger()).findEvaluationBySlug("my-feature")).toBeUndefined();
-        });
-    });
-
     describe("evaluate", () => {
         test("Delegates a server-resolved evaluation, passing its value and reason through unchanged", () => {
             const evaluator = evaluatorFor([resolved("my-feature", true, "The flag is enabled for this environment.")]);
