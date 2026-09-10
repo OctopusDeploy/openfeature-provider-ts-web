@@ -1,6 +1,6 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider";
 import { ProductMetadata } from "./productMetadata";
-import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
+import { ErrorCode, Logger, OpenFeature, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
 import { silentLogger } from "./testing/logger";
@@ -177,5 +177,111 @@ describe("Unsuccessful boolean evaluations surface the OpenFeature error contrac
         const result = OpenFeature.getClient().getBooleanDetails("feature-a", false);
 
         expect(result).toMatchObject({ value: false, errorCode: ErrorCode.PARSE_ERROR, reason: "ERROR" });
+    });
+});
+
+// Failing initialization would take the page load with it, so the failure is reported through the evaluations
+// instead: an evaluator we never got means every evaluation reports PROVIDER_NOT_READY.
+describe("A provider that retrieved no evaluations", () => {
+    let logger: Logger;
+
+    const buildProvider = () =>
+        new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+            logger,
+        });
+
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        logger = silentLogger();
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+            .fn()
+            .mockRejectedValue(new ProviderNotReadyError("Unable to retrieve feature flags, and no cached evaluations are available."));
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("Completes initialization rather than failing the caller that set it", async () => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).resolves.toBeUndefined();
+    });
+
+    // Nothing else reports this failure, so the log has to carry the reason we could not evaluate.
+    test("Logs why no flag will evaluate, and what stopped it", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        expect(logger.error).toHaveBeenCalledTimes(1);
+        expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("PROVIDER_NOT_READY"), expect.any(ProviderNotReadyError));
+    });
+
+    test("Contains an unexpected failure just the same, rather than passing it to the caller", async () => {
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(new TypeError("Cannot read properties of undefined"));
+
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).resolves.toBeUndefined();
+
+        expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+
+    test("Reports PROVIDER_NOT_READY rather than passing an outage off as an unrecognised slug", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        const result = OpenFeature.getClient().getBooleanDetails("feature-a", false);
+
+        expect(result).toMatchObject({ value: false, errorCode: ErrorCode.PROVIDER_NOT_READY, reason: "ERROR" });
+    });
+
+    test.each([
+        ["string", (flagKey: string) => OpenFeature.getClient().getStringDetails(flagKey, "default")],
+        ["number", (flagKey: string) => OpenFeature.getClient().getNumberDetails(flagKey, 0)],
+        ["object", (flagKey: string) => OpenFeature.getClient().getObjectDetails(flagKey, {})],
+    ])("Reports PROVIDER_NOT_READY for %s evaluations too", async (_, evaluate) => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        expect(evaluate("feature-a").errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+
+    // web-sdk returns its provider to READY after any successful context change, so the status alone would say the
+    // flags had arrived. The evaluations keep reporting the truth.
+    test("Keeps reporting PROVIDER_NOT_READY after a context change", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        await OpenFeature.setContext({ username: "admin" });
+
+        expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+});
+
+describe("A provider served from the cache", () => {
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockResolvedValue(
+            new FeatureFlagEvaluator(
+                {
+                    evaluations: [new ServerSideEvaluation("cached-feature", true, "The flag is enabled for this environment.")],
+                    contentHash: "cached-hash",
+                },
+                silentLogger()
+            )
+        );
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("Becomes ready and evaluates the cached flags", async () => {
+        const provider = new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+        });
+
+        await OpenFeature.setProviderAndWait(provider);
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
+        expect(OpenFeature.getClient().getBooleanValue("cached-feature", false)).toBe(true);
     });
 });
