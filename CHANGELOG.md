@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.0...v5.0.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* report no flags through the evaluations, not by failing initialization ([#131](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/131)) ([3f3d5f7](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/3f3d5f752c80914b49100e9fd4b235d64a28b7dd))
+
 ## [5.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v4.0.0...v5.0.0) (2026-08-13)
 
 
