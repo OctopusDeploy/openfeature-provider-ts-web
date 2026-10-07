@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.0...v5.0.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** resolve npm audit advisories ([#145](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/145)) ([58346bb](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/58346bb9d3aa2f1d4e9ba5371d78cf9d12e9d396))
+* report no flags through the evaluations, not by failing initialization ([#131](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/131)) ([3f3d5f7](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/3f3d5f752c80914b49100e9fd4b235d64a28b7dd))
+
 ## [5.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v4.0.0...v5.0.0) (2026-08-13)
 
 
