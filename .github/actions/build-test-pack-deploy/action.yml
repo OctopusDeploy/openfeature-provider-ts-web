@@ -89,7 +89,7 @@ runs:
         path: ${{ steps.pack.outputs.name }}
 
     - name: Login to Octopus Deploy
-      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
       uses: OctopusDeploy/login@v2
       with:
         server: ${{ inputs.octopus-url }}
@@ -97,14 +97,14 @@ runs:
 
     - name: Push to Octopus
       uses: OctopusDeploy/push-package-action@v4
-      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
       with:
         packages: |
           ${{ steps.pack.outputs.name }}
 
     - name: Create Release in Octopus
       uses: OctopusDeploy/create-release-action@v4
-      if: github.event.pull_request.head.repo.fork != true && (! contains(github.ref, '/dependabot/'))
+      if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
       with:
         project: "OpenFeature TypeScript Web Provider"
         release_number: ${{ steps.version.outputs.version }}
