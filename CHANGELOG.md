@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.1...v5.0.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** bump follow-redirects from 1.16.0 to 1.16.1 ([#161](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/161)) ([edb281e](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/edb281e12dffdee68585f999c4661259e8fec95c))
+
 ## [5.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.0...v5.0.1) (2026-10-07)
 
 
