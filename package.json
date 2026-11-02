@@ -36,6 +36,7 @@
         "@eslint/js": "^10.0.0",
         "@types/jest": "^30.0.0",
         "@types/murmurhash3js-revisited": "^3.0.3",
+        "@types/node": "^24.19.2",
         "axios-mock-adapter": "^2.1.0",
         "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
