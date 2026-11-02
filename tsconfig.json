@@ -3,7 +3,7 @@
         "removeComments": false,
         "rootDir": "src",
         "outDir": "dist",
-        "target": "ES2015",
+        "target": "ES2020",
         "allowJs": true,
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
