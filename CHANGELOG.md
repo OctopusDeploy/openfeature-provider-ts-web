@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.0.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.1...v5.0.2) (2026-11-02)
+
+
+### Bug Fixes
+
+* **deps:** bump follow-redirects from 1.16.0 to 1.16.1 ([#161](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/161)) ([edb281e](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/edb281e12dffdee68585f999c4661259e8fec95c))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency brace-expansion to v5.0.12 [security] ([141178b](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/141178bb39e071d4c6a8e03c3a925c3ba02ef7f6))
+
 ## [5.0.1](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.0...v5.0.1) (2026-10-07)
 
 
