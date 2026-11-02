@@ -1,17 +1,18 @@
 {
     "compilerOptions": {
         "removeComments": false,
+        "rootDir": "src",
         "outDir": "dist",
-        "target": "ES5",
+        "target": "ES2015",
         "allowJs": true,
-        "module": "CommonJS",
-        "moduleResolution": "node",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "declaration": true,
         "stripInternal": true,
         "esModuleInterop": true,
         "strict": true,
-        "downlevelIteration": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "types": ["jest", "node"]
     },
     "exclude": ["node_modules", "dist"],
     "include": ["src/**/*"]
