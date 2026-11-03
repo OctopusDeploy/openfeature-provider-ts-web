@@ -23,9 +23,10 @@ module.exports = {
     },
     {
       // Lint and test tooling only; a green build is enough.
-      // typescript stays on manual review because it compiles dist/.
+      // TypeScript stays on manual review because it compiles dist/. Both aliases are
+      // listed so this holds whether Renovate matches the alias or the real package name.
       matchDepTypes: ["devDependencies"],
-      matchPackageNames: ["!typescript"],
+      matchPackageNames: ["!typescript", "!@typescript/native", "!@typescript/typescript6"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
     },
