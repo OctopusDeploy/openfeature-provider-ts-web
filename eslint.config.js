@@ -2,6 +2,10 @@ const js = require("@eslint/js");
 const tseslint = require("typescript-eslint");
 const prettierRecommended = require("eslint-plugin-prettier/recommended");
 
+// A relative specifier ("./x", "../x", "." or "..") that doesn't end in .js.
+const missingJsExtension = "/^\\.{1,2}(\\/(?!.*\\.js$)|$)/";
+const missingJsExtensionMessage = "Relative imports must end in .js so the ESM build loads under native Node.";
+
 module.exports = tseslint.config(
     {
         ignores: ["dist/**", "coverage/**"],
@@ -18,6 +22,19 @@ module.exports = tseslint.config(
         rules: {
             "@typescript-eslint/no-unused-vars": "off",
             "@typescript-eslint/ban-ts-comment": "off",
+            // Native Node ESM needs the .js extension on relative imports, including dynamic import() and
+            // import("...") types, and tsc doesn't check for it.
+            "no-restricted-syntax": [
+                "error",
+                ...["ImportDeclaration", "ExportAllDeclaration", "ExportNamedDeclaration", "ImportExpression"].map((type) => ({
+                    selector: `${type}[source.value=${missingJsExtension}]`,
+                    message: missingJsExtensionMessage,
+                })),
+                {
+                    selector: `TSImportType[argument.literal.value=${missingJsExtension}]`,
+                    message: missingJsExtensionMessage,
+                },
+            ],
         },
     }
 );

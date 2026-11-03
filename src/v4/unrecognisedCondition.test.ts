@@ -1,5 +1,5 @@
-import * as Contexts from "../testing/contexts";
-import { parseServerSideEvaluation } from "./parseServerSideEvaluation";
+import * as Contexts from "../testing/contexts.js";
+import { parseServerSideEvaluation } from "./parseServerSideEvaluation.js";
 
 // A condition naming a type this version does not recognise is a capability from a newer server, not
 // a bad payload: it fails its own rule and nothing else. The deliberate departure from

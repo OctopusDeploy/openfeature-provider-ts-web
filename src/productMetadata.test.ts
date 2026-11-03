@@ -1,4 +1,4 @@
-import { ProductMetadata } from "./productMetadata";
+import { ProductMetadata } from "./productMetadata.js";
 
 describe("ProductMetadata", () => {
     describe("name", () => {

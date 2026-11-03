@@ -1,7 +1,7 @@
-import { ClientSideRule } from "./clientSideRule";
-import { ClientSideCondition } from "./conditions/clientSideCondition";
-import { parseCondition } from "./conditions/parseCondition";
-import { asArray, asRecord, asString } from "./jsonUtils";
+import { ClientSideRule } from "./clientSideRule.js";
+import { ClientSideCondition } from "./conditions/clientSideCondition.js";
+import { parseCondition } from "./conditions/parseCondition.js";
+import { asArray, asRecord, asString } from "./jsonUtils.js";
 
 /**
  * Reads a client-side rule and its polymorphic conditions.

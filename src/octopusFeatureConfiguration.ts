@@ -1,5 +1,5 @@
 import { Logger } from "@openfeature/web-sdk";
-import { ProductMetadata } from "./productMetadata";
+import { ProductMetadata } from "./productMetadata.js";
 
 export interface OctopusFeatureConfiguration {
     /** The ClientIdentifier provided by the Octopus variable Octopus.FeatureFlags.ClientIdentifier */

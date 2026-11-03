@@ -1,5 +1,5 @@
-import { rolloutVectors } from "../../testing/rolloutVectors";
-import { getNormalizedNumber, includes } from "./percentageRollout";
+import { rolloutVectors } from "../../testing/rolloutVectors.js";
+import { getNormalizedNumber, includes } from "./percentageRollout.js";
 
 // The vectors are duplicated verbatim across every provider library, so a divergence here is a
 // divergence in who a rollout turns a flag on for.

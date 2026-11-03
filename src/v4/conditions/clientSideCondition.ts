@@ -1,4 +1,4 @@
-import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
+import { ClientSideEvaluationContext } from "../clientSideEvaluationContext.js";
 
 /**
  * Base type for a client-side rule condition, selected from the camelCase `type` discriminator when

@@ -1,7 +1,7 @@
 import { EvaluationContext, ParseError } from "@openfeature/web-sdk";
-import * as Contexts from "../../testing/contexts";
-import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition";
-import { parseCondition } from "./parseCondition";
+import * as Contexts from "../../testing/contexts.js";
+import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition.js";
+import { parseCondition } from "./parseCondition.js";
 
 describe("ContextAttributeIsOneOfCondition", () => {
     describe("deserialisation", () => {

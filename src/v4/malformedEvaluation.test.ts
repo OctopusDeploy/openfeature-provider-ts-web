@@ -1,6 +1,6 @@
 import { ParseError } from "@openfeature/web-sdk";
-import * as Contexts from "../testing/contexts";
-import { parseServerSideEvaluation } from "./parseServerSideEvaluation";
+import * as Contexts from "../testing/contexts.js";
+import { parseServerSideEvaluation } from "./parseServerSideEvaluation.js";
 
 // A response the server could not legitimately have sent throws ParseError when the flag is
 // evaluated. The one exception — a condition type this client does not recognise — is covered by

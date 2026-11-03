@@ -1,10 +1,10 @@
-import { asArray, asInteger, asRecord, asString } from "../jsonUtils";
-import { ClientSideCondition } from "./clientSideCondition";
-import { ConditionTypeNames } from "./conditionTypeNames";
-import { ContextAttributeIsNotOneOfCondition } from "./contextAttributeIsNotOneOfCondition";
-import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition";
-import { PercentageByContextCondition } from "./percentageByContextCondition";
-import { UnknownCondition } from "./unknownCondition";
+import { asArray, asInteger, asRecord, asString } from "../jsonUtils.js";
+import { ClientSideCondition } from "./clientSideCondition.js";
+import { ConditionTypeNames } from "./conditionTypeNames.js";
+import { ContextAttributeIsNotOneOfCondition } from "./contextAttributeIsNotOneOfCondition.js";
+import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition.js";
+import { PercentageByContextCondition } from "./percentageByContextCondition.js";
+import { UnknownCondition } from "./unknownCondition.js";
 
 /**
  * Selects the concrete {@link ClientSideCondition} from the camelCase `type` discriminator. An

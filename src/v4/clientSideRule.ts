@@ -1,6 +1,6 @@
 import { ParseError } from "@openfeature/web-sdk";
-import { ClientSideEvaluationContext } from "./clientSideEvaluationContext";
-import { ClientSideCondition } from "./conditions/clientSideCondition";
+import { ClientSideEvaluationContext } from "./clientSideEvaluationContext.js";
+import { ClientSideCondition } from "./conditions/clientSideCondition.js";
 
 /**
  * A named rule the provider library still has to evaluate on the client side. The rule matches when
