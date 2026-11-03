@@ -10,7 +10,10 @@ const root = path.join(__dirname, "..");
 const workDir = fs.mkdtempSync(path.join(os.tmpdir(), "openfeature-smoke-"));
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 
-const run = (command, args, cwd) => execFileSync(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"], shell: process.platform === "win32" }).toString();
+// Windows can only run npm.cmd through a shell, but the inline node -e scripts must not go through one,
+// because cmd.exe would mangle their quotes and newlines.
+const run = (command, args, cwd) =>
+    execFileSync(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"], shell: process.platform === "win32" && command === npm }).toString();
 
 try {
     const tarball = run(npm, ["pack", "--silent", "--pack-destination", workDir], root).trim().split("\n").pop();
