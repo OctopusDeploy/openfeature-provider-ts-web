@@ -1,7 +1,7 @@
-import { ClientSideRule } from "./clientSideRule";
-import { asArray, asBoolean, asRecord, asString } from "./jsonUtils";
-import { parseClientSideRule } from "./parseClientSideRule";
-import { ServerSideEvaluation } from "./serverSideEvaluation";
+import { ClientSideRule } from "./clientSideRule.js";
+import { asArray, asBoolean, asRecord, asString } from "./jsonUtils.js";
+import { parseClientSideRule } from "./parseClientSideRule.js";
+import { ServerSideEvaluation } from "./serverSideEvaluation.js";
 
 /**
  * Reads the v4 evaluations endpoint's response: an array of flags.

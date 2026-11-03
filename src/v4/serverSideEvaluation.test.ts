@@ -1,10 +1,10 @@
-import * as Contexts from "../testing/contexts";
-import { ClientSideRule } from "./clientSideRule";
-import { ContextAttributeIsOneOfCondition } from "./conditions/contextAttributeIsOneOfCondition";
-import { PercentageByContextCondition } from "./conditions/percentageByContextCondition";
-import { UnknownCondition } from "./conditions/unknownCondition";
-import { parseServerSideEvaluation, parseServerSideEvaluations } from "./parseServerSideEvaluation";
-import { ServerSideEvaluation } from "./serverSideEvaluation";
+import * as Contexts from "../testing/contexts.js";
+import { ClientSideRule } from "./clientSideRule.js";
+import { ContextAttributeIsOneOfCondition } from "./conditions/contextAttributeIsOneOfCondition.js";
+import { PercentageByContextCondition } from "./conditions/percentageByContextCondition.js";
+import { UnknownCondition } from "./conditions/unknownCondition.js";
+import { parseServerSideEvaluation, parseServerSideEvaluations } from "./parseServerSideEvaluation.js";
+import { ServerSideEvaluation } from "./serverSideEvaluation.js";
 
 describe("ServerSideEvaluation", () => {
     // Both evaluation shapes and the array the endpoint returns. Individual conditions are covered by

@@ -9,9 +9,9 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/web-sdk";
-import { FeatureFlagApiClient } from "./featureFlagApiClient";
-import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
-import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
+import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 
 export class OctopusFeatureProvider implements Provider {
     private readonly logger: Logger;

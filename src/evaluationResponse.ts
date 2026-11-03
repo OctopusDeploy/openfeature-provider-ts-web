@@ -1,4 +1,4 @@
-import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
+import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
 
 /**
  * Parsed response from the evaluations endpoint.

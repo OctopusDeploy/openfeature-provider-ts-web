@@ -1,14 +1,14 @@
-import { OctopusFeatureProvider } from "./octopusFeatureProvider";
-import { ProductMetadata } from "./productMetadata";
+import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
+import { ProductMetadata } from "./productMetadata.js";
 import { ErrorCode, Logger, OpenFeature, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
-import { FeatureFlagApiClient } from "./featureFlagApiClient";
-import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
-import { silentLogger } from "./testing/logger";
-import { ClientSideRule } from "./v4/clientSideRule";
-import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition";
-import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
+import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
+import { silentLogger } from "./testing/logger.js";
+import { ClientSideRule } from "./v4/clientSideRule.js";
+import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
+import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
 
-jest.mock("./featureFlagApiClient");
+jest.mock("./featureFlagApiClient.js");
 
 describe.skip("octopusFeatureProvider", () => {
     // Stub out local storage for this particular test

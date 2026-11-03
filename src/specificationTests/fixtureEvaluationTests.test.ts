@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
-import { OctopusFeatureProvider } from "../octopusFeatureProvider";
-import { ProductMetadata } from "../productMetadata";
-import { Server } from "./server";
+import { OctopusFeatureProvider } from "../octopusFeatureProvider.js";
+import { ProductMetadata } from "../productMetadata.js";
+import { Server } from "./server.js";
 
 interface Fixture {
     response: unknown;

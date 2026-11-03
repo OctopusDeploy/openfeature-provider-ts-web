@@ -1,6 +1,6 @@
 import { ParseError } from "@openfeature/web-sdk";
-import { equalsIgnoringCase } from "../../equalsIgnoringCase";
-import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
+import { equalsIgnoringCase } from "../../equalsIgnoringCase.js";
+import { ClientSideEvaluationContext } from "../clientSideEvaluationContext.js";
 
 /**
  * The attribute lookup shared by both attribute conditions.

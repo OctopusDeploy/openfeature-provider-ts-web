@@ -1,7 +1,7 @@
 import { EvaluationContext, FlagNotFoundError, Logger, ResolutionDetails } from "@openfeature/web-sdk";
-import { EvaluationResponse } from "./evaluationResponse";
-import { equalsIgnoringCase } from "./equalsIgnoringCase";
-import { ServerSideEvaluation } from "./v4/serverSideEvaluation";
+import { EvaluationResponse } from "./evaluationResponse.js";
+import { equalsIgnoringCase } from "./equalsIgnoringCase.js";
+import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
 
 /**
  * Holds one evaluation response and resolves a flag from it, applying any client-side rules the server deferred.

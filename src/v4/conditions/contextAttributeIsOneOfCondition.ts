@@ -1,6 +1,6 @@
-import { ClientSideEvaluationContext } from "../clientSideEvaluationContext";
-import { ClientSideCondition } from "./clientSideCondition";
-import { isOneOf } from "./contextAttributes";
+import { ClientSideEvaluationContext } from "../clientSideEvaluationContext.js";
+import { ClientSideCondition } from "./clientSideCondition.js";
+import { isOneOf } from "./contextAttributes.js";
 
 /**
  * Matches when the context attribute `key` is one of `values`. Keys and values compare case-insensitively. A missing

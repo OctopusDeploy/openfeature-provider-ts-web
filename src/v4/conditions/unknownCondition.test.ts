@@ -1,6 +1,6 @@
 import { ParseError } from "@openfeature/web-sdk";
-import { parseCondition } from "./parseCondition";
-import { UnknownCondition } from "./unknownCondition";
+import { parseCondition } from "./parseCondition.js";
+import { UnknownCondition } from "./unknownCondition.js";
 
 describe("UnknownCondition", () => {
     describe("deserialisation", () => {

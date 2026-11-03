@@ -1,5 +1,5 @@
 import { ParseError } from "@openfeature/web-sdk";
-import { ClientSideCondition } from "./clientSideCondition";
+import { ClientSideCondition } from "./clientSideCondition.js";
 
 /**
  * A client-side condition whose `type` discriminator this version of the provider does not

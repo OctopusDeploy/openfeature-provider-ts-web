@@ -1,5 +1,5 @@
 import { EvaluationContext, EvaluationContextValue } from "@openfeature/web-sdk";
-import { ClientSideEvaluationContext } from "../v4/clientSideEvaluationContext";
+import { ClientSideEvaluationContext } from "../v4/clientSideEvaluationContext.js";
 
 // Builds the contexts the v4 evaluation tests run against.
 //

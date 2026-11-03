@@ -2,19 +2,36 @@
     "name": "@octopusdeploy/openfeature",
     "version": "5.0.2",
     "description": "The Octopus Feature Flags OpenFeature Provider",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "type": "commonjs",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
     "files": [
         "dist",
         "CHANGELOG.md"
     ],
     "scripts": {
-        "build": "tsc --p tsconfig.build.json",
+        "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+        "build": "npm run clean && tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json && node scripts/writeModuleMarkers.js",
         "lint:fix": "eslint . --fix",
         "lint": "eslint .",
         "prepare": "npm run build",
         "preversion": "npm run lint",
-        "test": "jest --maxWorkers=4 --config=jest.config.js --ci --reporters=default --reporters=jest-junit"
+        "test": "jest --maxWorkers=4 --config=jest.config.js --ci --reporters=default --reporters=jest-junit",
+        "test:package": "node scripts/smokeTestPackage.js"
     },
     "repository": {
         "type": "git",

@@ -1,7 +1,7 @@
 import { EvaluationContext, ParseError } from "@openfeature/web-sdk";
-import * as Contexts from "../../testing/contexts";
-import { parseCondition } from "./parseCondition";
-import { PercentageByContextCondition } from "./percentageByContextCondition";
+import * as Contexts from "../../testing/contexts.js";
+import { parseCondition } from "./parseCondition.js";
+import { PercentageByContextCondition } from "./percentageByContextCondition.js";
 
 describe("PercentageByContextCondition", () => {
     describe("deserialisation", () => {

@@ -1,3 +1,3 @@
-export * from "./octopusFeatureConfiguration";
-export * from "./octopusFeatureProvider";
-export * from "./productMetadata";
+export * from "./octopusFeatureConfiguration.js";
+export * from "./octopusFeatureProvider.js";
+export * from "./productMetadata.js";

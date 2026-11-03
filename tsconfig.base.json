@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "removeComments": false,
+        "rootDir": "src",
+        "target": "ES2020",
+        "allowJs": true,
+        "declaration": true,
+        "stripInternal": true,
+        "esModuleInterop": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "types": []
+    }
+}

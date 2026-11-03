@@ -1,8 +1,8 @@
-import { ContextAttributeIsNotOneOfCondition } from "./contextAttributeIsNotOneOfCondition";
-import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition";
-import { parseCondition } from "./parseCondition";
-import { PercentageByContextCondition } from "./percentageByContextCondition";
-import { UnknownCondition } from "./unknownCondition";
+import { ContextAttributeIsNotOneOfCondition } from "./contextAttributeIsNotOneOfCondition.js";
+import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition.js";
+import { parseCondition } from "./parseCondition.js";
+import { PercentageByContextCondition } from "./percentageByContextCondition.js";
+import { UnknownCondition } from "./unknownCondition.js";
 
 // Polymorphic deserialisation of a single condition. The concrete types are covered by their own
 // tests; whole responses are covered by serverSideEvaluation.test.ts.

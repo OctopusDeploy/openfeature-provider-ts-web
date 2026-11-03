@@ -1,13 +1,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { DefaultLogger, Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
-import { EvaluationResponse } from "./evaluationResponse";
-import { FeatureFlagEvaluator } from "./featureFlagEvaluator";
-import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration";
-import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames";
-import { ProductMetadata } from "./productMetadata";
-import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation";
-import { PROVIDER_VERSION } from "./version";
+import { EvaluationResponse } from "./evaluationResponse.js";
+import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
+import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
+import { ProductMetadata } from "./productMetadata.js";
+import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
+import { PROVIDER_VERSION } from "./version.js";
 
 interface RawEvaluationResponse {
     // Unparsed, exactly as received from the v4 endpoint (or retrieved from a cache entry).

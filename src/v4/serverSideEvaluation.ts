@@ -1,6 +1,6 @@
 import { EvaluationContext, ParseError, ResolutionDetails } from "@openfeature/web-sdk";
-import { ClientSideRule } from "./clientSideRule";
-import * as EvaluationReasons from "./evaluationReasons";
+import { ClientSideRule } from "./clientSideRule.js";
+import * as EvaluationReasons from "./evaluationReasons.js";
 
 /**
  * A single feature flag as returned by the Feature Flags service v4 evaluations endpoint. The

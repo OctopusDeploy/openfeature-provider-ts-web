@@ -1,7 +1,7 @@
-import { FeatureFlagApiClient } from "./featureFlagApiClient";
-import { ProductMetadata } from "./productMetadata";
-import { silentLogger } from "./testing/logger";
-import { PROVIDER_VERSION } from "./version";
+import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
+import { ProductMetadata } from "./productMetadata.js";
+import { silentLogger } from "./testing/logger.js";
+import { PROVIDER_VERSION } from "./version.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";

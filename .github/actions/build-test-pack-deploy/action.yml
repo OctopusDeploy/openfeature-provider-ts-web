@@ -39,6 +39,10 @@ runs:
       shell: bash
       run: npm run build
 
+    - name: Smoke test package
+      shell: bash
+      run: npm run test:package
+
     - name: Compute version
       id: version
       shell: bash
