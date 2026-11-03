@@ -39,6 +39,10 @@ runs:
       shell: bash
       run: npm run build
 
+    - name: Validate package
+      shell: bash
+      run: npm run lint:package
+
     - name: Smoke test package
       shell: bash
       run: npm run test:package
