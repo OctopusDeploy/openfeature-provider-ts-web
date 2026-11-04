@@ -37,3 +37,17 @@ if (client.getBooleanValue("to-the-moon-feature", false, {})) {
   console.log("🚀🚀🚀");
 }
 ```
+
+### When feature flags are unavailable
+
+If the provider cannot retrieve feature flags and has no cached evaluations to fall back on, initialization fails: `setProviderAndWait` rejects, the provider moves to `ERROR` and emits `PROVIDER_ERROR`, and every evaluation returns your default value with the `PROVIDER_NOT_READY` error code. A provider started from cached evaluations becomes `READY` as normal.
+
+To keep the rest of your application running when feature flags are unavailable, catch the rejection:
+
+```ts
+try {
+  await OpenFeature.setProviderAndWait(provider);
+} catch (e) {
+  console.warn("Feature flags are unavailable, falling back to default values.", e);
+}
+```
