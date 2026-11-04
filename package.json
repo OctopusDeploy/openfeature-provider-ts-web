@@ -37,7 +37,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/OctopusDeploy/openfeature-provider-ts-web.git"
+        "url": "git+https://github.com/OctopusDeploy/openfeature-provider-ts.git"
     },
     "keywords": [
         "octopus deploy",
@@ -48,9 +48,9 @@
     "author": "Octopus Deploy",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues"
+        "url": "https://github.com/OctopusDeploy/openfeature-provider-ts/issues"
     },
-    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
+    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts#readme",
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
         "@eslint/js": "^10.0.0",
