@@ -13,7 +13,7 @@ module.exports = {
     {
       // Dev-time dependencies don't ship in the published package. That includes the OpenFeature
       // SDK's devDependencies entry: it's a peer dependency, so a bump only changes what we build and
-      // test against. Raise its peerDependencies range by hand when the code needs a newer SDK.
+      // test against.
       matchDepTypes: ["devDependencies"],
       semanticCommitType: "chore",
     },
