@@ -300,8 +300,11 @@ export function analyseApiSurface(entryFile: string, tsconfigPath: string): ApiS
         }
 
         if (type.flags & ts.TypeFlags.Conditional) {
-            walk((type as ts.ConditionalType).checkType);
-            walk((type as ts.ConditionalType).extendsType);
+            const conditional = type as ts.ConditionalType;
+            walk(conditional.checkType);
+            walk(conditional.extendsType);
+            walk(checker.getTypeFromTypeNode(conditional.root.node.trueType));
+            walk(checker.getTypeFromTypeNode(conditional.root.node.falseType));
             return;
         }
 

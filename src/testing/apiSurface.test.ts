@@ -5,10 +5,13 @@ const tsconfig = path.join(__dirname, "..", "..", "tsconfig.json");
 const fixture = (name: string) => path.join(__dirname, "apiSurfaceFixtures", name, "index.ts");
 
 describe("analyseApiSurface", () => {
-    it("reports a type that is reachable from the surface but not exported", () => {
+    it("reports types that are reachable from the surface but not exported", () => {
         const { leaks } = analyseApiSurface(fixture("leak"), tsconfig);
 
-        expect(leaks).toEqual(["LeakyProvider exposes HiddenResult (src/testing/apiSurfaceFixtures/leak/hiddenResult.ts)"]);
+        expect(leaks).toEqual([
+            "LeakyProvider exposes HiddenResult (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
+            "LeakyProvider exposes HiddenBranch (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
+        ]);
     });
 
     it("marks a class re-exported with `export type` as type-only", () => {
