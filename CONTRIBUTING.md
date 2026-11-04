@@ -24,7 +24,7 @@ Bug fixes that bring this provider in line with the existing specification don't
 The tests depend on the specification submodule, so clone with submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/OctopusDeploy/openfeature-provider-ts-web.git
+git clone --recurse-submodules https://github.com/OctopusDeploy/openfeature-provider-ts.git
 ```
 
 If you've already cloned without submodules:

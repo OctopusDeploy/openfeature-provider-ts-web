@@ -1,6 +1,6 @@
 # Octopus Deploy OpenFeature Providers for TypeScript/JavaScript
 
-[![CI build](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/main.yml?query=branch:main)
+[![CI build](https://github.com/OctopusDeploy/openfeature-provider-ts/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/OctopusDeploy/openfeature-provider-ts/actions/workflows/main.yml?query=branch:main)
 
 | Package | Description |
 | --- | --- |
