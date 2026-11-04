@@ -27,6 +27,10 @@ export class OctopusFeatureProvider implements Provider {
             this.context = context;
         }
 
+        // The SDK initializes a provider again when it is set after being removed. Evaluations from the earlier start
+        // must not outlive a fetch that fails this time.
+        this.evaluator = undefined;
+
         this.initialization = this.client.getEvaluator().then((evaluator) => {
             this.evaluator = evaluator;
         });

@@ -29,7 +29,11 @@ const provider = new OctopusFeatureProvider({
 });
 
 await OpenFeature.setContext({ userid: "bob@octopus.com" });
-await OpenFeature.setProviderAndWait(provider);
+try {
+  await OpenFeature.setProviderAndWait(provider);
+} catch (error) {
+  console.error("Failed to initialize provider:", error);
+}
 
 const client = OpenFeature.getClient();
 

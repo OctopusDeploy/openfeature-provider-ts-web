@@ -220,10 +220,13 @@ describe("A provider that retrieved no evaluations", () => {
         const onError = jest.fn();
         OpenFeature.getClient().addHandler(ProviderEvents.Error, onError);
 
-        await setProviderAndWaitForFailure();
+        try {
+            await setProviderAndWaitForFailure();
 
-        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: unavailable.message }));
-        OpenFeature.getClient().removeHandler(ProviderEvents.Error, onError);
+            expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: unavailable.message }));
+        } finally {
+            OpenFeature.getClient().removeHandler(ProviderEvents.Error, onError);
+        }
     });
 
     test("Passes an unexpected failure to the caller too", async () => {
@@ -261,6 +264,21 @@ describe("A provider that retrieved no evaluations", () => {
         await expect(OpenFeature.setContext({ username: "admin" })).resolves.toBeUndefined();
 
         expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
+        expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+
+    // The SDK initializes the same provider again when it is set after being removed.
+    test("Does not keep evaluations from an earlier start when initialized again", async () => {
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+            .fn()
+            .mockResolvedValueOnce(new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()))
+            .mockRejectedValueOnce(unavailable);
+        const provider = buildProvider();
+        await OpenFeature.setProviderAndWait(provider);
+        await OpenFeature.clearProviders();
+
+        await expect(OpenFeature.setProviderAndWait(provider)).rejects.toBe(unavailable);
+
         expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
     });
 });
