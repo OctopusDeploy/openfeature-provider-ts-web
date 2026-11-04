@@ -14,8 +14,10 @@ The OctopusDeploy TypeScript/JavaScript [OpenFeature provider
 ### Installation
 
 ```
-npm i @octopusdeploy/openfeature
+npm i @octopusdeploy/openfeature @openfeature/web-sdk
 ```
+
+`@openfeature/web-sdk` is a peer dependency, so your app and the provider share a single copy of the OpenFeature SDK. npm 7+ and pnpm 8+ install it automatically. Yarn does not, so list `@openfeature/web-sdk` and its own peer dependency `@openfeature/core` in your `package.json`.
 
 ### Usage
 

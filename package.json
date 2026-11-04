@@ -54,6 +54,7 @@
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
         "@eslint/js": "^10.0.0",
+        "@openfeature/web-sdk": "^1.10.0",
         "@types/jest": "^30.0.0",
         "@types/murmurhash3js-revisited": "^3.0.3",
         "@types/node": "^24.19.2",
@@ -74,10 +75,12 @@
         "typescript-eslint": "^8.65.0"
     },
     "dependencies": {
-        "@openfeature/web-sdk": "1.10.0",
         "axios": "^1.16.0",
         "axios-retry": "4.5.0",
         "murmurhash3js-revisited": "3.0.0"
+    },
+    "peerDependencies": {
+        "@openfeature/web-sdk": "^1.1.0"
     },
     "overrides": {
         "brace-expansion": "5.0.12"

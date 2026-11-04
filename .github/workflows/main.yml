@@ -19,6 +19,50 @@ env:
   OCTOPUS_SPACE: "Developer Experience"
 
 jobs:
+  # The build below tests against the SDK version in devDependencies. This job tests against the
+  # lowest version our peerDependencies range promises, so a change that needs a newer SDK fails here
+  # instead of breaking apps that are still on an older one.
+  test-lowest-sdk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: 'true'
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Install lowest supported OpenFeature SDK
+        run: |
+          lowest() { node -p "process.argv[1].trim().replace(/^[\\^~]/, '')" "$1"; }
+          SDK=$(lowest "$(node -p "require('./package.json').peerDependencies['@openfeature/web-sdk']")")
+          # Older SDK releases pin an exact version of core, so take core from the SDK's own peer range.
+          CORE=$(lowest "$(npm view "@openfeature/web-sdk@$SDK" peerDependencies.@openfeature/core)")
+          echo "Installing @openfeature/web-sdk@$SDK and @openfeature/core@$CORE"
+          npm install --no-save --no-audit --no-fund "@openfeature/web-sdk@$SDK" "@openfeature/core@$CORE"
+          # Fail if npm resolved something else, otherwise this job would quietly test the wrong versions.
+          for pkg in "web-sdk:$SDK" "core:$CORE"; do
+            name=${pkg%%:*}; want=${pkg#*:}
+            got=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@openfeature/$name/package.json')).version")
+            [ "$got" = "$want" ] || { echo "Expected @openfeature/$name@$want, got $got"; exit 1; }
+          done
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
   test-build-and-publish:
     runs-on: ubuntu-latest
     permissions:

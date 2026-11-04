@@ -67,6 +67,12 @@ npm run lint:fix   # fix what can be fixed automatically
 
 Don't edit `src/version.ts` by hand. Release Please updates it with each release.
 
+### OpenFeature SDK version
+
+`@openfeature/web-sdk` is a peer dependency, so the provider runs against whichever version the app installs. The lowest version we support is the bottom of its `peerDependencies` range in `package.json`. Day to day we build and test against the newer version in `devDependencies`, and the `test-lowest-sdk` CI job builds and tests against the lowest one.
+
+If that job fails, the change needs something from a newer SDK. Raise the `peerDependencies` range to the lowest version that has it.
+
 ## Making a pull request
 
 1. Fork the repository and create a branch from `main`.

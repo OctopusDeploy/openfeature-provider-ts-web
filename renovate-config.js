@@ -11,13 +11,9 @@ module.exports = {
 
   packageRules: [
     {
-      // OpenFeature SDK updates are worth releasing as a minor version, even if not breaking
-      matchPackageNames: ["@openfeature/web-sdk"],
-      matchUpdateTypes: ["minor", "patch"],
-      semanticCommitType: "feat",
-    },
-    {
-      // Dev-time dependencies don't ship in the published package.
+      // Dev-time dependencies don't ship in the published package. That includes the OpenFeature
+      // SDK's devDependencies entry: it's a peer dependency, so a bump only changes what we build and
+      // test against.
       matchDepTypes: ["devDependencies"],
       semanticCommitType: "chore",
     },
