@@ -46,12 +46,15 @@ git submodule update --init
 npm ci
 npm test
 npm run build
+npm run lint:package
 npm run test:package
 ```
 
 The specification fixtures run as part of `src/specificationTests`.
 
 The package ships both ESM and CommonJS builds, so relative imports in `src` must end in `.js` (for example `import { ProductMetadata } from "./productMetadata.js"`). Native Node ESM needs the extension, but `tsc` and the tests don't, so a missing one only shows up when a consumer loads the ESM build. Linting flags it, and `npm run test:package` catches it by packing the package and loading it with both `require()` and `import`.
+
+`npm run lint:package` checks the packed package's `package.json` and type declarations with [publint](https://publint.dev) and [Are the Types Wrong?](https://github.com/arethetypeswrong/arethetypeswrong.github.io). Run it after changing `exports`, the build output, or the `files` list.
 
 ### Linting and formatting
 
