@@ -255,6 +255,10 @@ export function analyseApiSurface(entryFile: string, tsconfigPath: string): ApiS
         signature.typeParameters?.forEach((t) => walkType(t, exportName, seen));
         signature.getParameters().forEach((p) => walkType(checker.getTypeOfSymbol(p), exportName, seen));
         walkType(signature.getReturnType(), exportName, seen);
+
+        // A type guard's return type is just `boolean`, so the guarded type has to be read from the predicate.
+        const predicate = checker.getTypePredicateOfSignature(signature);
+        if (predicate?.type) walkType(predicate.type, exportName, seen);
     }
 
     function walkType(type: ts.Type, exportName: string, seen: Set<ts.Type>, isAlias = false): void {

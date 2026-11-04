@@ -11,6 +11,7 @@ describe("analyseApiSurface", () => {
         expect(leaks).toEqual([
             "LeakyProvider exposes HiddenResult (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
             "LeakyProvider exposes HiddenBranch (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
+            "LeakyProvider exposes HiddenGuarded (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
         ]);
     });
 

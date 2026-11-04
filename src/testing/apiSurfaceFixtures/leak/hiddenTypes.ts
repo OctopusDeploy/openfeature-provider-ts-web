@@ -5,3 +5,7 @@ export interface HiddenResult {
 export interface HiddenBranch {
     branch: string;
 }
+
+export interface HiddenGuarded {
+    guarded: string;
+}
