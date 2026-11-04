@@ -301,6 +301,26 @@ describe("A context change while initialization is still fetching", () => {
         expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
     });
 
+    // Judging the context change before the fetch settles would briefly move the provider to ERROR, and announce an
+    // outage on a start that succeeded.
+    test("Emits no PROVIDER_ERROR on the way when the fetch succeeds", async () => {
+        const onError = jest.fn();
+        OpenFeature.addHandler(ProviderEvents.Error, onError);
+
+        try {
+            const initialized = OpenFeature.setProviderAndWait(buildProvider());
+            const contextChanged = OpenFeature.setContext({ username: "admin" });
+
+            finishFetch({ evaluator: new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()) });
+            await initialized;
+            await contextChanged;
+
+            expect(onError).not.toHaveBeenCalled();
+        } finally {
+            OpenFeature.removeHandler(ProviderEvents.Error, onError);
+        }
+    });
+
     test("Ends ERROR once the fetch fails", async () => {
         const initialized = OpenFeature.setProviderAndWait(buildProvider());
         const contextChanged = OpenFeature.setContext({ username: "admin" });
