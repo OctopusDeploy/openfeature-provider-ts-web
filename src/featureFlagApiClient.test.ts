@@ -1,21 +1,32 @@
+import { EvaluationCache, RawEvaluationResponse } from "./evaluationCache.js";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
-import { LocalStorageCache } from "./localStorageCache.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { silentLogger } from "./testing/logger.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
-import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
+import { ProviderNotReadyError } from "@openfeature/web-sdk";
 
 axiosRetry(axios, { retries: 3 });
 
 const testProvider = { name: "test-provider", version: "1.2.3" };
 
+class FakeCache implements EvaluationCache {
+    written: RawEvaluationResponse | undefined;
+
+    constructor(private readonly entry?: RawEvaluationResponse) {}
+
+    read(): RawEvaluationResponse | undefined {
+        return this.entry;
+    }
+
+    write(raw: RawEvaluationResponse): void {
+        this.written = raw;
+    }
+}
+
 describe("FeatureFlagApiClient", () => {
     let mockAdapter: MockAdapter;
-    beforeEach(() => {
-        localStorage.clear();
-    });
 
     beforeAll(() => {
         mockAdapter = new MockAdapter(axios);
@@ -32,7 +43,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
             provider: testProvider,
-            cache: new LocalStorageCache(silentLogger()),
+            cache: new FakeCache(),
         });
 
         await client.getEvaluator();
@@ -48,7 +59,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
             provider: testProvider,
-            cache: new LocalStorageCache(silentLogger()),
+            cache: new FakeCache(),
             releaseVersionOverride,
         });
 
@@ -64,7 +75,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("MyProduct"),
             logger: silentLogger(),
             provider: testProvider,
-            cache: new LocalStorageCache(silentLogger()),
+            cache: new FakeCache(),
         });
 
         await client.getEvaluator();
@@ -79,7 +90,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
             logger: silentLogger(),
             provider: testProvider,
-            cache: new LocalStorageCache(silentLogger()),
+            cache: new FakeCache(),
         });
 
         await client.getEvaluator();
@@ -94,7 +105,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("My Product"),
             logger: silentLogger(),
             provider: testProvider,
-            cache: new LocalStorageCache(silentLogger()),
+            cache: new FakeCache(),
         });
 
         await client.getEvaluator();
@@ -102,72 +113,33 @@ describe("FeatureFlagApiClient", () => {
         expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual("MyProduct test-provider/1.2.3");
     });
 
-    describe("the manifest cache", () => {
-        const mockedLocalStorage = global.localStorage;
+    describe("the evaluation cache", () => {
+        const cachedEntry: RawEvaluationResponse = {
+            evaluations: [{ slug: "cached-feature", value: true, reason: "The flag is enabled for this environment." }],
+            contentHash: "cached-hash",
+        };
 
-        beforeEach(() => {
-            const store = new Map<string, string>();
-            global.localStorage = {
-                getItem: (key) => (store.has(key) ? store.get(key)! : null),
-                setItem: (key, value) => {
-                    store.set(key, String(value));
-                },
-                removeItem: (key) => {
-                    store.delete(key);
-                },
-                clear: () => {
-                    store.clear();
-                },
-                key: (index) => Array.from(store.keys())[index] ?? null,
-                get length() {
-                    return store.size;
-                },
-            };
-        });
-
-        // The store above stands in for the jest-localstorage-mock global, which resetMocks strips of its
-        // implementation before every test. Put it back so nothing added after this block inherits it.
-        afterEach(() => {
-            global.localStorage = mockedLocalStorage;
-        });
-
-        function newClient(logger: Logger = silentLogger()): FeatureFlagApiClient {
+        function newClient(cache: EvaluationCache): FeatureFlagApiClient {
             return new FeatureFlagApiClient({
                 clientIdentifier: "a.b.c",
                 productMetadata: new ProductMetadata("TestClient"),
-                logger,
+                logger: silentLogger(),
                 provider: testProvider,
-                cache: new LocalStorageCache(logger),
+                cache,
             });
         }
 
-        function cachedManifest(): unknown {
-            return JSON.parse(localStorage.getItem("octopus-openfeature-ts-feature-manifest")!);
-        }
-
-        function cacheEvaluationFor(slug: string): void {
-            localStorage.setItem(
-                "octopus-openfeature-ts-feature-manifest",
-                JSON.stringify({
-                    cacheSchemaVersion: 3,
-                    contents: {
-                        evaluations: [{ slug, value: true, reason: "The flag is enabled for this environment." }],
-                        contentHash: "cached-hash",
-                    },
-                })
-            );
-        }
-
-        test("Writes a cache entry after a successful fetch", async () => {
+        test("Writes the fetched evaluations to the cache", async () => {
             mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
                 ContentHash: "aGFzaA==",
             });
+            const cache = new FakeCache();
 
-            await newClient().getEvaluator();
+            await newClient(cache).getEvaluator();
 
-            expect(cachedManifest()).toEqual({
-                cacheSchemaVersion: 3,
-                contents: { evaluations: [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], contentHash: "aGFzaA==" },
+            expect(cache.written).toEqual({
+                evaluations: [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }],
+                contentHash: "aGFzaA==",
             });
         });
 
@@ -176,114 +148,37 @@ describe("FeatureFlagApiClient", () => {
                 ContentHash: "aGFzaA==",
             });
 
-            const context = await newClient().getEvaluator();
+            const context = await newClient(new FakeCache(cachedEntry)).getEvaluator();
 
             expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
         });
 
-        test("Falls back to a cached entry when the response has no ContentHash header", async () => {
-            mockAdapter.onGet().reply(200, []);
-            cacheEvaluationFor("cached-feature");
+        describe.each([
+            ["the response has no ContentHash header", () => mockAdapter.onGet().reply(200, [])],
+            ["the server cannot be reached", () => mockAdapter.onGet().networkError()],
+            ["the flags are not found", () => mockAdapter.onGet().reply(404)],
+            ["the server keeps failing", () => mockAdapter.onGet().reply(500)],
+        ])("when %s", (_, arrangeResponse) => {
+            beforeEach(() => arrangeResponse());
 
-            const context = await newClient().getEvaluator();
+            test("Falls back to the cached entry", async () => {
+                const context = await newClient(new FakeCache(cachedEntry)).getEvaluator();
 
-            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-        });
-
-        test("Falls back to a cached entry when the server cannot be reached", async () => {
-            mockAdapter.onGet().networkError();
-            cacheEvaluationFor("cached-feature");
-
-            const context = await newClient().getEvaluator();
-
-            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-        });
-
-        test("Falls back to a cached entry when the flags are not found", async () => {
-            mockAdapter.onGet().reply(404);
-            cacheEvaluationFor("cached-feature");
-
-            const context = await newClient().getEvaluator();
-
-            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-        });
-
-        test("Falls back to a cached entry when the server keeps failing", async () => {
-            mockAdapter.onGet().reply(500);
-            cacheEvaluationFor("cached-feature");
-
-            const context = await newClient().getEvaluator();
-
-            expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-        });
-
-        test("Leaves the cache entry in place when the fetch fails", async () => {
-            mockAdapter.onGet().networkError();
-            cacheEvaluationFor("cached-feature");
-
-            await newClient().getEvaluator();
-
-            expect(cachedManifest()).toMatchObject({ cacheSchemaVersion: 3, contents: { contentHash: "cached-hash" } });
-        });
-
-        // The warning is the only trace a failed write leaves: this start succeeds either way, and what was really
-        // lost is the fallback on the next page load.
-        test("Still resolves when the evaluations cannot be cached, warning that they were not", async () => {
-            mockAdapter.onGet().reply(200, [{ slug: "my-feature", value: true, reason: "The flag is enabled for this environment." }], {
-                ContentHash: "aGFzaA==",
-            });
-            global.localStorage.setItem = () => {
-                throw new Error("QuotaExceededError");
-            };
-            const logger = silentLogger();
-
-            const context = await newClient(logger).getEvaluator();
-
-            expect(context.evaluate("my-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
-            expect(logger.warn).toHaveBeenCalledTimes(1);
-        });
-
-        test("Removes a cache entry from a previous schema version, treating it as a miss", async () => {
-            mockAdapter.onGet().reply(200, []);
-            localStorage.setItem(
-                "octopus-openfeature-ts-feature-manifest",
-                JSON.stringify({ schemaVersion: "v2", contents: { evaluations: [], contentHash: "cached-hash" } })
-            );
-
-            await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
-
-            expect(localStorage.getItem("octopus-openfeature-ts-feature-manifest")).toBeNull();
-        });
-
-        // An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which
-        // evaluates the same as a misspelled slug. Rejecting instead keeps an outage distinguishable from a typo.
-        describe("when there is nothing to evaluate against", () => {
-            test.each([
-                ["the server cannot be reached", () => mockAdapter.onGet().networkError()],
-                ["the server keeps failing", () => mockAdapter.onGet().reply(500)],
-                ["the flags are not found", () => mockAdapter.onGet().reply(404)],
-                ["the response has no ContentHash header", () => mockAdapter.onGet().reply(200, [])],
-            ])("Rejects when %s and there is no cache entry", async (_, arrangeResponse) => {
-                arrangeResponse();
-
-                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+                expect(context.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
             });
 
-            test("Rejects when the cache entry is not valid JSON", async () => {
-                mockAdapter.onGet().networkError();
-                localStorage.setItem("octopus-openfeature-ts-feature-manifest", "not json");
+            test("Leaves the cache as it is", async () => {
+                const cache = new FakeCache(cachedEntry);
 
-                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+                await newClient(cache).getEvaluator();
+
+                expect(cache.written).toBeUndefined();
             });
 
-            test("Rejects when the cache entry is from a previous schema version", async () => {
-                mockAdapter.onGet().networkError();
-                localStorage.setItem(
-                    "octopus-openfeature-ts-feature-manifest",
-                    JSON.stringify({ schemaVersion: "v2", contents: { evaluations: [], contentHash: "cached-hash" } })
-                );
-
-                await expect(newClient().getEvaluator()).rejects.toThrow(ProviderNotReadyError);
+            // An evaluator holding an empty list of evaluations answers every lookup with FlagNotFoundError, which
+            // evaluates the same as a misspelled slug. Rejecting instead keeps an outage distinguishable from a typo.
+            test("Rejects when there is no cached entry", async () => {
+                await expect(newClient(new FakeCache()).getEvaluator()).rejects.toThrow(ProviderNotReadyError);
             });
         });
     });
