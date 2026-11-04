@@ -1,6 +1,6 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
 import { ProductMetadata } from "./productMetadata.js";
-import { ErrorCode, Logger, OpenFeature, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
+import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { silentLogger } from "./testing/logger.js";
@@ -180,53 +180,66 @@ describe("Unsuccessful boolean evaluations surface the OpenFeature error contrac
     });
 });
 
-// Failing initialization would take the page load with it, so the failure is reported through the evaluations
-// instead: an evaluator we never got means every evaluation reports PROVIDER_NOT_READY.
+// Without evaluations we cannot tell an unknown slug from one we never received, so initialization fails: the SDK moves
+// the provider to ERROR, and every evaluation reports PROVIDER_NOT_READY rather than FLAG_NOT_FOUND.
 describe("A provider that retrieved no evaluations", () => {
-    let logger: Logger;
+    const unavailable = new ProviderNotReadyError("Unable to retrieve feature flags, and no cached evaluations are available.");
 
     const buildProvider = () =>
         new OctopusFeatureProvider({
             clientIdentifier: "test",
             productMetadata: new ProductMetadata("TestClient"),
-            logger,
+            logger: silentLogger(),
         });
+
+    const setProviderAndWaitForFailure = async () => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBeDefined();
+    };
 
     beforeEach(async () => {
         await OpenFeature.setContext({});
-        logger = silentLogger();
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
-            .fn()
-            .mockRejectedValue(new ProviderNotReadyError("Unable to retrieve feature flags, and no cached evaluations are available."));
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(unavailable);
     });
 
     afterEach(async () => {
         await OpenFeature.clearProviders();
     });
 
-    test("Completes initialization rather than failing the caller that set it", async () => {
-        await expect(OpenFeature.setProviderAndWait(buildProvider())).resolves.toBeUndefined();
+    test("Fails initialization, so the caller that set it learns the flags are unavailable", async () => {
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBe(unavailable);
     });
 
-    // Nothing else reports this failure, so the log has to carry the reason we could not evaluate.
-    test("Logs why no flag will evaluate, and what stopped it", async () => {
-        await OpenFeature.setProviderAndWait(buildProvider());
+    test("Moves the provider to ERROR", async () => {
+        await setProviderAndWaitForFailure();
 
-        expect(logger.error).toHaveBeenCalledTimes(1);
-        expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("PROVIDER_NOT_READY"), expect.any(ProviderNotReadyError));
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
     });
 
-    test("Contains an unexpected failure just the same, rather than passing it to the caller", async () => {
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(new TypeError("Cannot read properties of undefined"));
+    test("Emits PROVIDER_ERROR with the reason", async () => {
+        const onError = jest.fn();
+        OpenFeature.getClient().addHandler(ProviderEvents.Error, onError);
 
-        await expect(OpenFeature.setProviderAndWait(buildProvider())).resolves.toBeUndefined();
+        try {
+            await setProviderAndWaitForFailure();
+
+            expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: unavailable.message }));
+        } finally {
+            OpenFeature.getClient().removeHandler(ProviderEvents.Error, onError);
+        }
+    });
+
+    test("Passes an unexpected failure to the caller too", async () => {
+        const unexpected = new TypeError("Cannot read properties of undefined");
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(unexpected);
+
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBe(unexpected);
 
         expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
     });
 
     test("Reports PROVIDER_NOT_READY rather than passing an outage off as an unrecognised slug", async () => {
-        await OpenFeature.setProviderAndWait(buildProvider());
+        await setProviderAndWaitForFailure();
 
         const result = OpenFeature.getClient().getBooleanDetails("feature-a", false);
 
@@ -238,19 +251,103 @@ describe("A provider that retrieved no evaluations", () => {
         ["number", (flagKey: string) => OpenFeature.getClient().getNumberDetails(flagKey, 0)],
         ["object", (flagKey: string) => OpenFeature.getClient().getObjectDetails(flagKey, {})],
     ])("Reports PROVIDER_NOT_READY for %s evaluations too", async (_, evaluate) => {
-        await OpenFeature.setProviderAndWait(buildProvider());
+        await setProviderAndWaitForFailure();
 
         expect(evaluate("feature-a").errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
     });
 
-    // web-sdk returns its provider to READY after any successful context change, so the status alone would say the
-    // flags had arrived. The evaluations keep reporting the truth.
-    test("Keeps reporting PROVIDER_NOT_READY after a context change", async () => {
-        await OpenFeature.setProviderAndWait(buildProvider());
+    // web-sdk returns a provider to READY after any context change that resolves, which would announce flags that
+    // never arrived.
+    test("Stays in ERROR after a context change, without failing the caller that changed it", async () => {
+        await setProviderAndWaitForFailure();
 
-        await OpenFeature.setContext({ username: "admin" });
+        await expect(OpenFeature.setContext({ username: "admin" })).resolves.toBeUndefined();
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
+        expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+
+    // The SDK initializes the same provider again when it is set after being removed.
+    test("Does not keep evaluations from an earlier start when initialized again", async () => {
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+            .fn()
+            .mockResolvedValueOnce(new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()))
+            .mockRejectedValueOnce(unavailable);
+        const provider = buildProvider();
+        await OpenFeature.setProviderAndWait(provider);
+        await OpenFeature.clearProviders();
+
+        await expect(OpenFeature.setProviderAndWait(provider)).rejects.toBe(unavailable);
 
         expect(OpenFeature.getClient().getBooleanDetails("feature-a", false).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
+    });
+});
+
+describe("A context change while initialization is still fetching", () => {
+    let finishFetch: (outcome: { evaluator?: FeatureFlagEvaluator; error?: Error }) => void;
+
+    const buildProvider = () =>
+        new OctopusFeatureProvider({
+            clientIdentifier: "test",
+            productMetadata: new ProductMetadata("TestClient"),
+            logger: silentLogger(),
+        });
+
+    beforeEach(async () => {
+        await OpenFeature.setContext({});
+        jest.mocked(FeatureFlagApiClient).mockClear();
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockImplementation(
+            () =>
+                new Promise<FeatureFlagEvaluator>((resolve, reject) => {
+                    finishFetch = ({ evaluator, error }) => (evaluator ? resolve(evaluator) : reject(error));
+                })
+        );
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+    });
+
+    test("Ends READY once the fetch succeeds", async () => {
+        const initialized = OpenFeature.setProviderAndWait(buildProvider());
+        const contextChanged = OpenFeature.setContext({ username: "admin" });
+
+        finishFetch({ evaluator: new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()) });
+        await initialized;
+        await contextChanged;
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
+    });
+
+    // Judging the context change before the fetch settles would briefly move the provider to ERROR, and announce an
+    // outage on a start that succeeded.
+    test("Emits no PROVIDER_ERROR on the way when the fetch succeeds", async () => {
+        const onError = jest.fn();
+        OpenFeature.addHandler(ProviderEvents.Error, onError);
+
+        try {
+            const initialized = OpenFeature.setProviderAndWait(buildProvider());
+            const contextChanged = OpenFeature.setContext({ username: "admin" });
+
+            finishFetch({ evaluator: new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()) });
+            await initialized;
+            await contextChanged;
+
+            expect(onError).not.toHaveBeenCalled();
+        } finally {
+            OpenFeature.removeHandler(ProviderEvents.Error, onError);
+        }
+    });
+
+    test("Ends ERROR once the fetch fails", async () => {
+        const initialized = OpenFeature.setProviderAndWait(buildProvider());
+        const contextChanged = OpenFeature.setContext({ username: "admin" });
+
+        finishFetch({ error: new ProviderNotReadyError("unavailable") });
+        await expect(initialized).rejects.toBeDefined();
+        await contextChanged;
+
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
     });
 });
 

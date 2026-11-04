@@ -1,26 +1,15 @@
-import {
-    DefaultLogger,
-    EvaluationContext,
-    FlagNotFoundError,
-    JsonValue,
-    Logger,
-    Provider,
-    ProviderNotReadyError,
-    ResolutionDetails,
-    TypeMismatchError,
-} from "@openfeature/web-sdk";
+import { EvaluationContext, FlagNotFoundError, JsonValue, Provider, ProviderNotReadyError, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 
 export class OctopusFeatureProvider implements Provider {
-    private readonly logger: Logger;
     private client: FeatureFlagApiClient;
     private evaluator: FeatureFlagEvaluator | undefined;
+    private initialization: Promise<void> | undefined;
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
-        this.logger = configuration.logger ?? new DefaultLogger();
         this.client = new FeatureFlagApiClient(configuration);
         this.context = {};
     }
@@ -38,15 +27,29 @@ export class OctopusFeatureProvider implements Provider {
             this.context = context;
         }
 
-        try {
-            this.evaluator = await this.client.getEvaluator();
-        } catch (e) {
-            this.logger.error("Octopus feature flags are unavailable, and every evaluation will report PROVIDER_NOT_READY.", e);
-        }
+        // The SDK initializes a provider again when it is set after being removed. Evaluations from the earlier start
+        // must not outlive a fetch that fails this time.
+        this.evaluator = undefined;
+
+        this.initialization = this.client.getEvaluator().then((evaluator) => {
+            this.evaluator = evaluator;
+        });
+
+        // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
+        // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND.
+        await this.initialization;
     }
 
     async onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void> {
         this.context = newContext;
+
+        // A context change can arrive while initialization is still fetching. Let it settle so we judge the outcome,
+        // not the moment; its own failure has already been reported through initialize.
+        await this.initialization?.catch(() => undefined);
+
+        // web-sdk moves a provider to READY after any context change that resolves, which would announce flags that
+        // never arrived. Rejecting keeps the provider in ERROR.
+        this.requireEvaluator();
     }
 
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean> {

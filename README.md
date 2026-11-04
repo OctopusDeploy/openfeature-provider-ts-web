@@ -31,7 +31,11 @@ const provider = new OctopusFeatureProvider({
 });
 
 await OpenFeature.setContext({ userid: "bob@octopus.com" });
-await OpenFeature.setProviderAndWait(provider);
+try {
+  await OpenFeature.setProviderAndWait(provider);
+} catch (error) {
+  console.error("Failed to initialize provider:", error);
+}
 
 const client = OpenFeature.getClient();
 
@@ -39,3 +43,5 @@ if (client.getBooleanValue("to-the-moon-feature", false, {})) {
   console.log("🚀🚀🚀");
 }
 ```
+
+If the provider cannot retrieve feature flags and has no cached evaluations, `setProviderAndWait` rejects; catch the rejection if your application should start anyway, and every evaluation will return your default value.
