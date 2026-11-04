@@ -37,7 +37,7 @@ git submodule update --init
 
 ### Prerequisites
 
-- Node.js 24 (the version CI uses)
+- Node.js 26 (the version CI uses)
 - npm
 
 ### Commands
