@@ -32,7 +32,7 @@ export class LocalStorageCache implements EvaluationCache {
             // The cached entry is from an old cache schema version.
             localStorage.removeItem(localStorageKey);
         } catch (e) {
-            this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
+            this.logger.warn("Failed to read cached feature flag evaluations.", e);
         }
 
         return undefined;
@@ -45,7 +45,7 @@ export class LocalStorageCache implements EvaluationCache {
         } catch (e) {
             // A full or unavailable local storage costs us the fallback on the next page load, but the evaluations we
             // just fetched are still good, so this must not fail initialization.
-            this.logger.warn(`Failed to cache feature flag evaluations: ${JSON.stringify(e)}`);
+            this.logger.warn("Failed to cache feature flag evaluations.", e);
         }
     }
 }

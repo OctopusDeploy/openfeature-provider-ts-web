@@ -69,23 +69,25 @@ describe("LocalStorageCache", () => {
     // The warning is the only trace a failed write leaves: this start succeeds either way, and what was really
     // lost is the fallback on the next page load.
     test("Does not throw when the entry cannot be written, warning that it was not", () => {
+        const error = new Error("QuotaExceededError");
         global.localStorage.setItem = () => {
-            throw new Error("QuotaExceededError");
+            throw error;
         };
         const logger = silentLogger();
 
         expect(() => new LocalStorageCache(logger).write(raw)).not.toThrow();
-        expect(logger.warn).toHaveBeenCalledTimes(1);
+        expect(logger.warn).toHaveBeenCalledWith(expect.any(String), error);
     });
 
     // Browsers throw a SecurityError on access when storage is blocked, such as in a third-party iframe.
     test("Reads nothing when local storage cannot be read, warning that it could not", () => {
+        const error = new Error("SecurityError");
         global.localStorage.getItem = () => {
-            throw new Error("SecurityError");
+            throw error;
         };
         const logger = silentLogger();
 
         expect(new LocalStorageCache(logger).read()).toBeUndefined();
-        expect(logger.warn).toHaveBeenCalledTimes(1);
+        expect(logger.warn).toHaveBeenCalledWith(expect.any(String), error);
     });
 });
