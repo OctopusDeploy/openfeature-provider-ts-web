@@ -10,7 +10,14 @@ export class OctopusFeatureProvider implements Provider {
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
-        this.client = new FeatureFlagApiClient(configuration);
+        this.logger = configuration.logger ?? new DefaultLogger();
+        this.client = new FeatureFlagApiClient({
+            clientIdentifier: configuration.clientIdentifier,
+            productMetadata: configuration.productMetadata,
+            serverUri: configuration.serverUri,
+            releaseVersionOverride: configuration.releaseVersionOverride,
+            logger: this.logger,
+        });
         this.context = {};
     }
 

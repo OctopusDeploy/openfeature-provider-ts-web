@@ -1,9 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
-import { DefaultLogger, Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
+import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
 import { EvaluationResponse } from "./evaluationResponse.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
-import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
@@ -21,6 +20,20 @@ interface EvaluationCacheEntry {
     contents: RawEvaluationResponse;
 }
 
+/**
+ * Kept separate from each provider's public configuration so a provider can change its own API without changing
+ * the client's.
+ *
+ * @internal
+ */
+export interface FeatureFlagApiClientOptions {
+    clientIdentifier: string;
+    productMetadata: ProductMetadata;
+    serverUri?: string;
+    releaseVersionOverride?: string;
+    logger: Logger;
+}
+
 /** @internal */
 export class FeatureFlagApiClient {
     private readonly clientIdentifier: string;
@@ -31,12 +44,12 @@ export class FeatureFlagApiClient {
     private readonly releaseVersionOverride?: string;
     private readonly productMetadata: ProductMetadata;
 
-    constructor(configuration: OctopusFeatureConfiguration) {
-        this.clientIdentifier = configuration.clientIdentifier;
-        this.serverUri = configuration.serverUri ? configuration.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
-        this.releaseVersionOverride = configuration.releaseVersionOverride;
-        this.productMetadata = configuration.productMetadata;
-        this.logger = configuration.logger ?? new DefaultLogger();
+    constructor(options: FeatureFlagApiClientOptions) {
+        this.clientIdentifier = options.clientIdentifier;
+        this.serverUri = options.serverUri ? options.serverUri.replace(/\/$/, "") : "https://features.octopus.com";
+        this.releaseVersionOverride = options.releaseVersionOverride;
+        this.productMetadata = options.productMetadata;
+        this.logger = options.logger;
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
             retries: 3,

@@ -28,6 +28,7 @@ describe("FeatureFlagApiClient", () => {
         const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
+            logger: silentLogger(),
         });
 
         await client.getEvaluator();
@@ -41,6 +42,7 @@ describe("FeatureFlagApiClient", () => {
         const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
+            logger: silentLogger(),
             releaseVersionOverride,
         });
 
@@ -54,6 +56,7 @@ describe("FeatureFlagApiClient", () => {
         const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct"),
+            logger: silentLogger(),
         });
 
         await client.getEvaluator();
@@ -66,6 +69,7 @@ describe("FeatureFlagApiClient", () => {
         const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
+            logger: silentLogger(),
         });
 
         await client.getEvaluator();
@@ -78,6 +82,7 @@ describe("FeatureFlagApiClient", () => {
         const client = new FeatureFlagApiClient({
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("My Product"),
+            logger: silentLogger(),
         });
 
         await client.getEvaluator();
