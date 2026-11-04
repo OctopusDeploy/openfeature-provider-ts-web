@@ -2,6 +2,7 @@ import { EvaluationContext, FlagNotFoundError, JsonValue, Provider, ProviderNotR
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
+import { PROVIDER_VERSION } from "./version.js";
 
 export class OctopusFeatureProvider implements Provider {
     private client: FeatureFlagApiClient;
@@ -17,6 +18,7 @@ export class OctopusFeatureProvider implements Provider {
             serverUri: configuration.serverUri,
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger: this.logger,
+            provider: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION },
         });
         this.context = {};
     }

@@ -1,13 +1,14 @@
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { silentLogger } from "./testing/logger.js";
-import { PROVIDER_VERSION } from "./version.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
 import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
 
 axiosRetry(axios, { retries: 3 });
+
+const testProvider = { name: "test-provider", version: "1.2.3" };
 
 describe("FeatureFlagApiClient", () => {
     let mockAdapter: MockAdapter;
@@ -29,6 +30,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
+            provider: testProvider,
         });
 
         await client.getEvaluator();
@@ -43,6 +45,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
+            provider: testProvider,
             releaseVersionOverride,
         });
 
@@ -57,11 +60,12 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct"),
             logger: silentLogger(),
+            provider: testProvider,
         });
 
         await client.getEvaluator();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual("MyProduct test-provider/1.2.3");
     });
 
     test("Should include X-Octopus-Client header with product name and version", async () => {
@@ -70,11 +74,12 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
             logger: silentLogger(),
+            provider: testProvider,
         });
 
         await client.getEvaluator();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct/2024.1.0 openfeature-provider-ts-web/${PROVIDER_VERSION}`);
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual("MyProduct/2024.1.0 test-provider/1.2.3");
     });
 
     test("Should strip unsupported chars from product name in X-Octopus-Client header", async () => {
@@ -83,11 +88,12 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("My Product"),
             logger: silentLogger(),
+            provider: testProvider,
         });
 
         await client.getEvaluator();
 
-        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual(`MyProduct openfeature-provider-ts-web/${PROVIDER_VERSION}`);
+        expect(mockAdapter.history.get[0].headers!["X-Octopus-Client"]).toEqual("MyProduct test-provider/1.2.3");
     });
 
     describe("the manifest cache", () => {
@@ -120,7 +126,7 @@ describe("FeatureFlagApiClient", () => {
         });
 
         function newClient(logger: Logger = silentLogger()): FeatureFlagApiClient {
-            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger });
+            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger, provider: testProvider });
         }
 
         function cachedManifest(): unknown {

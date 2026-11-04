@@ -6,7 +6,6 @@ import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
-import { PROVIDER_VERSION } from "./version.js";
 
 interface RawEvaluationResponse {
     // Unparsed, exactly as received from the v4 endpoint (or retrieved from a cache entry).
@@ -32,6 +31,8 @@ export interface FeatureFlagApiClientOptions {
     serverUri?: string;
     releaseVersionOverride?: string;
     logger: Logger;
+    /** Identifies the provider package in the X-Octopus-Client header, e.g. openfeature-provider-ts-web/5.0.2. */
+    provider: { name: string; version: string };
 }
 
 /** @internal */
@@ -43,6 +44,7 @@ export class FeatureFlagApiClient {
     private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
     private readonly releaseVersionOverride?: string;
     private readonly productMetadata: ProductMetadata;
+    private readonly provider: { name: string; version: string };
 
     constructor(options: FeatureFlagApiClientOptions) {
         this.clientIdentifier = options.clientIdentifier;
@@ -50,6 +52,7 @@ export class FeatureFlagApiClient {
         this.releaseVersionOverride = options.releaseVersionOverride;
         this.productMetadata = options.productMetadata;
         this.logger = options.logger;
+        this.provider = options.provider;
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
             retries: 3,
@@ -181,7 +184,7 @@ export class FeatureFlagApiClient {
         if (this.productMetadata.version) {
             value += `/${this.productMetadata.version}`;
         }
-        return `${value} openfeature-provider-ts-web/${PROVIDER_VERSION}`;
+        return `${value} ${this.provider.name}/${this.provider.version}`;
     }
 }
 
