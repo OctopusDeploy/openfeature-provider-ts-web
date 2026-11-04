@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`public API of the web entry point matches the committed snapshot 1`] = `
+"interface OctopusFeatureConfiguration
+    clientIdentifier: string
+    logger?: Logger
+    productMetadata: ProductMetadata
+    releaseVersionOverride?: string
+    serverUri?: string
+
+class OctopusFeatureProvider implements Provider
+    constructor(configuration: OctopusFeatureConfiguration): OctopusFeatureProvider
+    hooks: never[]
+    initialize(context?: EvaluationContext | undefined): Promise<void>
+    metadata: { name: string; }
+    onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void>
+    resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean>
+    resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number>
+    resolveObjectEvaluation<U extends JsonValue>(flagKey: string, defaultValue: U): ResolutionDetails<U>
+    resolveStringEvaluation(flagKey: string, defaultValue: string): ResolutionDetails<string>
+    readonly runsOn: "client"
+
+class ProductMetadata
+    constructor(name: string): ProductMetadata
+    constructor(name: string, version: string): ProductMetadata
+    readonly name: string
+    readonly version: string | undefined
+"
+`;
