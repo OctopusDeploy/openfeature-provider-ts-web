@@ -77,4 +77,15 @@ describe("LocalStorageCache", () => {
         expect(() => new LocalStorageCache(logger).write(raw)).not.toThrow();
         expect(logger.warn).toHaveBeenCalledTimes(1);
     });
+
+    // Browsers throw a SecurityError on access when storage is blocked, such as in a third-party iframe.
+    test("Reads nothing when local storage cannot be read, warning that it could not", () => {
+        global.localStorage.getItem = () => {
+            throw new Error("SecurityError");
+        };
+        const logger = silentLogger();
+
+        expect(new LocalStorageCache(logger).read()).toBeUndefined();
+        expect(logger.warn).toHaveBeenCalledTimes(1);
+    });
 });

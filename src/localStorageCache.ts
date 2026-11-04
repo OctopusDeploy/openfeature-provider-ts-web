@@ -18,12 +18,12 @@ export class LocalStorageCache implements EvaluationCache {
     }
 
     read(): RawEvaluationResponse | undefined {
-        const rawCache = localStorage.getItem(localStorageKey);
-        if (rawCache === null) {
-            return undefined;
-        }
-
         try {
+            const rawCache = localStorage.getItem(localStorageKey);
+            if (rawCache === null) {
+                return undefined;
+            }
+
             const cacheEntry = JSON.parse(rawCache);
             if (isCurrentCacheEntry(cacheEntry)) {
                 return cacheEntry.contents;

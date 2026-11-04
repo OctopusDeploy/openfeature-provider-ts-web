@@ -14,7 +14,7 @@ export interface RawEvaluationResponse {
  * @internal
  */
 export interface EvaluationCache {
-    /** Returns undefined when there is no usable entry. */
+    /** Must not throw when the entry can't be read: there is just no usable entry, so return undefined. */
     read(): RawEvaluationResponse | undefined;
 
     /** Must not throw when the entry can't be stored: the evaluations just fetched are still good. */

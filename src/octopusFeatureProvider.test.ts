@@ -3,6 +3,7 @@ import { ProductMetadata } from "./productMetadata.js";
 import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
+import { LocalStorageCache } from "./localStorageCache.js";
 import { silentLogger } from "./testing/logger.js";
 import { ClientSideRule } from "./v4/clientSideRule.js";
 import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
@@ -391,4 +392,11 @@ test("Identifies itself to the API client as the web provider", () => {
     expect(FeatureFlagApiClient).toHaveBeenCalledWith(
         expect.objectContaining({ provider: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION } })
     );
+});
+
+// The API client tests run against a fake cache, so this is all that ties web's offline fallback to local storage.
+test("Gives the API client a local storage cache", () => {
+    new OctopusFeatureProvider({ clientIdentifier: "test", productMetadata: new ProductMetadata("TestClient") });
+
+    expect(FeatureFlagApiClient).toHaveBeenCalledWith(expect.objectContaining({ cache: expect.any(LocalStorageCache) }));
 });
