@@ -1,23 +1,12 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
+import { EvaluationCache, RawEvaluationResponse } from "./evaluationCache.js";
 import { EvaluationResponse } from "./evaluationResponse.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
-
-interface RawEvaluationResponse {
-    // Unparsed, exactly as received from the v4 endpoint (or retrieved from a cache entry).
-    evaluations: unknown;
-    contentHash: string;
-}
-
-interface EvaluationCacheEntry {
-    // Note: This counts cache shapes, not endpoint or manifest versions.
-    cacheSchemaVersion: 3;
-    contents: RawEvaluationResponse;
-}
 
 /**
  * Kept separate from each provider's public configuration so a provider can change its own API without changing
@@ -33,6 +22,7 @@ export interface FeatureFlagApiClientOptions {
     logger: Logger;
     /** Identifies the provider package in the X-Octopus-Client header, e.g. openfeature-provider-ts-web/5.0.2. */
     provider: { name: string; version: string };
+    cache: EvaluationCache;
 }
 
 /** @internal */
@@ -41,10 +31,10 @@ export class FeatureFlagApiClient {
     private readonly serverUri: string;
     private readonly logger: Logger;
     private readonly axiosInstance: AxiosInstance;
-    private readonly localStorageKey = "octopus-openfeature-ts-feature-manifest";
     private readonly releaseVersionOverride?: string;
     private readonly productMetadata: ProductMetadata;
     private readonly provider: { name: string; version: string };
+    private readonly cache: EvaluationCache;
 
     constructor(options: FeatureFlagApiClientOptions) {
         this.clientIdentifier = options.clientIdentifier;
@@ -53,6 +43,7 @@ export class FeatureFlagApiClient {
         this.productMetadata = options.productMetadata;
         this.logger = options.logger;
         this.provider = options.provider;
+        this.cache = options.cache;
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
             retries: 3,
@@ -82,54 +73,12 @@ export class FeatureFlagApiClient {
         const raw = await this.fetchEvaluationsFromServer();
 
         if (raw === undefined) {
-            return this.readCachedEvaluations();
+            return this.cache.read();
         }
 
-        this.cacheEvaluations(raw);
+        this.cache.write(raw);
 
         return raw;
-    }
-
-    private cacheEvaluations(raw: RawEvaluationResponse): void {
-        const cacheEntry: EvaluationCacheEntry = { cacheSchemaVersion: 3, contents: raw };
-        try {
-            localStorage.setItem(this.localStorageKey, JSON.stringify(cacheEntry));
-        } catch (e) {
-            // A full or unavailable local storage costs us the fallback on the next page load, but the evaluations we
-            // just fetched are still good, so this must not fail initialization.
-            this.logger.warn(`Failed to cache feature flag evaluations: ${JSON.stringify(e)}`);
-        }
-    }
-
-    private readCachedEvaluations(): RawEvaluationResponse | undefined {
-        const rawCache = localStorage.getItem(this.localStorageKey);
-        if (rawCache === null) {
-            return undefined;
-        }
-
-        try {
-            const cacheEntry = JSON.parse(rawCache);
-            if (this.isCurrentCacheEntry(cacheEntry)) {
-                return cacheEntry.contents;
-            }
-
-            // The cached entry is from an old cache schema version.
-            localStorage.removeItem(this.localStorageKey);
-        } catch (e) {
-            this.logger.warn(`Failed to retrieve feature flags: ${JSON.stringify(e)}`);
-        }
-
-        return undefined;
-    }
-
-    private isCurrentCacheEntry(entry: unknown): entry is EvaluationCacheEntry {
-        const possibleCacheEntry = entry as EvaluationCacheEntry;
-        return (
-            possibleCacheEntry.cacheSchemaVersion === 3 &&
-            possibleCacheEntry.contents !== undefined &&
-            possibleCacheEntry.contents.evaluations !== undefined &&
-            possibleCacheEntry.contents.contentHash !== undefined
-        );
     }
 
     private async fetchEvaluationsFromServer(): Promise<RawEvaluationResponse | undefined> {

@@ -1,4 +1,5 @@
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
+import { LocalStorageCache } from "./localStorageCache.js";
 import { ProductMetadata } from "./productMetadata.js";
 import { silentLogger } from "./testing/logger.js";
 import axios from "axios";
@@ -31,6 +32,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
             provider: testProvider,
+            cache: new LocalStorageCache(silentLogger()),
         });
 
         await client.getEvaluator();
@@ -46,6 +48,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
             provider: testProvider,
+            cache: new LocalStorageCache(silentLogger()),
             releaseVersionOverride,
         });
 
@@ -61,6 +64,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("MyProduct"),
             logger: silentLogger(),
             provider: testProvider,
+            cache: new LocalStorageCache(silentLogger()),
         });
 
         await client.getEvaluator();
@@ -75,6 +79,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
             logger: silentLogger(),
             provider: testProvider,
+            cache: new LocalStorageCache(silentLogger()),
         });
 
         await client.getEvaluator();
@@ -89,6 +94,7 @@ describe("FeatureFlagApiClient", () => {
             productMetadata: new ProductMetadata("My Product"),
             logger: silentLogger(),
             provider: testProvider,
+            cache: new LocalStorageCache(silentLogger()),
         });
 
         await client.getEvaluator();
@@ -126,7 +132,13 @@ describe("FeatureFlagApiClient", () => {
         });
 
         function newClient(logger: Logger = silentLogger()): FeatureFlagApiClient {
-            return new FeatureFlagApiClient({ clientIdentifier: "a.b.c", productMetadata: new ProductMetadata("TestClient"), logger, provider: testProvider });
+            return new FeatureFlagApiClient({
+                clientIdentifier: "a.b.c",
+                productMetadata: new ProductMetadata("TestClient"),
+                logger,
+                provider: testProvider,
+                cache: new LocalStorageCache(logger),
+            });
         }
 
         function cachedManifest(): unknown {
