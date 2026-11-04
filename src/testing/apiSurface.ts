@@ -160,6 +160,23 @@ export function analyseApiSurface(entryFile: string, tsconfigPath: string): ApiS
             }
 
             if (ts.isFunctionLike(member)) {
+                // Parameter properties can only be declared on the implementation, so collect them before skipping it in favour of the overloads.
+                if (ts.isConstructorDeclaration(member)) {
+                    for (const parameter of member.parameters) {
+                        if (!ts.isParameterPropertyDeclaration(parameter, member) || isHidden(parameter)) continue;
+
+                        const type = propertyType(parameter);
+                        roots.push({ type });
+
+                        const parameterName = parameter.name.getText();
+                        const parameterOptional = parameter.questionToken ? "?" : "";
+                        described.push({
+                            key: parameterName,
+                            text: `${modifiersOf(parameter)}${parameterName}${parameterOptional}: ${checker.typeToString(type, undefined, formatFlags)}`,
+                        });
+                    }
+                }
+
                 if (checker.isImplementationOfOverload(member)) continue;
 
                 const signature = checker.getSignatureFromDeclaration(member)!;
@@ -178,22 +195,6 @@ export function analyseApiSurface(entryFile: string, tsconfigPath: string): ApiS
                 const key =
                     ts.isConstructorDeclaration(member) || ts.isConstructSignatureDeclaration(member) || ts.isCallSignatureDeclaration(member) ? "" : name;
                 described.push({ key, text: `${modifiers}${prefix}${checker.signatureToString(signature, undefined, formatFlags)}` });
-
-                if (ts.isConstructorDeclaration(member)) {
-                    for (const parameter of member.parameters) {
-                        if (!ts.isParameterPropertyDeclaration(parameter, member) || isHidden(parameter)) continue;
-
-                        const type = propertyType(parameter);
-                        roots.push({ type });
-
-                        const parameterName = parameter.name.getText();
-                        described.push({
-                            key: parameterName,
-                            text: `${modifiersOf(parameter)}${parameterName}: ${checker.typeToString(type, undefined, formatFlags)}`,
-                        });
-                    }
-                }
-
                 continue;
             }
 

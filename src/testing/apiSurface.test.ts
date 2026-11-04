@@ -16,4 +16,10 @@ describe("analyseApiSurface", () => {
 
         expect(surface).toContain("class Widget (type-only export)");
     });
+
+    it("includes parameter properties declared on an overloaded constructor", () => {
+        const { surface } = analyseApiSurface(fixture("overloadedConstructor"), tsconfig);
+
+        expect(surface).toContain("    readonly extra?: string\n    readonly name: string\n");
+    });
 });
