@@ -1,5 +1,34 @@
 # Changelog
 
+## [6.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.2...v6.0.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* fail initialization when feature flags cannot be retrieved and none are cached ([#180](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/180))
+* move OpenFeature SDK to peerDependencies ([#177](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/177))
+* publish dual ESM/CJS output ([#172](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/172))
+* raise compile target from ES2015 to ES2020 ([#169](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/169))
+* **deps:** upgrade TypeScript to 7 ([#168](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/168))
+
+### Features
+
+* mark the package as side-effect free for bundlers ([afad2b7](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/afad2b77430e2718f02ef2b7cebfb51254fe31c2))
+* move OpenFeature SDK to peerDependencies ([#177](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/177)) ([5de57a0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/5de57a0978a4d125d88b4a24d24de075818d2d88))
+* publish dual ESM/CJS output ([#172](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/172)) ([a3f9866](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/a3f98666aed529d0c2dc4df838d03d9380f6e845))
+* raise compile target from ES2015 to ES2020 ([#169](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/169)) ([0ff3dc0](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/0ff3dc0a5cccb664552e6ea769bd5682c2937997))
+
+
+### Bug Fixes
+
+* **deps:** bump follow-redirects from 1.16.1 to 1.16.2 ([#182](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/182)) ([d600d17](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/d600d177ff09cdb203d11a916ffb39e699893786))
+* fail initialization when feature flags cannot be retrieved and none are cached ([#180](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/180)) ([d426f71](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/d426f712774b3f3d7f1c0e241f04be533945a624))
+
+
+### Miscellaneous Chores
+
+* **deps:** upgrade TypeScript to 7 ([#168](https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues/168)) ([1c48379](https://github.com/OctopusDeploy/openfeature-provider-ts-web/commit/1c4837940aa546579a97aed5ec6f8c3ee5c59c66))
+
 ## [5.0.2](https://github.com/OctopusDeploy/openfeature-provider-ts-web/compare/v5.0.1...v5.0.2) (2026-11-02)
 
 

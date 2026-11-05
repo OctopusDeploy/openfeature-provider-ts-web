@@ -1,6 +1,6 @@
 {
     "name": "@octopusdeploy/openfeature",
-    "version": "5.0.2",
+    "version": "6.0.0",
     "description": "The Octopus Feature Flags OpenFeature Provider",
     "type": "commonjs",
     "main": "dist/cjs/index.js",
