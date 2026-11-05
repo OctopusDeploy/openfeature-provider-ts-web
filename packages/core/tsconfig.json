@@ -5,7 +5,8 @@
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
         // Core runs in both browsers and Node, so neither DOM nor Node globals are in scope.
-        "lib": ["ES2022"],
+        // Matches the base target, because tsc downlevels newer syntax but not newer APIs.
+        "lib": ["ES2020"],
         // Jest's globals are for tests only. tsconfig.build.json removes them from the shipped code.
         "types": ["jest"],
         // Web consumes core's @internal declarations, so they must survive into core's .d.ts.
