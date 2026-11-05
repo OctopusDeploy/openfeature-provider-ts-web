@@ -10,7 +10,6 @@ module.exports = {
                 "^(\\.{1,2}/.*)\\.js$": "$1",
             },
             resetMocks: true,
-            setupFilesAfterEnv: ["jest-expect-message", "jest-extended"],
             testRegex: ".*\\.(test|spec)\\.(ts)$",
             transform: {
                 ".(ts)": "ts-jest",
