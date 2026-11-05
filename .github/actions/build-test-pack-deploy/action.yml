@@ -51,7 +51,7 @@ runs:
       id: version
       shell: bash
       run: |
-        BASE=$(node -p "require('./package.json').version")
+        BASE=$(node -p "require('./packages/web/package.json').version")
         if [ -n "${{ inputs.prerelease-tag }}" ]; then
           VERSION="${BASE}-${{ inputs.prerelease-tag }}.$(date -u +%Y%m%dT%H%M%S).${GITHUB_SHA:0:9}"
         else
@@ -68,20 +68,20 @@ runs:
       # dist/ is unaffected, so no rebuild is needed.
       # --ignore-scripts skips the repo's preversion/version lifecycle hooks (e.g. preversion runs
       # the linter); stamping is a pure version-number write and must not trigger other gates.
-      run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version --allow-same-version --ignore-scripts
+      run: npm version "${{ steps.version.outputs.version }}" -w packages/web --no-git-tag-version --allow-same-version --ignore-scripts
 
     - name: Pack
       id: pack
       shell: bash
       run: |
-        FILE=$(npm pack | tail -n 1)
+        FILE=$(npm pack -w packages/web | tail -n 1)
         [ -f "$FILE" ] || { echo "Error: npm pack did not produce $FILE"; exit 1; }
         # npm pack joins the package id and version with a hyphen
         # (octopusdeploy-openfeature-3.0.2-pr....tgz). Octopus parses package filenames by splitting
         # on the first "-<digit>" run, so it reads the id as "octopusdeploy-openfeature-3" and the
         # version as "0.2-pr...". Rename so the id/version separator is a dot, which Octopus treats as
         # the canonical separator, yielding the correct id "octopusdeploy-openfeature".
-        PKG_ID=$(node -p "require('./package.json').name.replace('@','').replace('/','-')")
+        PKG_ID=$(node -p "require('./packages/web/package.json').name.replace('@','').replace('/','-')")
         DEST="${PKG_ID}.${{ steps.version.outputs.version }}.tgz"
         mv "$FILE" "$DEST"
         echo "id=$PKG_ID" >> "$GITHUB_OUTPUT"

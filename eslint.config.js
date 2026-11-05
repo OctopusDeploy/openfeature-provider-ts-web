@@ -8,14 +8,15 @@ const missingJsExtensionMessage = "Relative imports must end in .js so the ESM b
 
 module.exports = tseslint.config(
     {
-        ignores: ["dist/**", "coverage/**"],
+        ignores: ["**/dist/**", "**/coverage/**"],
     },
     {
         files: ["**/*.ts"],
         extends: [js.configs.recommended, ...tseslint.configs.recommended, prettierRecommended],
         languageOptions: {
             parserOptions: {
-                project: ["./tsconfig.json"],
+                projectService: true,
+                tsconfigRootDir: __dirname,
                 sourceType: "module",
             },
         },

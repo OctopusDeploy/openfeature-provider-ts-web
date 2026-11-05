@@ -12,10 +12,10 @@ flowchart TD
     PR --> RP["release.yml: release-please"]
     TRIG -. "triggers" .-> CI["main.yml"]
 
-    RP -->|"opens / updates"| RPR["Release PR<br/>bumps package.json + src/version.ts + CHANGELOG"]
+    RP -->|"opens / updates"| RPR["Release PR<br/>bumps packages/web: package.json<br/>+ src/version.ts + CHANGELOG"]
     RPR -->|"merged"| RP2["release.yml: release-please"]
     RP2 --> TAG["Git tag + GitHub Release"]
-    RP2 -->|"release_created"| ACTR["Build + test + pack<br/>(release version)"]
+    RP2 -->|"releases_created"| ACTR["Build + test + pack<br/>(release version)"]
     CI --> ACTP["Build + test + pack<br/>(prerelease version: ci / pr.N.branch)"]
 
     ACTR --> OCT["Octopus Deploy"]
@@ -30,7 +30,7 @@ flowchart TD
 ```
 
 - **Release builds** run after a Release Please PR is merged; the packaged artifact is pushed to Octopus Deploy, from which the release version is published to the npm registry by a manual action.
-- **Prerelease builds** run on pushes to `main`, the nightly schedule, and manual dispatches (all tagged `ci`), and PRs (`pr.<number>.<branch>`). These are pushed to Octopus Deploy and stay internal, except for fork PRs and Dependabot branches, which upload the package as a GitHub Actions artifact instead. Only `package.json` is stamped with the prerelease version; `src/version.ts` stays at the release base.
+- **Prerelease builds** run on pushes to `main`, the nightly schedule, and manual dispatches (all tagged `ci`), and PRs (`pr.<number>.<branch>`). These are pushed to Octopus Deploy and stay internal, except for fork PRs and Dependabot branches, which upload the package as a GitHub Actions artifact instead. Only `packages/web/package.json` is stamped with the prerelease version; `packages/web/src/version.ts` stays at the release base.
 
 ## Cutting a release
 
