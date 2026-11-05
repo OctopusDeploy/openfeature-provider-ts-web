@@ -1,0 +1,63 @@
+{
+    "name": "@octopusdeploy/openfeature",
+    "version": "6.0.0",
+    "description": "The Octopus Feature Flags OpenFeature Provider",
+    "type": "commonjs",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "CHANGELOG.md"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+        "build": "npm run clean && tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json && node scripts/writeModuleMarkers.js",
+        "lint:package": "publint --strict && attw --pack .",
+        "test:package": "node scripts/smokeTestPackage.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/OctopusDeploy/openfeature-provider-ts-web.git"
+    },
+    "keywords": [
+        "octopus deploy",
+        "openfeature",
+        "feature flags",
+        "feature toggles"
+    ],
+    "author": "Octopus Deploy",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues"
+    },
+    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
+    "devDependencies": {
+        "@openfeature/web-sdk": "^1.10.0",
+        "@types/murmurhash3js-revisited": "^3.0.3",
+        "axios-mock-adapter": "^2.1.0",
+        "jest-localstorage-mock": "^2.4.26"
+    },
+    "dependencies": {
+        "axios": "^1.16.0",
+        "axios-retry": "4.5.0",
+        "murmurhash3js-revisited": "3.0.0"
+    },
+    "peerDependencies": {
+        "@openfeature/web-sdk": "^1.1.0"
+    }
+}

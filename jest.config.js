@@ -2,7 +2,8 @@ module.exports = {
     preset: "ts-jest/presets/js-with-ts",
     projects: [
         {
-            displayName: "test",
+            displayName: "web",
+            rootDir: "<rootDir>/packages/web",
             moduleDirectories: ["<rootDir>/src/", "node_modules"],
             moduleFileExtensions: ["ts", "js"],
             // Source imports use .js extensions for native ESM; resolve them to the .ts files.

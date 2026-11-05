@@ -34,7 +34,7 @@ interface Expected {
 }
 
 function loadTestCases(): TestEntry[] {
-    const fixturesDir = path.join(__dirname, "../../specification/Fixtures");
+    const fixturesDir = path.join(__dirname, "../../../../specification/Fixtures");
     const testCases: TestEntry[] = [];
 
     const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
