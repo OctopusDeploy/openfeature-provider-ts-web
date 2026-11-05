@@ -47,6 +47,7 @@
     },
     "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
     "devDependencies": {
+        "@octopusdeploy/openfeature-specification-tests": "*",
         "@openfeature/web-sdk": "^1.10.0",
         "@types/murmurhash3js-revisited": "^3.0.3",
         "axios-mock-adapter": "^2.1.0",

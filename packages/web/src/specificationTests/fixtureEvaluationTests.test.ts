@@ -1,84 +1,18 @@
-import * as fs from "fs";
-import * as path from "path";
-import { ErrorCode, OpenFeature } from "@openfeature/web-sdk";
+import { OpenFeature } from "@openfeature/web-sdk";
+import { runSpecificationFixtures } from "@octopusdeploy/openfeature-specification-tests";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider.js";
 import { ProductMetadata } from "../productMetadata.js";
-import { Server } from "./server.js";
 
-interface Fixture {
-    response: unknown;
-    cases: Case[];
-}
-
-interface TestEntry {
-    testResponse: string;
-    testCase: Case;
-}
-
-interface Case {
-    description: string;
-    configuration: Configuration;
-    expected: Expected;
-}
-
-interface Configuration {
-    slug: string;
-    defaultValue: boolean;
-    context?: Record<string, string | null>;
-}
-
-interface Expected {
-    value: boolean;
-    reason?: string;
-    errorCode?: ErrorCode;
-}
-
-function loadTestCases(): TestEntry[] {
-    const fixturesDir = path.join(__dirname, "../../../../specification/Fixtures");
-    const testCases: TestEntry[] = [];
-
-    const fixtureFiles = fs.readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
-    for (const file of fixtureFiles) {
-        const json = fs.readFileSync(path.join(fixturesDir, file), "utf-8");
-        const fixture: Fixture = JSON.parse(json);
-
-        // Unlike in the other client libraries, we can safely parse and re-serialize here.
-        const testResponse = JSON.stringify(fixture.response);
-
-        for (const c of fixture.cases) {
-            testCases.push({ testResponse, testCase: c });
-        }
-    }
-    return testCases;
-}
-
-const testCases = loadTestCases();
-const server = new Server();
-
-beforeAll(async () => {
-    await server.start();
-});
-
-afterAll(async () => {
-    await server.stop();
-});
-
-test.each(testCases)("$testCase.description", async ({ testResponse, testCase }) => {
-    const token = server.configure(testResponse);
+// The web SDK uses static context: set it, then evaluate synchronously.
+runSpecificationFixtures(async ({ serverUri, clientIdentifier, slug, defaultValue, context }) => {
     const provider = new OctopusFeatureProvider({
-        clientIdentifier: token,
-        serverUri: server.url,
+        clientIdentifier,
+        serverUri,
         productMetadata: new ProductMetadata("TestClient"),
     });
 
     await OpenFeature.setProviderAndWait(provider);
-    await OpenFeature.setContext(testCase.configuration.context ?? {});
+    await OpenFeature.setContext(context);
 
-    const result = OpenFeature.getClient().getBooleanDetails(testCase.configuration.slug, testCase.configuration.defaultValue);
-
-    expect(result.value).toBe(testCase.expected.value);
-    expect(result.errorCode).toBe(testCase.expected.errorCode);
-    if (testCase.expected.reason !== undefined) {
-        expect(result.reason).toBe(testCase.expected.reason);
-    }
+    return OpenFeature.getClient().getBooleanDetails(slug, defaultValue);
 });
