@@ -1,6 +1,6 @@
 {
     "packages": {
-        ".": {
+        "packages/web": {
             "release-type": "node",
             "include-component-in-tag": false,
             "extra-files": ["src/version.ts"]
