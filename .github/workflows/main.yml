@@ -45,15 +45,19 @@ jobs:
       - name: Install lowest supported OpenFeature SDK
         run: |
           lowest() { node -p "process.argv[1].trim().replace(/^[\\^~]/, '')" "$1"; }
-          SDK=$(lowest "$(node -p "require('./package.json').peerDependencies['@openfeature/web-sdk']")")
+          SDK=$(lowest "$(node -p "require('./packages/web/package.json').peerDependencies['@openfeature/web-sdk']")")
           # Older SDK releases pin an exact version of core, so take core from the SDK's own peer range.
           CORE=$(lowest "$(npm view "@openfeature/web-sdk@$SDK" peerDependencies.@openfeature/core)")
           echo "Installing @openfeature/web-sdk@$SDK and @openfeature/core@$CORE"
-          npm install --no-save --no-audit --no-fund "@openfeature/web-sdk@$SDK" "@openfeature/core@$CORE"
+          # Install into the workspace: from the root, npm would nest web's newer devDependency copy under
+          # packages/web, and that is the one the source resolves.
+          npm install --no-save --no-audit --no-fund -w packages/web "@openfeature/web-sdk@$SDK" "@openfeature/core@$CORE"
           # Fail if npm resolved something else, otherwise this job would quietly test the wrong versions.
           for pkg in "web-sdk:$SDK" "core:$CORE"; do
             name=${pkg%%:*}; want=${pkg#*:}
-            got=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@openfeature/$name/package.json')).version")
+            dir="packages/web/node_modules/@openfeature/$name"
+            [ -d "$dir" ] || dir="node_modules/@openfeature/$name"
+            got=$(node -p "JSON.parse(require('fs').readFileSync('$dir/package.json')).version")
             [ "$got" = "$want" ] || { echo "Expected @openfeature/$name@$want, got $got"; exit 1; }
           done
 
