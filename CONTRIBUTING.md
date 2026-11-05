@@ -42,6 +42,8 @@ git submodule update --init
 
 ### Commands
 
+The repository is an npm workspace and the web provider lives in `packages/web`. Run these from the repository root:
+
 ```bash
 npm ci
 npm test
@@ -50,7 +52,7 @@ npm run lint:package
 npm run test:package
 ```
 
-The specification fixtures run as part of `src/specificationTests`.
+The specification fixtures run as part of `packages/web/src/specificationTests`.
 
 The package ships both ESM and CommonJS builds, so relative imports in `src` must end in `.js` (for example `import { ProductMetadata } from "./productMetadata.js"`). Native Node ESM needs the extension, but `tsc` and the tests don't, so a missing one only shows up when a consumer loads the ESM build. Linting flags it, and `npm run test:package` catches it by packing the package and loading it with both `require()` and `import`.
 
@@ -65,11 +67,11 @@ npm run lint       # check
 npm run lint:fix   # fix what can be fixed automatically
 ```
 
-Don't edit `src/version.ts` by hand. Release Please updates it with each release.
+Don't edit `packages/web/src/version.ts` by hand. Release Please updates it with each release.
 
 ### OpenFeature SDK version
 
-`@openfeature/web-sdk` is a peer dependency, so the provider runs against whichever version the app installs. The lowest version we support is the bottom of its `peerDependencies` range in `package.json`. Day to day we build and test against the newer version in `devDependencies`, and the `test-lowest-sdk` CI job builds and tests against the lowest one.
+`@openfeature/web-sdk` is a peer dependency, so the provider runs against whichever version the app installs. The lowest version we support is the bottom of its `peerDependencies` range in `packages/web/package.json`. Day to day we build and test against the newer version in `devDependencies`, and the `test-lowest-sdk` CI job builds and tests against the lowest one.
 
 If that job fails, the change needs something from a newer SDK. Raise the `peerDependencies` range to the lowest version that has it.
 
