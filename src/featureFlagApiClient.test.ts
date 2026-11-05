@@ -9,7 +9,7 @@ import { ProviderNotReadyError } from "@openfeature/web-sdk";
 
 axiosRetry(axios, { retries: 3 });
 
-const testProvider = { name: "test-provider", version: "1.2.3" };
+const testProviderMetadata = { name: "test-provider", version: "1.2.3" };
 
 class FakeCache implements EvaluationCache {
     written: RawEvaluationResponse | undefined;
@@ -42,7 +42,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
-            provider: testProvider,
+            providerMetadata: testProviderMetadata,
             cache: new FakeCache(),
         });
 
@@ -58,7 +58,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("TestClient"),
             logger: silentLogger(),
-            provider: testProvider,
+            providerMetadata: testProviderMetadata,
             cache: new FakeCache(),
             releaseVersionOverride,
         });
@@ -74,7 +74,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct"),
             logger: silentLogger(),
-            provider: testProvider,
+            providerMetadata: testProviderMetadata,
             cache: new FakeCache(),
         });
 
@@ -89,7 +89,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("MyProduct", "2024.1.0"),
             logger: silentLogger(),
-            provider: testProvider,
+            providerMetadata: testProviderMetadata,
             cache: new FakeCache(),
         });
 
@@ -104,7 +104,7 @@ describe("FeatureFlagApiClient", () => {
             clientIdentifier: "a.b.c",
             productMetadata: new ProductMetadata("My Product"),
             logger: silentLogger(),
-            provider: testProvider,
+            providerMetadata: testProviderMetadata,
             cache: new FakeCache(),
         });
 
@@ -124,7 +124,7 @@ describe("FeatureFlagApiClient", () => {
                 clientIdentifier: "a.b.c",
                 productMetadata: new ProductMetadata("TestClient"),
                 logger: silentLogger(),
-                provider: testProvider,
+                providerMetadata: testProviderMetadata,
                 cache,
             });
         }

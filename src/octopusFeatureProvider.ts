@@ -19,7 +19,7 @@ export class OctopusFeatureProvider implements Provider {
             serverUri: configuration.serverUri,
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger: this.logger,
-            provider: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION },
+            providerMetadata: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION },
             cache: new LocalStorageCache(this.logger),
         });
         this.context = {};

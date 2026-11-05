@@ -21,7 +21,7 @@ export interface FeatureFlagApiClientOptions {
     releaseVersionOverride?: string;
     logger: Logger;
     /** Identifies the provider package in the X-Octopus-Client header, e.g. openfeature-provider-ts-web/5.0.2. */
-    provider: { name: string; version: string };
+    providerMetadata: { name: string; version: string };
     cache: EvaluationCache;
 }
 
@@ -33,7 +33,7 @@ export class FeatureFlagApiClient {
     private readonly axiosInstance: AxiosInstance;
     private readonly releaseVersionOverride?: string;
     private readonly productMetadata: ProductMetadata;
-    private readonly provider: { name: string; version: string };
+    private readonly providerMetadata: { name: string; version: string };
     private readonly cache: EvaluationCache;
 
     constructor(options: FeatureFlagApiClientOptions) {
@@ -42,7 +42,7 @@ export class FeatureFlagApiClient {
         this.releaseVersionOverride = options.releaseVersionOverride;
         this.productMetadata = options.productMetadata;
         this.logger = options.logger;
-        this.provider = options.provider;
+        this.providerMetadata = options.providerMetadata;
         this.cache = options.cache;
         this.axiosInstance = axios.create();
         axiosRetry(this.axiosInstance, {
@@ -133,7 +133,7 @@ export class FeatureFlagApiClient {
         if (this.productMetadata.version) {
             value += `/${this.productMetadata.version}`;
         }
-        return `${value} ${this.provider.name}/${this.provider.version}`;
+        return `${value} ${this.providerMetadata.name}/${this.providerMetadata.version}`;
     }
 }
 

@@ -390,7 +390,7 @@ test("Identifies itself to the API client as the web provider", () => {
     new OctopusFeatureProvider({ clientIdentifier: "test", productMetadata: new ProductMetadata("TestClient") });
 
     expect(FeatureFlagApiClient).toHaveBeenCalledWith(
-        expect.objectContaining({ provider: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION } })
+        expect.objectContaining({ providerMetadata: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION } })
     );
 });
 
