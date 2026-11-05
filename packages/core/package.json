@@ -23,6 +23,9 @@
         "dist",
         "CHANGELOG.md"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "sideEffects": false,
     "scripts": {
         "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
