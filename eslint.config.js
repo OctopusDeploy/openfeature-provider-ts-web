@@ -37,5 +37,21 @@ module.exports = tseslint.config(
                 },
             ],
         },
+    },
+    {
+        // Core is shared by the web and server providers, so it must not depend on either SDK.
+        // Shared OpenFeature types come from @openfeature/core.
+        files: ["packages/core/**/*.ts"],
+        rules: {
+            "no-restricted-imports": [
+                "error",
+                {
+                    paths: ["@openfeature/web-sdk", "@openfeature/server-sdk"].map((name) => ({
+                        name,
+                        message: "Core is shared by both providers. Import from @openfeature/core instead.",
+                    })),
+                },
+            ],
+        },
     }
 );
