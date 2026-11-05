@@ -7,6 +7,7 @@ import { silentLogger } from "./testing/logger.js";
 import { ClientSideRule } from "./v4/clientSideRule.js";
 import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
 import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
+import { PROVIDER_VERSION } from "./version.js";
 
 jest.mock("./featureFlagApiClient.js");
 
@@ -381,4 +382,13 @@ describe("A provider served from the cache", () => {
         expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
         expect(OpenFeature.getClient().getBooleanValue("cached-feature", false)).toBe(true);
     });
+});
+
+// The X-Octopus-Client header is how backend telemetry tells web traffic apart from other providers.
+test("Identifies itself to the API client as the web provider", () => {
+    new OctopusFeatureProvider({ clientIdentifier: "test", productMetadata: new ProductMetadata("TestClient") });
+
+    expect(FeatureFlagApiClient).toHaveBeenCalledWith(
+        expect.objectContaining({ providerMetadata: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION } })
+    );
 });

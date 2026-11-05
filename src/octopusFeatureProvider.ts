@@ -1,7 +1,18 @@
-import { EvaluationContext, FlagNotFoundError, JsonValue, Provider, ProviderNotReadyError, ResolutionDetails, TypeMismatchError } from "@openfeature/web-sdk";
+import {
+    DefaultLogger,
+    EvaluationContext,
+    FlagNotFoundError,
+    JsonValue,
+    Provider,
+    ProviderNotReadyError,
+    ResolutionDetails,
+    TypeMismatchError,
+} from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
+import { LocalStorageCache } from "./localStorageCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
+import { PROVIDER_VERSION } from "./version.js";
 
 export class OctopusFeatureProvider implements Provider {
     private client: FeatureFlagApiClient;
@@ -10,7 +21,16 @@ export class OctopusFeatureProvider implements Provider {
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
-        this.client = new FeatureFlagApiClient(configuration);
+        const logger = configuration.logger ?? new DefaultLogger();
+        this.client = new FeatureFlagApiClient({
+            clientIdentifier: configuration.clientIdentifier,
+            productMetadata: configuration.productMetadata,
+            serverUri: configuration.serverUri,
+            releaseVersionOverride: configuration.releaseVersionOverride,
+            logger,
+            providerMetadata: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION },
+            cache: new LocalStorageCache(logger),
+        });
         this.context = {};
     }
 
