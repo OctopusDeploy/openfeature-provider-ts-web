@@ -1,2 +1,3 @@
 export { runSpecificationFixtures } from "./runSpecificationFixtures.js";
-export type { EvaluateFixture, FixtureEvaluationRequest, FixtureEvaluationResult } from "./runSpecificationFixtures.js";
+export type { EvaluateFixture, FixtureEvaluationRequest } from "./runSpecificationFixtures.js";
+export type { FixtureEvaluationResult } from "./fixtures.js";

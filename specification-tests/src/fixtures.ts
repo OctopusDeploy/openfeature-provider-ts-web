@@ -9,7 +9,7 @@ export interface FixtureCase {
     responseJson: string;
     description: string;
     configuration: FixtureConfiguration;
-    expected: FixtureExpectation;
+    expected: FixtureEvaluationResult;
 }
 
 export interface FixtureConfiguration {
@@ -18,7 +18,11 @@ export interface FixtureConfiguration {
     context?: Record<string, string | null>;
 }
 
-export interface FixtureExpectation {
+/**
+ * The parts of an OpenFeature evaluation details result that the fixtures check. Used both for a case's
+ * expected result and for what a provider returns, so the two can't drift apart.
+ */
+export interface FixtureEvaluationResult {
     value: boolean;
     reason?: string;
     errorCode?: string;
@@ -29,12 +33,12 @@ interface Fixture {
     cases: Omit<FixtureCase, "responseJson">[];
 }
 
-export function loadFixtureCases(directory: string = fixturesDirectory): FixtureCase[] {
+export function loadFixtureCases(): FixtureCase[] {
     const cases: FixtureCase[] = [];
 
-    const fixtureFiles = fs.readdirSync(directory).filter((f) => f.endsWith(".json"));
+    const fixtureFiles = fs.readdirSync(fixturesDirectory).filter((f) => f.endsWith(".json"));
     for (const file of fixtureFiles) {
-        const json = fs.readFileSync(path.join(directory, file), "utf-8");
+        const json = fs.readFileSync(path.join(fixturesDirectory, file), "utf-8");
         const fixture: Fixture = JSON.parse(json);
 
         // Unlike in the other client libraries, we can safely parse and re-serialize here.

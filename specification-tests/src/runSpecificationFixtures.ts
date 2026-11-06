@@ -1,4 +1,4 @@
-import { FixtureCase, fixturesDirectory, loadFixtureCases } from "./fixtures.js";
+import { FixtureCase, FixtureEvaluationResult, fixturesDirectory, loadFixtureCases } from "./fixtures.js";
 import { Server } from "./server.js";
 
 /** What a provider needs to evaluate one fixture case against the test server. */
@@ -9,13 +9,6 @@ export interface FixtureEvaluationRequest {
     slug: string;
     defaultValue: boolean;
     context: Record<string, string | null>;
-}
-
-/** The parts of an OpenFeature evaluation details result that the fixtures check. */
-export interface FixtureEvaluationResult {
-    value: boolean;
-    reason?: string;
-    errorCode?: string;
 }
 
 export type EvaluateFixture = (request: FixtureEvaluationRequest) => Promise<FixtureEvaluationResult>;

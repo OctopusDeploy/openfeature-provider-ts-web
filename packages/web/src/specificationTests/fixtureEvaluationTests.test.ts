@@ -1,5 +1,5 @@
 import { OpenFeature } from "@openfeature/web-sdk";
-import { runSpecificationFixtures } from "@octopusdeploy/openfeature-specification-tests";
+import { runSpecificationFixtures } from "specification-tests";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider.js";
 import { ProductMetadata } from "../productMetadata.js";
 
