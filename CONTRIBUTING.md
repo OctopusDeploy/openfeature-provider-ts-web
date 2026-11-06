@@ -52,7 +52,7 @@ npm run lint:package
 npm run test:package
 ```
 
-The specification fixtures run as part of `packages/web/src/specificationTests`.
+The specification fixtures (from the `specification` submodule) are run by the private `specification-tests` workspace, which owns case loading, the test server and the assertions. Each provider has a thin test file that tells the harness how its SDK evaluates a flag. The web provider's is `packages/web/src/specificationTests/fixtureEvaluationTests.test.ts`.
 
 The package ships both ESM and CommonJS builds, so relative imports in `src` must end in `.js` (for example `import { ProductMetadata } from "./productMetadata.js"`). Native Node ESM needs the extension, but `tsc` and the tests don't, so a missing one only shows up when a consumer loads the ESM build. Linting flags it, and `npm run test:package` catches it by packing the package and loading it with both `require()` and `import`.
 
