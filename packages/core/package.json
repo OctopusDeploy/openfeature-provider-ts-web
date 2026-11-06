@@ -1,0 +1,51 @@
+{
+    "name": "@octopusdeploy/openfeature-core",
+    "version": "6.0.0",
+    "description": "Internal shared logic for the Octopus OpenFeature providers",
+    "type": "commonjs",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "CHANGELOG.md"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "sideEffects": false,
+    "scripts": {
+        "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+        "build": "npm run clean && tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json && node scripts/writeModuleMarkers.js",
+        "lint:package": "publint --strict && attw --pack ."
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/OctopusDeploy/openfeature-provider-ts-web.git"
+    },
+    "keywords": [
+        "octopus deploy",
+        "openfeature",
+        "feature flags",
+        "feature toggles"
+    ],
+    "author": "Octopus Deploy",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues"
+    },
+    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme"
+}

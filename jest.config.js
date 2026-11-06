@@ -2,6 +2,20 @@ module.exports = {
     preset: "ts-jest/presets/js-with-ts",
     projects: [
         {
+            displayName: "core",
+            rootDir: "<rootDir>/packages/core",
+            testEnvironment: "node",
+            moduleFileExtensions: ["ts", "js"],
+            moduleNameMapper: {
+                "^(\\.{1,2}/.*)\\.js$": "$1",
+            },
+            resetMocks: true,
+            testRegex: ".*\\.(test|spec)\\.(ts)$",
+            transform: {
+                ".(ts)": "ts-jest",
+            },
+        },
+        {
             displayName: "web",
             rootDir: "<rootDir>/packages/web",
             moduleDirectories: ["<rootDir>/src/", "node_modules"],
