@@ -1,4 +1,4 @@
-import { ParseError } from "@openfeature/web-sdk";
+import { ParseError } from "@openfeature/core";
 import { parseCondition } from "./parseCondition.js";
 import { UnknownCondition } from "./unknownCondition.js";
 

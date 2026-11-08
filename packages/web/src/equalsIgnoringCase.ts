@@ -1,3 +1,5 @@
+// Core has a temporary copy of this for the v4 conditions. BMBB-826 moves the evaluator into core
+// and deletes this file.
 /**
  * Case-insensitive string equality.
  *

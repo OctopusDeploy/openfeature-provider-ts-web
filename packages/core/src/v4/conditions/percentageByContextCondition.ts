@@ -1,4 +1,4 @@
-import { ParseError } from "@openfeature/web-sdk";
+import { ParseError } from "@openfeature/core";
 import { ClientSideEvaluationContext } from "../clientSideEvaluationContext.js";
 import { includes } from "./percentageRollout.js";
 import { ClientSideCondition } from "./clientSideCondition.js";

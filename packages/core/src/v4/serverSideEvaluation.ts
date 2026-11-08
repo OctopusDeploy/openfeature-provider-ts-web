@@ -1,4 +1,4 @@
-import { EvaluationContext, ParseError, ResolutionDetails } from "@openfeature/web-sdk";
+import { EvaluationContext, ParseError, ResolutionDetails } from "@openfeature/core";
 import { ClientSideRule } from "./clientSideRule.js";
 import * as EvaluationReasons from "./evaluationReasons.js";
 

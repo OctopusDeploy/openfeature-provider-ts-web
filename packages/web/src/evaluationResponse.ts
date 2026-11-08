@@ -1,4 +1,4 @@
-import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
+import { ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
 
 /**
  * Parsed response from the evaluations endpoint.

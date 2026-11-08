@@ -4,9 +4,7 @@ import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, Provider
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { silentLogger } from "./testing/logger.js";
-import { ClientSideRule } from "./v4/clientSideRule.js";
-import { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
-import { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
+import { ClientSideRule, ContextAttributeIsOneOfCondition, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
 
 jest.mock("./featureFlagApiClient.js");

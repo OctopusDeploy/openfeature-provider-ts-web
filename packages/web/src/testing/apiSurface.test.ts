@@ -15,6 +15,12 @@ describe("analyseApiSurface", () => {
         ]);
     });
 
+    it("reports types from core that are reachable from the surface but not exported", () => {
+        const { leaks } = analyseApiSurface(fixture("coreLeak"), tsconfig);
+
+        expect(leaks).toEqual(["CoreLeakyProvider exposes ServerSideEvaluation (../core/dist/cjs/v4/serverSideEvaluation.d.ts)"]);
+    });
+
     it("marks a class re-exported with `export type` as type-only", () => {
         const { surface } = analyseApiSurface(fixture("typeOnlyClass"), tsconfig);
 

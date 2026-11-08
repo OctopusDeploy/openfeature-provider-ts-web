@@ -16,9 +16,12 @@ const run = (command, args, cwd) =>
     execFileSync(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"], shell: process.platform === "win32" && command === npm }).toString();
 
 try {
-    const tarball = run(npm, ["pack", "--silent", "--pack-destination", workDir], root).trim().split("\n").pop();
+    const pack = (dir) => path.join(workDir, run(npm, ["pack", "--silent", "--pack-destination", workDir], dir).trim().split("\n").pop());
+    // Core is packed alongside web because the exact version web pins may not be on npm yet. Installing both tarballs
+    // together satisfies that pin from the local build instead of the registry.
+    const tarballs = [pack(path.join(root, "..", "core")), pack(root)];
     fs.writeFileSync(path.join(workDir, "package.json"), JSON.stringify({ name: "smoke-test", private: true }));
-    run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", path.join(workDir, tarball)], workDir);
+    run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", ...tarballs], workDir);
 
     const check = `
         const { OctopusFeatureProvider, ProductMetadata } = PROVIDER;
