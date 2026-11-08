@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
 env:
   OCTOPUS_SPACE: "Developer Experience"
 
