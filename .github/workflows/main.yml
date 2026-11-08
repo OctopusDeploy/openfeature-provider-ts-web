@@ -21,8 +21,8 @@ env:
 jobs:
   # The build below tests against the SDK version in devDependencies. This job tests against the
   # lowest version our peerDependencies range promises, so a change that needs a newer SDK fails here
-  # instead of breaking apps that are still on an older one. Core's @openfeature/core peer range must
-  # reach down to the version that SDK requires.
+  # instead of breaking apps that are still on an older one. The @openfeature/core peer range, in
+  # both core and web, must reach down to the version that SDK requires.
   test-lowest-sdk:
     runs-on: ubuntu-latest
     permissions:

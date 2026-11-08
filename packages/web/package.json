@@ -58,6 +58,7 @@
         "axios-retry": "4.5.0"
     },
     "peerDependencies": {
+        "@openfeature/core": "^1.2.0",
         "@openfeature/web-sdk": "^1.1.0"
     }
 }
