@@ -1,10 +1,8 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
-import { ProductMetadata } from "./productMetadata.js";
 import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
-import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
-import { silentLogger } from "./testing/logger.js";
-import { ClientSideRule, ContextAttributeIsOneOfCondition, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
+import { silentLogger } from "../../core/src/testing/logger.js";
+import { ClientSideRule, ContextAttributeIsOneOfCondition, FeatureFlagEvaluator, ProductMetadata, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
 
 jest.mock("./featureFlagApiClient.js");

@@ -1,6 +1,3 @@
-// Temporary copy of web's equalsIgnoringCase.ts, which the evaluator still uses. Deliberately not
-// exported from core, so it doesn't become public API. BMBB-826 moves the evaluator here and
-// deletes web's copy.
 /**
  * Case-insensitive string equality.
  *

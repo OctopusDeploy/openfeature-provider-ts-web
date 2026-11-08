@@ -1,12 +1,14 @@
-import { FlagNotFoundError, Logger, ParseError } from "@openfeature/web-sdk";
-import * as Contexts from "./testing/contexts.js";
-import { silentLogger } from "./testing/logger.js";
+import { FlagNotFoundError, Logger, ParseError } from "@openfeature/core";
+import * as Contexts from "../testing/contexts.js";
+import { silentLogger } from "../testing/logger.js";
+import { ClientSideRule } from "../v4/clientSideRule.js";
+import { ContextAttributeIsOneOfCondition } from "../v4/conditions/contextAttributeIsOneOfCondition.js";
+import { ServerSideEvaluation } from "../v4/serverSideEvaluation.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
-import { ClientSideRule, ContextAttributeIsOneOfCondition, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
 
-// Evaluating a slug's rules is ServerSideEvaluation's job, covered in core's
-// v4/serverSideEvaluation.test.ts and the condition tests. This covers what FeatureFlagEvaluator
-// adds on top: slug lookup, the FlagNotFoundError contract, and the warn-once behaviour.
+// Evaluating a slug's rules is ServerSideEvaluation's job, covered in ../v4/serverSideEvaluation.test.ts
+// and the condition tests. This covers what FeatureFlagEvaluator adds on top: slug lookup, the
+// FlagNotFoundError contract, and the warn-once behaviour.
 describe("FeatureFlagEvaluator", () => {
     function resolved(slug: string, value: boolean, reason: string): ServerSideEvaluation {
         return new ServerSideEvaluation(slug, value, reason);

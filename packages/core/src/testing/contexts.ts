@@ -3,8 +3,6 @@ import { ClientSideEvaluationContext } from "../v4/clientSideEvaluationContext.j
 
 // Builds the contexts the v4 evaluation tests run against.
 //
-// Web's tests have their own copy until BMBB-826 consolidates the test helpers into core.
-//
 // getNormalizedNumber("evaluation-key", "targeting-key") is 13, so this targeting key is inside a
 // >=13% rollout and outside a <13% one. The rollout tests either side of the bucket pin that value.
 export const EvaluationKey = "evaluation-key";

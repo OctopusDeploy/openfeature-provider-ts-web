@@ -1,11 +1,11 @@
 import { EvaluationCache, RawEvaluationResponse } from "./evaluationCache.js";
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
-import { ProductMetadata } from "./productMetadata.js";
-import { silentLogger } from "./testing/logger.js";
+import { silentLogger } from "../../core/src/testing/logger.js";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
 import { ProviderNotReadyError } from "@openfeature/web-sdk";
+import { ProductMetadata } from "@octopusdeploy/openfeature-core";
 
 axiosRetry(axios, { retries: 3 });
 

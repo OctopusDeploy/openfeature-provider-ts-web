@@ -1,5 +1,5 @@
 import { LocalStorageCache } from "./localStorageCache.js";
-import { silentLogger } from "./testing/logger.js";
+import { silentLogger } from "../../core/src/testing/logger.js";
 
 const key = "octopus-openfeature-ts-feature-manifest";
 const raw = { evaluations: [{ slug: "my-feature", value: true }], contentHash: "aGFzaA==" };
