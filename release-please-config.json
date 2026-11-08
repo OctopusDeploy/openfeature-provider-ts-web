@@ -1,9 +1,23 @@
 {
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+    "include-component-in-tag": true,
     "packages": {
+        "packages/core": {
+            "release-type": "node",
+            "component": "core"
+        },
         "packages/web": {
             "release-type": "node",
-            "include-component-in-tag": false,
+            "component": "web",
             "extra-files": ["src/version.ts"]
         }
-    }
+    },
+    "plugins": [
+        { "type": "node-workspace", "merge": false },
+        {
+            "type": "linked-versions",
+            "groupName": "openfeature-providers",
+            "components": ["core", "web"]
+        }
+    ]
 }
