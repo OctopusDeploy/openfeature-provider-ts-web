@@ -11,6 +11,7 @@
         "lint": "eslint .",
         "lint:package": "npm run lint:package -w packages/core && npm run lint:package -w packages/web",
         "prepare": "npm run build",
+        "pretest": "npm run build -w packages/core",
         "test": "jest --maxWorkers=4 --config=jest.config.js --ci --reporters=default --reporters=jest-junit",
         "test:package": "npm run build && npm run test:package -w packages/web"
     },
