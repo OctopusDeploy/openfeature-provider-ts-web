@@ -32,13 +32,13 @@ try {
     const cjs = `const PROVIDER = require("@octopusdeploy/openfeature");${check}console.log("require(): ok");`;
     process.stdout.write(run(process.execPath, ["-e", cjs], workDir));
 
-    // The ESM build should load the ESM build of the OpenFeature SDK, not a second CJS copy.
+    // The ESM build should load the ESM builds of core and the OpenFeature SDK, not a second CJS copy of either.
     const esm = `
         import * as PROVIDER from "@octopusdeploy/openfeature";
         import Module from "node:module";
         ${check}
-        const cjsSdk = Object.keys(Module._cache).filter((file) => file.includes("@openfeature"));
-        if (cjsSdk.length > 0) throw new Error("ESM build loaded the CommonJS OpenFeature SDK: " + cjsSdk.join(", "));
+        const cjs = Object.keys(Module._cache).filter((file) => /[\\\\/]@(openfeature|octopusdeploy)[\\\\/]/.test(file));
+        if (cjs.length > 0) throw new Error("ESM build loaded a CommonJS build: " + cjs.join(", "));
         console.log("import: ok");
     `;
     process.stdout.write(run(process.execPath, ["--input-type=module", "-e", esm], workDir));

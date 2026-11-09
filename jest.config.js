@@ -1,5 +1,6 @@
 module.exports = {
     preset: "ts-jest/presets/js-with-ts",
+    globalSetup: "<rootDir>/jest.globalSetup.js",
     projects: [
         {
             displayName: "core",
@@ -26,8 +27,7 @@ module.exports = {
             },
             resetMocks: true,
             setupFilesAfterEnv: ["jest-expect-message", "jest-extended", "jest-localstorage-mock"],
-            // Web runs against core's built output, as it does once published. `npm test` rebuilds
-            // core first (the root pretest script); running jest directly uses whatever is in dist.
+            // Web runs against core's built output, which jest.globalSetup.js rebuilds before every run.
             // The workspace symlink resolves to packages/core, outside node_modules, so keep the
             // transform away from core's already-compiled JavaScript.
             transformIgnorePatterns: ["/node_modules/", "/packages/core/dist/"],

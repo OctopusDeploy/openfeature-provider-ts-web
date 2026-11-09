@@ -1,6 +1,5 @@
 // Core's exports are internal: they exist for the provider packages, not for their consumers.
-// Each declaration keeps its @internal tag, and the providers' builds strip them from their own
-// .d.ts so nothing here reaches a provider's public API.
+// Each declaration keeps its @internal tag.
 export type { ClientSideEvaluationContext } from "./v4/clientSideEvaluationContext.js";
 export { ClientSideRule } from "./v4/clientSideRule.js";
 export { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
