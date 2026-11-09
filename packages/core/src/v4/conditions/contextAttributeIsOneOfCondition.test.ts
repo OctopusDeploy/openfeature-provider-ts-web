@@ -1,4 +1,4 @@
-import { EvaluationContext, ParseError } from "@openfeature/web-sdk";
+import { EvaluationContext, ParseError } from "@openfeature/core";
 import * as Contexts from "../../testing/contexts.js";
 import { ContextAttributeIsOneOfCondition } from "./contextAttributeIsOneOfCondition.js";
 import { parseCondition } from "./parseCondition.js";

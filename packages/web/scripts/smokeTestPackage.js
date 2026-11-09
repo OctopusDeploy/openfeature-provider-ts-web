@@ -16,9 +16,12 @@ const run = (command, args, cwd) =>
     execFileSync(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"], shell: process.platform === "win32" && command === npm }).toString();
 
 try {
-    const tarball = run(npm, ["pack", "--silent", "--pack-destination", workDir], root).trim().split("\n").pop();
+    const pack = (dir) => path.join(workDir, run(npm, ["pack", "--silent", "--pack-destination", workDir], dir).trim().split("\n").pop());
+    // Core is packed alongside web because the exact version web pins may not be on npm yet. Installing both tarballs
+    // together satisfies that pin from the local build instead of the registry.
+    const tarballs = [pack(path.join(root, "..", "core")), pack(root)];
     fs.writeFileSync(path.join(workDir, "package.json"), JSON.stringify({ name: "smoke-test", private: true }));
-    run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", path.join(workDir, tarball)], workDir);
+    run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", ...tarballs], workDir);
 
     const check = `
         const { OctopusFeatureProvider, ProductMetadata } = PROVIDER;
@@ -29,13 +32,13 @@ try {
     const cjs = `const PROVIDER = require("@octopusdeploy/openfeature");${check}console.log("require(): ok");`;
     process.stdout.write(run(process.execPath, ["-e", cjs], workDir));
 
-    // The ESM build should load the ESM build of the OpenFeature SDK, not a second CJS copy.
+    // The ESM build should load the ESM builds of core and the OpenFeature SDK, not a second CJS copy of either.
     const esm = `
         import * as PROVIDER from "@octopusdeploy/openfeature";
         import Module from "node:module";
         ${check}
-        const cjsSdk = Object.keys(Module._cache).filter((file) => file.includes("@openfeature"));
-        if (cjsSdk.length > 0) throw new Error("ESM build loaded the CommonJS OpenFeature SDK: " + cjsSdk.join(", "));
+        const cjs = Object.keys(Module._cache).filter((file) => /[\\\\/]@(openfeature|octopusdeploy)[\\\\/]/.test(file));
+        if (cjs.length > 0) throw new Error("ESM build loaded a CommonJS build: " + cjs.join(", "));
         console.log("import: ok");
     `;
     process.stdout.write(run(process.execPath, ["--input-type=module", "-e", esm], workDir));

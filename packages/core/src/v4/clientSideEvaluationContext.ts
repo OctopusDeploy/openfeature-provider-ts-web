@@ -1,4 +1,4 @@
-import { EvaluationContext } from "@openfeature/web-sdk";
+import { EvaluationContext } from "@openfeature/core";
 
 /**
  * What a flag's rules and conditions are evaluated against.

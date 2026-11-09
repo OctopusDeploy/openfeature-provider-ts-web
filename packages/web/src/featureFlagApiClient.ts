@@ -6,7 +6,7 @@ import { EvaluationResponse } from "./evaluationResponse.js";
 import { FeatureFlagEvaluator } from "./featureFlagEvaluator.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 import { ProductMetadata } from "./productMetadata.js";
-import { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
+import { parseServerSideEvaluations } from "@octopusdeploy/openfeature-core";
 
 /**
  * Kept separate from each provider's public configuration so a provider can change its own API without changing

@@ -47,5 +47,15 @@
     "bugs": {
         "url": "https://github.com/OctopusDeploy/openfeature-provider-ts-web/issues"
     },
-    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme"
+    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
+    "devDependencies": {
+        "@openfeature/core": "^1.2.0",
+        "@types/murmurhash3js-revisited": "^3.0.3"
+    },
+    "dependencies": {
+        "murmurhash3js-revisited": "3.0.0"
+    },
+    "peerDependencies": {
+        "@openfeature/core": "^1.2.0"
+    }
 }

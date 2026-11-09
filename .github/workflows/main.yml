@@ -21,7 +21,8 @@ env:
 jobs:
   # The build below tests against the SDK version in devDependencies. This job tests against the
   # lowest version our peerDependencies range promises, so a change that needs a newer SDK fails here
-  # instead of breaking apps that are still on an older one.
+  # instead of breaking apps that are still on an older one. The @openfeature/core peer range, in
+  # both core and web, must reach down to the version that SDK requires.
   test-lowest-sdk:
     runs-on: ubuntu-latest
     permissions:
@@ -49,17 +50,27 @@ jobs:
           # Older SDK releases pin an exact version of core, so take core from the SDK's own peer range.
           CORE=$(lowest "$(npm view "@openfeature/web-sdk@$SDK" peerDependencies.@openfeature/core)")
           echo "Installing @openfeature/web-sdk@$SDK and @openfeature/core@$CORE"
-          # Install into the workspace: from the root, npm would nest web's newer devDependency copy under
-          # packages/web, and that is the one the source resolves.
-          npm install --no-save --no-audit --no-fund -w packages/web "@openfeature/web-sdk@$SDK" "@openfeature/core@$CORE"
+          # Web, core and the SDK must all load the same copy of @openfeature/core, as they do in an app,
+          # or core's errors aren't instances of the SDK's classes. Point the workspaces' devDependencies
+          # at the lowest versions and drop the lockfile's placement of these packages, so npm places
+          # them afresh and hoists one shared copy. Left in the lockfile, npm nests a copy per workspace.
+          npm pkg set -w packages/web "devDependencies.@openfeature/web-sdk=$SDK"
+          npm pkg set -w packages/core "devDependencies.@openfeature/core=$CORE"
+          node -e "
+            const fs = require('fs');
+            const lock = JSON.parse(fs.readFileSync('package-lock.json'));
+            for (const key of Object.keys(lock.packages)) if (key.includes('node_modules/@openfeature/')) delete lock.packages[key];
+            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 4));
+          "
+          npm install --no-audit --no-fund
           # Fail if npm resolved something else, otherwise this job would quietly test the wrong versions.
           for pkg in "web-sdk:$SDK" "core:$CORE"; do
             name=${pkg%%:*}; want=${pkg#*:}
-            dir="packages/web/node_modules/@openfeature/$name"
-            [ -d "$dir" ] || dir="node_modules/@openfeature/$name"
-            got=$(node -p "JSON.parse(require('fs').readFileSync('$dir/package.json')).version")
+            got=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@openfeature/$name/package.json')).version")
             [ "$got" = "$want" ] || { echo "Expected @openfeature/$name@$want, got $got"; exit 1; }
           done
+          nested=$(find packages specification-tests -path "*/node_modules/@openfeature/*" -prune -print)
+          [ -z "$nested" ] || { echo "Expected one shared copy of each OpenFeature package, also found: $nested"; exit 1; }
 
       - name: Build
         run: npm run build

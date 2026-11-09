@@ -1,4 +1,4 @@
-import { ParseError } from "@openfeature/web-sdk";
+import { ParseError } from "@openfeature/core";
 import * as Contexts from "../testing/contexts.js";
 import { ClientSideRule } from "./clientSideRule.js";
 import { ContextAttributeIsOneOfCondition } from "./conditions/contextAttributeIsOneOfCondition.js";
