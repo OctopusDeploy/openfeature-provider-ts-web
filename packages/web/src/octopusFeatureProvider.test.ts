@@ -1,11 +1,21 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
 import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
-import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { silentLogger } from "../../core/src/testing/logger.js";
-import { ClientSideRule, ContextAttributeIsOneOfCondition, FeatureFlagEvaluator, ProductMetadata, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
+import {
+    ClientSideRule,
+    ContextAttributeIsOneOfCondition,
+    FeatureFlagApiClient,
+    FeatureFlagEvaluator,
+    ProductMetadata,
+    ServerSideEvaluation,
+} from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
 
-jest.mock("./featureFlagApiClient.js");
+// Only the API client is replaced. The evaluator and wire contract stay real, so the tests below can build evaluators.
+jest.mock("@octopusdeploy/openfeature-core", () => {
+    const core = jest.requireActual<typeof import("@octopusdeploy/openfeature-core")>("@octopusdeploy/openfeature-core");
+    return { ...core, FeatureFlagApiClient: jest.fn() };
+});
 
 describe.skip("octopusFeatureProvider", () => {
     // Stub out local storage for this particular test

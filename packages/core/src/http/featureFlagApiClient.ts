@@ -1,8 +1,12 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
-import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
-import { EvaluationCache, RawEvaluationResponse } from "./evaluationCache.js";
-import { EvaluationResponse, FeatureFlagEvaluator, octopusHttpHeaderNames, parseServerSideEvaluations, ProductMetadata } from "@octopusdeploy/openfeature-core";
+import { Logger, ProviderNotReadyError } from "@openfeature/core";
+import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCache.js";
+import { ProductMetadata } from "../configuration/productMetadata.js";
+import { EvaluationResponse } from "../evaluation/evaluationResponse.js";
+import { FeatureFlagEvaluator } from "../evaluation/featureFlagEvaluator.js";
+import { parseServerSideEvaluations } from "../v4/parseServerSideEvaluation.js";
+import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 
 /**
  * Kept separate from each provider's public configuration so a provider can change its own API without changing

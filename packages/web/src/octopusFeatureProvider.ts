@@ -8,11 +8,10 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/web-sdk";
-import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { LocalStorageCache } from "./localStorageCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
-import { FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
 
 export class OctopusFeatureProvider implements Provider {
     private client: FeatureFlagApiClient;
