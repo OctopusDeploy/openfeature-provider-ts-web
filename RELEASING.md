@@ -34,9 +34,9 @@ flowchart TD
 
 ## Versioning
 
-The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`).
+The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`). Only web is built and pushed to Octopus Deploy for now; core gets tags and GitHub releases but no published package.
 
-The release workflow can also be run manually from the Actions tab, which is useful for refreshing the release PR after changing the Release Please config.
+The release workflow can also be run manually from the Actions tab to re-run Release Please without pushing a commit, for example after a failed run. Manual runs only do anything on `main`; runs from other branches are skipped.
 
 ## Cutting a release
 
