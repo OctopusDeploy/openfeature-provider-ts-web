@@ -12,6 +12,8 @@ env:
 
 jobs:
   release-please:
+    # A manual run from another branch would build the release from that branch.
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
       issues: write
