@@ -57,7 +57,7 @@
         "specification-tests": "*"
     },
     "dependencies": {
-        "@octopusdeploy/openfeature-core": "*"
+        "@octopusdeploy/openfeature-core": "6.0.0"
     },
     "peerDependencies": {
         "@openfeature/core": "^1.2.0",

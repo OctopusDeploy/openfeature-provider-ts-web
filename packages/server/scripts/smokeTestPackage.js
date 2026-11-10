@@ -25,13 +25,12 @@ try {
     fs.writeFileSync(path.join(workDir, "package.json"), JSON.stringify({ name: "smoke-test", private: true }));
     run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", ...tarballs], workDir);
 
-    // Server's only runtime dependency is core. Anything else server needs at runtime belongs in core, which declares
-    // it once for both providers. Until BMBB-1401 adds server to Release Please, nothing would bump an exact pin when
-    // core is released, so server takes any core and the workspace supplies it. BMBB-1401 pins it, and checks it here.
+    // Server's only runtime dependency is core, pinned to the exact version released with it. Anything else server
+    // needs at runtime belongs in core, which declares it once for both providers.
     const readManifest = (dir) => JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf-8"));
     const core = readManifest(path.join(root, "..", "core"));
     const packed = readManifest(path.join(workDir, "node_modules", "@octopusdeploy", "openfeature-server"));
-    const expectedDependencies = JSON.stringify({ [core.name]: "*" });
+    const expectedDependencies = JSON.stringify({ [core.name]: core.version });
     const actualDependencies = JSON.stringify(packed.dependencies ?? {});
     if (actualDependencies !== expectedDependencies) {
         throw new Error(`Expected the packed dependencies to be exactly ${expectedDependencies}, but they were ${actualDependencies}`);
