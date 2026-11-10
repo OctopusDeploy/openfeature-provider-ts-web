@@ -40,6 +40,9 @@ const serverOnly = restrictSpecifier(
     "The server provider uses @openfeature/server-sdk, and must not depend on the web SDK or provider."
 );
 
+const webStorage = ["localStorage", "sessionStorage"];
+const webStorageMessage = "The server provider keeps evaluations in core's InMemoryEvaluationCache, not browser storage.";
+
 module.exports = tseslint.config(
     {
         ignores: ["**/dist/**", "**/coverage/**"],
@@ -78,6 +81,14 @@ module.exports = tseslint.config(
         files: ["packages/server/**/*.ts"],
         rules: {
             "no-restricted-syntax": ["error", ...missingJsExtension, ...serverOnly],
+            // @types/node declares Web Storage, and Node 25+ provides it, so the compiler doesn't stop
+            // server reaching for browser storage. A Node process serves many users, so per-user state
+            // in a process-wide store would leak between them.
+            "no-restricted-globals": ["error", ...webStorage.map((name) => ({ name, message: webStorageMessage }))],
+            "no-restricted-properties": [
+                "error",
+                ...["globalThis", "global"].flatMap((object) => webStorage.map((property) => ({ object, property, message: webStorageMessage }))),
+            ],
         },
     }
 );

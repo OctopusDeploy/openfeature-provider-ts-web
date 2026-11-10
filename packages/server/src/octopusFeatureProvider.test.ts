@@ -53,17 +53,15 @@ describe("Evaluation context is supplied per evaluation", () => {
         expect(await OpenFeature.getClient().getBooleanValue("segmented-feature", false, { serverUri: "app.example.com" })).toBe(true);
     });
 
-    // A server handles many users at once, so each evaluation must see only its own context.
-    test("Evaluates concurrent requests against their own context", async () => {
+    // One provider serves every user of a server, so nothing from one user's evaluation may reach the next. This
+    // fails if the provider keeps the last context it saw and falls back to it, as web keeps its static context.
+    test("Does not carry one evaluation's context into the next", async () => {
         const client = OpenFeature.getClient();
 
-        const [matching, other] = await Promise.all([
-            client.getBooleanValue("segmented-feature", false, { serverUri: "app.example.com" }),
-            client.getBooleanValue("segmented-feature", false, { serverUri: "other.example.com" }),
-        ]);
-
-        expect(matching).toBe(true);
-        expect(other).toBe(false);
+        expect(await client.getBooleanValue("segmented-feature", false, { serverUri: "app.example.com" })).toBe(true);
+        expect(await client.getBooleanValue("segmented-feature", false, { serverUri: "other.example.com" })).toBe(false);
+        expect(await client.getBooleanValue("segmented-feature", false, { serverUri: "app.example.com" })).toBe(true);
+        expect(await client.getBooleanValue("segmented-feature", false)).toBe(false);
     });
 
     test("Merges the client's context with the evaluation's", async () => {

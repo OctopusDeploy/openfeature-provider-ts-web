@@ -40,9 +40,11 @@ git submodule update --init
 - Node.js 26 (the version CI uses)
 - npm
 
+The server provider supports the Node versions in its `engines.node`, and the Minimum Node workflow runs the same checks on the oldest of them.
+
 ### Commands
 
-The repository is an npm workspace and the web provider lives in `packages/web`. Run these from the repository root:
+The repository is an npm workspace. The web provider lives in `packages/web`, the server provider in `packages/server`, and the code they share in `packages/core`. Run these from the repository root:
 
 ```bash
 npm ci
@@ -52,7 +54,7 @@ npm run lint:package
 npm run test:package
 ```
 
-The specification fixtures (from the `specification` submodule) are run by the private `specification-tests` workspace, which owns case loading, the test server and the assertions. Each provider has a thin test file that tells the harness how its SDK evaluates a flag. The web provider's is `packages/web/src/specificationTests/fixtureEvaluationTests.test.ts`.
+The specification fixtures (from the `specification` submodule) are run by the private `specification-tests` workspace, which owns case loading, the test server and the assertions. Each provider has a thin test file that tells the harness how its SDK evaluates a flag. Each provider's is at `src/specificationTests/fixtureEvaluationTests.test.ts` in its package.
 
 The package ships both ESM and CommonJS builds, so relative imports in `src` must end in `.js` (for example `import { ProductMetadata } from "./productMetadata.js"`). Native Node ESM needs the extension, but `tsc` and the tests don't, so a missing one only shows up when a consumer loads the ESM build. Linting flags it, and `npm run test:package` catches it by packing the package and loading it with both `require()` and `import`.
 
@@ -71,7 +73,7 @@ Don't edit `packages/web/src/version.ts` by hand. Release Please updates it with
 
 ### OpenFeature SDK version
 
-`@openfeature/web-sdk` is a peer dependency, so the provider runs against whichever version the app installs. The lowest version we support is the bottom of its `peerDependencies` range in `packages/web/package.json`. Day to day we build and test against the newer version in `devDependencies`, and the `test-lowest-sdk` CI job builds and tests against the lowest one.
+Each provider peer-depends on its OpenFeature SDK: `@openfeature/web-sdk` for web and `@openfeature/server-sdk` for server. The provider runs against whichever version the app installs. The lowest version we support is the bottom of the SDK's `peerDependencies` range in the provider's `package.json`. Day to day we build and test against the newer version in `devDependencies`, and the `test-lowest-sdk` CI job builds and tests against the lowest versions of both SDKs together.
 
 If that job fails, the change needs something from a newer SDK. Raise the `peerDependencies` range to the lowest version that has it.
 
