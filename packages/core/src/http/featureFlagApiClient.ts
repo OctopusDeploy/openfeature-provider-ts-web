@@ -8,6 +8,8 @@ import { FeatureFlagEvaluator } from "../evaluation/featureFlagEvaluator.js";
 import { parseServerSideEvaluations } from "../v4/parseServerSideEvaluation.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 
+const requestTimeoutMs = 100_000;
+
 /**
  * Kept separate from each provider's public configuration so a provider can change its own API without changing
  * the client's.
@@ -44,7 +46,8 @@ export class FeatureFlagApiClient {
         this.logger = options.logger;
         this.providerMetadata = options.providerMetadata;
         this.cache = options.cache;
-        this.axiosInstance = axios.create();
+        // A request that never gets a response would otherwise stall polling for good. 100s matches .NET's HttpClient default.
+        this.axiosInstance = axios.create({ timeout: requestTimeoutMs });
         axiosRetry(this.axiosInstance, {
             retries: 3,
             onRetry: (retryCount, error) =>

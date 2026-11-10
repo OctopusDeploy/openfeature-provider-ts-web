@@ -224,6 +224,17 @@ describe("FeatureFlagApiClient", () => {
             expect(mockAdapter.history.get).toHaveLength(0);
         });
 
+        test("Times out both requests, so one that never gets a response can't stall polling", async () => {
+            mockAdapter.onGet(checkUrl).reply(200, { contentHash: "bmV3" });
+            mockAdapter.onGet().reply(200, [], { ContentHash: "bmV3" });
+            const client = newClient();
+
+            await client.haveFeaturesChanged("aGFzaA==");
+            await client.getEvaluator();
+
+            expect(mockAdapter.history.get.map((request) => request.timeout)).toEqual([100_000, 100_000]);
+        });
+
         // Rejecting, rather than reporting a change, lets the caller keep the evaluations it has instead of fetching
         // them again from a server that is already failing.
         test.each([
