@@ -16,6 +16,11 @@ export class FeatureFlagEvaluator {
         private readonly logger: Logger
     ) {}
 
+    /** Identifies the evaluations this evaluator holds, so a caller can ask the server whether they have changed. */
+    get contentHash(): string {
+        return this.response.contentHash;
+    }
+
     findEvaluationBySlug(slug: string): ServerSideEvaluation | undefined {
         return this.response.evaluations.find((evaluation) => typeof evaluation.slug === "string" && equalsIgnoringCase(evaluation.slug, slug));
     }

@@ -27,4 +27,8 @@ if (await client.getBooleanValue("to-the-moon-feature", false, { userid: "bob@oc
 }
 ```
 
-The provider fetches flags once, when it initializes. If it cannot retrieve them, `setProviderAndWait` rejects and every evaluation returns your default value.
+The provider fetches flags when it initializes. If it cannot retrieve them, `setProviderAndWait` rejects and every evaluation returns your default value.
+
+After that, it checks for changes every minute and fetches the flags again only when they have changed. Set `cacheDurationMs` to check more or less often. If a check fails, the provider keeps evaluating against the flags it already has and tries again at the next interval. If initialization failed, it keeps trying and moves to `READY` once the flags can be fetched.
+
+Polling stops when the provider is closed, for example by `OpenFeature.close()`. The polling timer never keeps the Node process alive on its own.
