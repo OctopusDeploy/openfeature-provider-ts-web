@@ -41,7 +41,7 @@ const serverOnly = restrictSpecifier(
 );
 
 const webStorage = ["localStorage", "sessionStorage"];
-const webStorageMessage = "The server provider keeps evaluations in core's InMemoryEvaluationCache, not browser storage.";
+const webStorageMessage = "The server provider keeps its evaluations in memory, not in browser storage.";
 
 module.exports = tseslint.config(
     {
