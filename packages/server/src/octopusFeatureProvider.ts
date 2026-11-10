@@ -8,9 +8,16 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/server-sdk";
-import { FeatureFlagApiClient, FeatureFlagEvaluator, InMemoryEvaluationCache } from "@octopusdeploy/openfeature-core";
+import { EvaluationCache, FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
+
+// The provider already holds the evaluations it fetched, so a cache adds nothing, and falling back to one would let a
+// failed fetch quietly serve evaluations from an earlier start.
+const noEvaluationCache: EvaluationCache = {
+    read: () => undefined,
+    write: () => undefined,
+};
 
 export class OctopusFeatureProvider implements Provider {
     private client: FeatureFlagApiClient;
@@ -25,8 +32,7 @@ export class OctopusFeatureProvider implements Provider {
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger,
             providerMetadata: { name: "openfeature-provider-ts-server", version: PROVIDER_VERSION },
-            // A Node process has no storage that outlives it, so the cache only lives as long as this provider.
-            cache: new InMemoryEvaluationCache(),
+            cache: noEvaluationCache,
         });
     }
 
