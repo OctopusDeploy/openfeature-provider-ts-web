@@ -6,13 +6,13 @@
         "specification-tests"
     ],
     "scripts": {
-        "build": "npm run build -w packages/core && npm run build -w packages/web",
+        "build": "npm run build -w packages/core && npm run build -w packages/web && npm run build -w packages/server",
         "lint:fix": "eslint . --fix",
         "lint": "eslint .",
-        "lint:package": "npm run lint:package -w packages/core && npm run lint:package -w packages/web",
+        "lint:package": "npm run lint:package -w packages/core && npm run lint:package -w packages/web && npm run lint:package -w packages/server",
         "prepare": "npm run build",
         "test": "jest --maxWorkers=4 --config=jest.config.js --ci --reporters=default --reporters=jest-junit",
-        "test:package": "npm run build && npm run test:package -w packages/web"
+        "test:package": "npm run build && npm run test:package -w packages/web && npm run test:package -w packages/server"
     },
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",

@@ -1,0 +1,36 @@
+name: "Test"
+description: "Installs, tests, builds and validates every package on one Node version"
+
+inputs:
+  node-version:
+    description: "The Node version to test on"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: "npm"
+
+    - name: Install
+      shell: bash
+      run: npm ci
+
+    - name: Test
+      shell: bash
+      run: npm test
+
+    - name: Build
+      shell: bash
+      run: npm run build
+
+    - name: Validate package
+      shell: bash
+      run: npm run lint:package
+
+    - name: Smoke test package
+      shell: bash
+      run: npm run test:package

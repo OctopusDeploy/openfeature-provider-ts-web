@@ -26,5 +26,12 @@ module.exports = {
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
     },
+    {
+      // This workflow tests the oldest Node the server provider supports (engines.node). Bumping it
+      // would quietly stop testing that version, so it moves only when engines.node does.
+      matchFileNames: [".github/workflows/minimum-node.yml"],
+      matchDepNames: ["node"],
+      enabled: false,
+    },
   ],
 };
