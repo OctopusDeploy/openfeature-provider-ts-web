@@ -80,9 +80,9 @@ runs:
       # dist/ is unaffected, so no rebuild is needed.
       # --ignore-scripts skips the repo's preversion/version lifecycle hooks (e.g. preversion runs
       # the linter); stamping is a pure version-number write and must not trigger other gates.
-      # --no-workspaces-update stops npm reinstalling the workspace. Until the pins below are rewritten, web
-      # still pins core's base version, which the stamped local core no longer satisfies, so npm would try
-      # to fetch it from the registry.
+      # --no-workspaces-update skips the reinstall npm version would otherwise run. Until the pins below are
+      # rewritten, web still pins core's base version, which the stamped local core no longer satisfies, so that
+      # reinstall would try to fetch core's base version from the registry.
       run: |
         VERSION="${{ steps.version.outputs.version }}"
         PATHS="${{ steps.packages.outputs.paths }}"
