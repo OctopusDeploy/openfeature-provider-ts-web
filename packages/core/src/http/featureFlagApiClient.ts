@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import axiosRetry from "axios-retry";
 import { Logger, ProviderNotReadyError } from "@openfeature/core";
 import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCache.js";
@@ -103,9 +103,9 @@ export class FeatureFlagApiClient {
             return undefined;
         }
 
-        // @ts-ignore
-        const contentHash = response.headers.get(octopusHttpHeaderNames.contentHash);
-        if (!contentHash) {
+        // Axios turns every adapter's response headers into AxiosHeaders, but its types still allow a plain object.
+        const contentHash = response.headers instanceof AxiosHeaders ? response.headers.get(octopusHttpHeaderNames.contentHash) : undefined;
+        if (typeof contentHash !== "string" || contentHash === "") {
             this.logger.warn(`Feature flag response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
         }

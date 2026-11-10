@@ -1,6 +1,7 @@
 // Packs the package and loads the tarball under native Node with both require() and import.
 // tsc doesn't check that relative imports carry a .js extension, and a missing one only fails
 // when Node loads dist/esm as real ESM, so this is the check that catches it.
+// It also checks that the packed package depends on core and nothing else.
 const { execFileSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -22,6 +23,18 @@ try {
     const tarballs = [pack(path.join(root, "..", "core")), pack(root)];
     fs.writeFileSync(path.join(workDir, "package.json"), JSON.stringify({ name: "smoke-test", private: true }));
     run(npm, ["install", "--silent", "--no-audit", "--no-fund", "--no-package-lock", ...tarballs], workDir);
+
+    // Web's only runtime dependency is core, pinned to the exact version released with it. Anything else web needs at
+    // runtime belongs in core, which declares it once for both providers.
+    const readManifest = (dir) => JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf-8"));
+    const core = readManifest(path.join(root, "..", "core"));
+    const packed = readManifest(path.join(workDir, "node_modules", "@octopusdeploy", "openfeature"));
+    const expectedDependencies = JSON.stringify({ [core.name]: core.version });
+    const actualDependencies = JSON.stringify(packed.dependencies ?? {});
+    if (actualDependencies !== expectedDependencies) {
+        throw new Error(`Expected the packed dependencies to be exactly ${expectedDependencies}, but they were ${actualDependencies}`);
+    }
+    console.log("dependencies: ok");
 
     const check = `
         const { OctopusFeatureProvider, ProductMetadata } = PROVIDER;

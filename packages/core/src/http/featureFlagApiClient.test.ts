@@ -2,12 +2,9 @@ import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCac
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { silentLogger } from "../testing/logger.js";
 import axios from "axios";
-import axiosRetry from "axios-retry";
 import MockAdapter from "axios-mock-adapter";
 import { ProviderNotReadyError } from "@openfeature/core";
 import { ProductMetadata } from "../configuration/productMetadata.js";
-
-axiosRetry(axios, { retries: 3 });
 
 const testProviderMetadata = { name: "test-provider", version: "1.2.3" };
 

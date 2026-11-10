@@ -1,8 +1,8 @@
 import { EvaluationCache, RawEvaluationResponse } from "./evaluationCache.js";
 
 /**
- * Keeps the last evaluations fetched for the lifetime of the process, for providers that have no storage that outlives
- * it. Neither method can fail, so both meet the EvaluationCache contract trivially.
+ * Keeps the last evaluations fetched for as long as this instance lives, for providers that have no storage that
+ * outlives the process. Neither method can fail, so both meet the EvaluationCache contract trivially.
  *
  * @internal
  */
