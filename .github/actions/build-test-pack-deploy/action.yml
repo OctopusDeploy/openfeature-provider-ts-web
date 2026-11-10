@@ -169,6 +169,9 @@ runs:
       if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
       with:
         packages: ${{ steps.pack.outputs.files }}
+        # Release builds reuse the base version, so a re-run after a partial failure finds these already pushed.
+        # Ignore rather than overwrite, so a re-run can never replace a package behind a deployed release.
+        overwrite_mode: IgnoreIfExists
 
     - name: Create Release in Octopus
       uses: OctopusDeploy/create-release-action@v4
@@ -177,3 +180,4 @@ runs:
         project: "OpenFeature TypeScript Web Provider"
         release_number: ${{ steps.version.outputs.version }}
         packages: ${{ steps.pack.outputs.refs }}
+        ignore_existing: "true"
