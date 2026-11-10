@@ -17,30 +17,6 @@ jest.mock("@octopusdeploy/openfeature-core", () => {
     return { ...core, FeatureFlagApiClient: jest.fn() };
 });
 
-describe.skip("octopusFeatureProvider", () => {
-    // Stub out local storage for this particular test
-    global.localStorage = {
-        getItem: jest.fn(),
-        setItem: jest.fn(),
-        clear: jest.fn(),
-        length: 0,
-        key: jest.fn(),
-        removeItem: jest.fn(),
-    };
-
-    test("use this to verify that the provider is happy end to end", async () => {
-        const client = new OctopusFeatureProvider({
-            clientIdentifier: "TODO",
-            productMetadata: new ProductMetadata("TestClient"),
-        });
-
-        await OpenFeature.setProviderAndWait(client);
-        await OpenFeature.setContext({ username: "admin" });
-        const result = OpenFeature.getClient().getBooleanValue("heartbeat", false, {});
-        expect(result).toBe(true);
-    });
-});
-
 describe("Context is available for segment evaluation immediately after provider is ready", () => {
     const context = { serverUri: "app.example.com" };
 

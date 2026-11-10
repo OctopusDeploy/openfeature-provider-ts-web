@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, RawAxiosHeaders } from "axios";
 import axiosRetry from "axios-retry";
 import { Logger, ProviderNotReadyError } from "@openfeature/core";
 import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCache.js";
@@ -103,8 +103,9 @@ export class FeatureFlagApiClient {
             return undefined;
         }
 
-        // Axios turns every adapter's response headers into AxiosHeaders, but its types still allow a plain object.
-        const contentHash = response.headers instanceof AxiosHeaders ? response.headers.get(octopusHttpHeaderNames.contentHash) : undefined;
+        // from() returns AxiosHeaders as they are and wraps a plain object, so the lookup is case-insensitive either way.
+        // Axios's own response header types don't match from()'s parameter, so they need the cast.
+        const contentHash = AxiosHeaders.from(response.headers as RawAxiosHeaders).get(octopusHttpHeaderNames.contentHash);
         if (typeof contentHash !== "string" || contentHash === "") {
             this.logger.warn(`Feature flag response from ${this.serverUri} did not contain expected ContentHash header.`);
             return undefined;
