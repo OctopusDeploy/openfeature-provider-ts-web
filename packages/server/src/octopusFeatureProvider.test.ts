@@ -10,6 +10,7 @@ import {
     ServerSideEvaluation,
 } from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
+import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 
 // Only the API client is replaced. The evaluator and wire contract stay real, so the tests below can build evaluators.
 jest.mock("@octopusdeploy/openfeature-core", () => {
@@ -17,11 +18,12 @@ jest.mock("@octopusdeploy/openfeature-core", () => {
     return { ...core, FeatureFlagApiClient: jest.fn() };
 });
 
-const buildProvider = () =>
+const buildProvider = (configuration: Partial<OctopusFeatureConfiguration> = {}) =>
     new OctopusFeatureProvider({
         clientIdentifier: "test",
         productMetadata: new ProductMetadata("TestClient"),
         logger: silentLogger(),
+        ...configuration,
     });
 
 const serveEvaluations = (...evaluations: ServerSideEvaluation[]) => {
@@ -160,7 +162,7 @@ describe("A provider that retrieved no evaluations", () => {
     });
 });
 
-test("Fetches evaluations once, when it initializes", async () => {
+test("Does not fetch evaluations for each evaluation", async () => {
     serveEvaluations(new ServerSideEvaluation("feature-a", true, "The flag is enabled for this environment."));
     await OpenFeature.setProviderAndWait(buildProvider());
 
@@ -168,6 +170,191 @@ test("Fetches evaluations once, when it initializes", async () => {
     await OpenFeature.getClient().getBooleanValue("feature-a", false);
 
     expect(jest.mocked(FeatureFlagApiClient).prototype.getEvaluator).toHaveBeenCalledTimes(1);
+});
+
+// Matches the .NET and Java providers: check the content hash every cacheDuration (one minute by default), fetch again
+// only when it changed, keep the evaluations already held on any failure, and keep trying for as long as it is open.
+describe("Polling for flag updates", () => {
+    const oneMinute = 60_000;
+    const enabled = "The flag is enabled for this environment.";
+    const disabled = "The flag is disabled for this environment.";
+
+    const evaluator = (value: boolean, contentHash: string) =>
+        new FeatureFlagEvaluator({ evaluations: [new ServerSideEvaluation("feature-a", value, value ? enabled : disabled)], contentHash }, silentLogger());
+
+    let getEvaluator: jest.Mock;
+    let haveFeaturesChanged: jest.Mock;
+
+    const evaluateFeatureA = () => OpenFeature.getClient().getBooleanValue("feature-a", false);
+
+    beforeEach(() => {
+        jest.useFakeTimers();
+        getEvaluator = jest.fn().mockResolvedValue(evaluator(true, "first"));
+        haveFeaturesChanged = jest.fn().mockResolvedValue(false);
+        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = getEvaluator;
+        jest.mocked(FeatureFlagApiClient).prototype.haveFeaturesChanged = haveFeaturesChanged;
+    });
+
+    afterEach(async () => {
+        await OpenFeature.clearProviders();
+        // A timer left behind here is one close failed to clear.
+        expect(jest.getTimerCount()).toBe(0);
+        jest.useRealTimers();
+    });
+
+    test("Checks for changes once a minute by default", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        await jest.advanceTimersByTimeAsync(oneMinute - 1);
+        expect(haveFeaturesChanged).not.toHaveBeenCalled();
+
+        await jest.advanceTimersByTimeAsync(1);
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(1);
+        expect(haveFeaturesChanged).toHaveBeenCalledWith("first", expect.any(AbortSignal));
+
+        await jest.advanceTimersByTimeAsync(oneMinute);
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(2);
+    });
+
+    test("Checks for changes on the configured interval", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider({ cacheDurationMs: 5_000 }));
+
+        await jest.advanceTimersByTimeAsync(15_000);
+
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(3);
+    });
+
+    test("Does not fetch the evaluations again while they are unchanged", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        await jest.advanceTimersByTimeAsync(oneMinute * 3);
+
+        expect(getEvaluator).toHaveBeenCalledTimes(1);
+    });
+
+    test("Evaluates against the new evaluations once they have changed", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+        expect(await evaluateFeatureA()).toBe(true);
+
+        haveFeaturesChanged.mockResolvedValueOnce(true);
+        getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+        await jest.advanceTimersByTimeAsync(oneMinute);
+
+        expect(await evaluateFeatureA()).toBe(false);
+
+        await jest.advanceTimersByTimeAsync(oneMinute);
+        expect(haveFeaturesChanged).toHaveBeenLastCalledWith("second", expect.any(AbortSignal));
+    });
+
+    // Neither the .NET nor the Java provider emits an event when the evaluations change. See BMBB-1399.
+    test("Does not emit PROVIDER_CONFIGURATION_CHANGED when the evaluations change", async () => {
+        const onChanged = jest.fn();
+        OpenFeature.addHandler(ProviderEvents.ConfigurationChanged, onChanged);
+        try {
+            await OpenFeature.setProviderAndWait(buildProvider());
+            haveFeaturesChanged.mockResolvedValueOnce(true);
+            getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+
+            await jest.advanceTimersByTimeAsync(oneMinute);
+
+            expect(onChanged).not.toHaveBeenCalled();
+        } finally {
+            OpenFeature.removeHandler(ProviderEvents.ConfigurationChanged, onChanged);
+        }
+    });
+
+    test.each([
+        ["the check fails", () => haveFeaturesChanged.mockRejectedValueOnce(new Error("Network Error"))],
+        [
+            "fetching the changed evaluations fails",
+            () => {
+                haveFeaturesChanged.mockResolvedValueOnce(true);
+                getEvaluator.mockRejectedValueOnce(new ProviderNotReadyError("unavailable"));
+            },
+        ],
+    ])("Keeps the evaluations it has, stays READY, and tries again next interval when %s", async (_, arrangeFailure) => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+        arrangeFailure();
+
+        await jest.advanceTimersByTimeAsync(oneMinute);
+
+        expect(await evaluateFeatureA()).toBe(true);
+        expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
+
+        haveFeaturesChanged.mockResolvedValueOnce(true);
+        getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+        await jest.advanceTimersByTimeAsync(oneMinute);
+
+        expect(await evaluateFeatureA()).toBe(false);
+    });
+
+    // Initialization still rejects, as it did before polling, but the provider keeps trying like .NET and Java do.
+    test("Recovers from a failed initialization once the flags can be fetched", async () => {
+        getEvaluator.mockRejectedValueOnce(new ProviderNotReadyError("unavailable"));
+        const onReady = jest.fn();
+        OpenFeature.addHandler(ProviderEvents.Ready, onReady);
+        try {
+            await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBeDefined();
+            expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
+
+            await jest.advanceTimersByTimeAsync(oneMinute);
+
+            // Nothing was held to compare against, so it fetches without checking first.
+            expect(haveFeaturesChanged).not.toHaveBeenCalled();
+            expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
+            expect(onReady).toHaveBeenCalled();
+            expect(await evaluateFeatureA()).toBe(true);
+        } finally {
+            OpenFeature.removeHandler(ProviderEvents.Ready, onReady);
+        }
+    });
+
+    test("Stops polling when closed", async () => {
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        await OpenFeature.clearProviders();
+        await jest.advanceTimersByTimeAsync(oneMinute * 3);
+
+        expect(haveFeaturesChanged).not.toHaveBeenCalled();
+    });
+
+    test("Abandons a refresh that is under way when closed", async () => {
+        haveFeaturesChanged.mockImplementationOnce(
+            (_: string, signal: AbortSignal) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason)))
+        );
+        await OpenFeature.setProviderAndWait(buildProvider());
+        await jest.advanceTimersByTimeAsync(oneMinute);
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(1);
+
+        await OpenFeature.clearProviders();
+        await jest.advanceTimersByTimeAsync(oneMinute * 3);
+
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(1);
+    });
+
+    test("Does not keep the Node process alive while waiting to poll", async () => {
+        const setTimeoutSpy = jest.spyOn(global, "setTimeout");
+        await OpenFeature.setProviderAndWait(buildProvider());
+
+        const timers = setTimeoutSpy.mock.results.map((result) => result.value as NodeJS.Timeout);
+        expect(timers).not.toHaveLength(0);
+        expect(timers.every((timer) => !timer.hasRef())).toBe(true);
+    });
+
+    test("Polls on one timer only after being initialized again", async () => {
+        const provider = buildProvider();
+        await OpenFeature.setProviderAndWait(provider);
+        await OpenFeature.clearProviders();
+        await OpenFeature.setProviderAndWait(provider);
+
+        await jest.advanceTimersByTimeAsync(oneMinute);
+
+        expect(haveFeaturesChanged).toHaveBeenCalledTimes(1);
+    });
+
+    test.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 31])("Rejects a cacheDurationMs of %p", (cacheDurationMs) => {
+        expect(() => buildProvider({ cacheDurationMs })).toThrow(RangeError);
+    });
 });
 
 // The X-Octopus-Client header is how backend telemetry tells server traffic apart from other providers.

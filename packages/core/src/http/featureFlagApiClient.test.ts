@@ -179,4 +179,62 @@ describe("FeatureFlagApiClient", () => {
             });
         });
     });
+
+    describe("checking whether the features have changed", () => {
+        const checkUrl = /\/api\/feature-flags\/check\/v4\/$/;
+
+        function newClient(releaseVersionOverride?: string): FeatureFlagApiClient {
+            return new FeatureFlagApiClient({
+                clientIdentifier: "a.b.c",
+                productMetadata: new ProductMetadata("TestClient"),
+                logger: silentLogger(),
+                providerMetadata: testProviderMetadata,
+                cache: new FakeCache(),
+                releaseVersionOverride,
+            });
+        }
+
+        test("Invokes the v4 check endpoint with the same headers as the evaluations request", async () => {
+            mockAdapter.onGet(checkUrl).reply(200, { contentHash: "aGFzaA==" });
+
+            await newClient("1.2.3").haveFeaturesChanged("aGFzaA==");
+
+            const request = mockAdapter.history.get[0];
+            expect(request.url).toMatch(checkUrl);
+            expect(request.headers!["Authorization"]).toEqual("Bearer a.b.c");
+            expect(request.headers!["X-Octopus-Client"]).toEqual("TestClient test-provider/1.2.3");
+            expect(request.headers!["X-Release-Version"]).toEqual("1.2.3");
+        });
+
+        test("Reports no change when the server returns the same content hash", async () => {
+            mockAdapter.onGet(checkUrl).reply(200, { contentHash: "aGFzaA==" });
+
+            await expect(newClient().haveFeaturesChanged("aGFzaA==")).resolves.toBe(false);
+        });
+
+        test("Reports a change when the server returns a different content hash", async () => {
+            mockAdapter.onGet(checkUrl).reply(200, { contentHash: "bmV3" });
+
+            await expect(newClient().haveFeaturesChanged("aGFzaA==")).resolves.toBe(true);
+        });
+
+        test("Reports a change without asking the server when there is no content hash to compare", async () => {
+            await expect(newClient().haveFeaturesChanged("")).resolves.toBe(true);
+
+            expect(mockAdapter.history.get).toHaveLength(0);
+        });
+
+        // Rejecting, rather than reporting a change, lets the caller keep the evaluations it has instead of fetching
+        // them again from a server that is already failing.
+        test.each([
+            ["the server cannot be reached", () => mockAdapter.onGet(checkUrl).networkError()],
+            ["the server keeps failing", () => mockAdapter.onGet(checkUrl).reply(500)],
+            ["the response has no content hash", () => mockAdapter.onGet(checkUrl).reply(200, {})],
+            ["the response is not an object", () => mockAdapter.onGet(checkUrl).reply(200, "nope")],
+        ])("Rejects when %s", async (_, arrangeResponse) => {
+            arrangeResponse();
+
+            await expect(newClient().haveFeaturesChanged("aGFzaA==")).rejects.toBeDefined();
+        });
+    });
 });

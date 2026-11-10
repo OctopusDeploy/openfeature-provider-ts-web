@@ -1,4 +1,4 @@
-import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, RawAxiosHeaders } from "axios";
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, GenericAbortSignal, RawAxiosHeaders } from "axios";
 import axiosRetry from "axios-retry";
 import { Logger, ProviderNotReadyError } from "@openfeature/core";
 import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCache.js";
@@ -57,8 +57,8 @@ export class FeatureFlagApiClient {
     /**
      * @throws {ProviderNotReadyError} when the server returned nothing usable and no cached evaluations are available.
      */
-    async getEvaluator(): Promise<FeatureFlagEvaluator> {
-        const raw = await this.fetchEvaluations();
+    async getEvaluator(signal?: GenericAbortSignal): Promise<FeatureFlagEvaluator> {
+        const raw = await this.fetchEvaluations(signal);
 
         if (raw === undefined) {
             throw new ProviderNotReadyError(
@@ -69,8 +69,35 @@ export class FeatureFlagApiClient {
         return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
     }
 
-    private async fetchEvaluations(): Promise<RawEvaluationResponse | undefined> {
-        const raw = await this.fetchEvaluationsFromServer();
+    /**
+     * Asks the server whether the evaluations identified by contentHash are still current. This is much cheaper than
+     * fetching the evaluations again, so a provider that polls checks first.
+     *
+     * @throws when the server can't be reached or does not return a content hash, so the caller can keep what it has.
+     */
+    async haveFeaturesChanged(contentHash: string, signal?: GenericAbortSignal): Promise<boolean> {
+        if (contentHash === "") {
+            return true;
+        }
+
+        const response = await this.axiosInstance.request<unknown>({
+            url: `${this.serverUri}/api/feature-flags/check/v4/`,
+            method: "GET",
+            responseType: "json",
+            headers: this.buildRequestHeaders(),
+            signal,
+        });
+
+        const current = parseFeatureCheck(response.data);
+        if (current === undefined) {
+            throw new Error(`Feature flag check from ${this.serverUri} did not return a valid content hash.`);
+        }
+
+        return current !== contentHash;
+    }
+
+    private async fetchEvaluations(signal: GenericAbortSignal | undefined): Promise<RawEvaluationResponse | undefined> {
+        const raw = await this.fetchEvaluationsFromServer(signal);
 
         if (raw === undefined) {
             return this.cache.read();
@@ -81,21 +108,16 @@ export class FeatureFlagApiClient {
         return raw;
     }
 
-    private async fetchEvaluationsFromServer(): Promise<RawEvaluationResponse | undefined> {
+    private async fetchEvaluationsFromServer(signal: GenericAbortSignal | undefined): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
             method: "GET",
             responseType: "json",
-            headers: {
-                Authorization: `Bearer ${this.clientIdentifier}`,
-                [octopusHttpHeaderNames.octopusClient]: this.buildOctopusClientHeaderValue(),
-            },
+            headers: this.buildRequestHeaders(),
+            signal,
         };
-        if (this.releaseVersionOverride) {
-            config.headers![octopusHttpHeaderNames.releaseVersion] = this.releaseVersionOverride;
-        }
 
         const response = await this.requestEvaluations(config);
 
@@ -122,11 +144,20 @@ export class FeatureFlagApiClient {
         try {
             return await this.axiosInstance.request<unknown>(config);
         } catch (e) {
-            this.logger.warn(
-                `Failed to retrieve feature manifest during initialization. Falling back to cached evaluations, if present.\n${JSON.stringify(e)}`
-            );
+            this.logger.warn(`Failed to retrieve feature manifest. Falling back to cached evaluations, if present.\n${JSON.stringify(e)}`);
             return undefined;
         }
+    }
+
+    private buildRequestHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${this.clientIdentifier}`,
+            [octopusHttpHeaderNames.octopusClient]: this.buildOctopusClientHeaderValue(),
+        };
+        if (this.releaseVersionOverride) {
+            headers[octopusHttpHeaderNames.releaseVersion] = this.releaseVersionOverride;
+        }
+        return headers;
     }
 
     private buildOctopusClientHeaderValue(): string {
@@ -140,4 +171,13 @@ export class FeatureFlagApiClient {
 
 function parseEvaluationResponse(raw: RawEvaluationResponse): EvaluationResponse {
     return { evaluations: parseServerSideEvaluations(raw.evaluations), contentHash: raw.contentHash };
+}
+
+/** The check endpoint returns the current content hash base64-encoded, the same form as the ContentHash header. */
+function parseFeatureCheck(data: unknown): string | undefined {
+    if (typeof data !== "object" || data === null) {
+        return undefined;
+    }
+    const contentHash = (data as { contentHash?: unknown }).contentHash;
+    return typeof contentHash === "string" && contentHash !== "" ? contentHash : undefined;
 }
