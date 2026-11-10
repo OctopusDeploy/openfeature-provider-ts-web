@@ -1,0 +1,48 @@
+name: Minimum Node
+
+# The server provider declares the oldest Node it supports in engines.node. The CI build runs on the
+# current Node, so this tests the declared minimum too, and must be a required check on PRs to main.
+# Renovate is told to leave this file's Node version alone (see renovate-config.js); it moves only
+# when engines.node does.
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: minimum-node-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MINIMUM_NODE: "22"
+
+jobs:
+  test-minimum-node:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: 'true'
+
+      # Fail when engines.node moves without this workflow, so the check never tests a Node the
+      # package no longer declares.
+      - name: Check the minimum matches engines.node
+        run: |
+          DECLARED=$(node -p "require('./packages/server/package.json').engines.node")
+          [ "$DECLARED" = ">=$MINIMUM_NODE" ] || { echo "packages/server declares engines.node \"$DECLARED\", but this workflow tests Node $MINIMUM_NODE"; exit 1; }
+
+      - name: Test on Node ${{ env.MINIMUM_NODE }}
+        uses: ./.github/actions/test
+        with:
+          node-version: ${{ env.MINIMUM_NODE }}

@@ -29,6 +29,17 @@ const openFeatureSdk = restrictSpecifier(
     "Core is shared by both providers. Import from @openfeature/core instead."
 );
 
+// Each provider talks to its own OpenFeature SDK and never to the other provider, so a Node app
+// never pulls in the browser SDK and vice versa.
+const webOnly = restrictSpecifier(
+    "/^(@openfeature\\/server-sdk|@octopusdeploy\\/openfeature-server)(\\/|$)/",
+    "The web provider uses @openfeature/web-sdk, and must not depend on the server SDK or provider."
+);
+const serverOnly = restrictSpecifier(
+    "/^(@openfeature\\/web-sdk|@octopusdeploy\\/openfeature)(\\/|$)/",
+    "The server provider uses @openfeature/server-sdk, and must not depend on the web SDK or provider."
+);
+
 module.exports = tseslint.config(
     {
         ignores: ["**/dist/**", "**/coverage/**"],
@@ -55,6 +66,18 @@ module.exports = tseslint.config(
             // A later config replaces a rule's options rather than merging them, so repeat the
             // .js extension check alongside the SDK ban.
             "no-restricted-syntax": ["error", ...missingJsExtension, ...openFeatureSdk],
+        },
+    },
+    {
+        files: ["packages/web/**/*.ts"],
+        rules: {
+            "no-restricted-syntax": ["error", ...missingJsExtension, ...webOnly],
+        },
+    },
+    {
+        files: ["packages/server/**/*.ts"],
+        rules: {
+            "no-restricted-syntax": ["error", ...missingJsExtension, ...serverOnly],
         },
     }
 );

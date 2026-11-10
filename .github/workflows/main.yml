@@ -22,7 +22,9 @@ jobs:
   # The build below tests against the SDK version in devDependencies. This job tests against the
   # lowest version our peerDependencies range promises, so a change that needs a newer SDK fails here
   # instead of breaking apps that are still on an older one. The @openfeature/core peer range, in
-  # both core and web, must reach down to the version that SDK requires.
+  # core and in each provider, must reach down to the version those SDKs require.
+  # Both providers share one copy of @openfeature/core in the workspace, so both lowest SDKs must
+  # accept the same core version. They do today; if that changes, the install below fails.
   test-lowest-sdk:
     runs-on: ubuntu-latest
     permissions:
@@ -43,18 +45,22 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Install lowest supported OpenFeature SDK
+      - name: Install lowest supported OpenFeature SDKs
         run: |
           lowest() { node -p "process.argv[1].trim().replace(/^[\\^~]/, '')" "$1"; }
-          SDK=$(lowest "$(node -p "require('./packages/web/package.json').peerDependencies['@openfeature/web-sdk']")")
-          # Older SDK releases pin an exact version of core, so take core from the SDK's own peer range.
-          CORE=$(lowest "$(npm view "@openfeature/web-sdk@$SDK" peerDependencies.@openfeature/core)")
-          echo "Installing @openfeature/web-sdk@$SDK and @openfeature/core@$CORE"
+          WEB_SDK=$(lowest "$(node -p "require('./packages/web/package.json').peerDependencies['@openfeature/web-sdk']")")
+          SERVER_SDK=$(lowest "$(node -p "require('./packages/server/package.json').peerDependencies['@openfeature/server-sdk']")")
+          # Older SDK releases pin an exact version of core, so take core from the SDKs' own peer ranges.
+          CORE=$(lowest "$(npm view "@openfeature/web-sdk@$WEB_SDK" peerDependencies.@openfeature/core)")
+          SERVER_CORE=$(lowest "$(npm view "@openfeature/server-sdk@$SERVER_SDK" peerDependencies.@openfeature/core)")
+          [ "$CORE" = "$SERVER_CORE" ] || { echo "@openfeature/web-sdk@$WEB_SDK needs @openfeature/core@$CORE, but @openfeature/server-sdk@$SERVER_SDK needs $SERVER_CORE"; exit 1; }
+          echo "Installing @openfeature/web-sdk@$WEB_SDK, @openfeature/server-sdk@$SERVER_SDK and @openfeature/core@$CORE"
           # Web, core and the SDK must all load the same copy of @openfeature/core, as they do in an app,
           # or core's errors aren't instances of the SDK's classes. Point the workspaces' devDependencies
           # at the lowest versions and drop the lockfile's placement of these packages, so npm places
           # them afresh and hoists one shared copy. Left in the lockfile, npm nests a copy per workspace.
-          npm pkg set -w packages/web "devDependencies.@openfeature/web-sdk=$SDK"
+          npm pkg set -w packages/web "devDependencies.@openfeature/web-sdk=$WEB_SDK"
+          npm pkg set -w packages/server "devDependencies.@openfeature/server-sdk=$SERVER_SDK"
           npm pkg set -w packages/core "devDependencies.@openfeature/core=$CORE"
           node -e "
             const fs = require('fs');
@@ -64,7 +70,7 @@ jobs:
           "
           npm install --no-audit --no-fund
           # Fail if npm resolved something else, otherwise this job would quietly test the wrong versions.
-          for pkg in "web-sdk:$SDK" "core:$CORE"; do
+          for pkg in "web-sdk:$WEB_SDK" "server-sdk:$SERVER_SDK" "core:$CORE"; do
             name=${pkg%%:*}; want=${pkg#*:}
             got=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@openfeature/$name/package.json')).version")
             [ "$got" = "$want" ] || { echo "Expected @openfeature/$name@$want, got $got"; exit 1; }

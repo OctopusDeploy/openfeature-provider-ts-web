@@ -1,0 +1,14 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        // Server runs only in Node, so Node's globals are in scope and the DOM lib is not. Anything browser-only,
+        // such as localStorage, is a compile error.
+        "lib": ["ES2020"],
+        "types": ["jest", "node"]
+    },
+    "exclude": ["node_modules", "dist"],
+    "include": ["src/**/*"]
+}

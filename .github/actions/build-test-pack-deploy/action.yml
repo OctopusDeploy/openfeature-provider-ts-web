@@ -13,19 +13,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Node
-      uses: actions/setup-node@v7
+    - name: Test
+      uses: ./.github/actions/test
       with:
         node-version: 26
-        cache: "npm"
-
-    - name: Install
-      shell: bash
-      run: npm ci
-
-    - name: Test
-      shell: bash
-      run: npm test
 
     - name: Tests report
       uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3.2.0
@@ -34,18 +25,6 @@ runs:
         name: Tests report
         path: "reports/jest-*.xml"
         reporter: jest-junit
-
-    - name: Build
-      shell: bash
-      run: npm run build
-
-    - name: Validate package
-      shell: bash
-      run: npm run lint:package
-
-    - name: Smoke test package
-      shell: bash
-      run: npm run test:package
 
     - name: Compute version
       id: version
