@@ -23,6 +23,9 @@
     "files": [
         "dist"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "sideEffects": false,
     "engines": {
         "node": ">=22"
@@ -54,7 +57,7 @@
         "specification-tests": "*"
     },
     "dependencies": {
-        "@octopusdeploy/openfeature-core": "6.0.0"
+        "@octopusdeploy/openfeature-core": "*"
     },
     "peerDependencies": {
         "@openfeature/core": "^1.2.0",
