@@ -50,9 +50,12 @@
     "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts-web#readme",
     "devDependencies": {
         "@openfeature/core": "^1.2.0",
-        "@types/murmurhash3js-revisited": "^3.0.3"
+        "@types/murmurhash3js-revisited": "^3.0.3",
+        "axios-mock-adapter": "^2.1.0"
     },
     "dependencies": {
+        "axios": "^1.16.0",
+        "axios-retry": "4.5.0",
         "murmurhash3js-revisited": "3.0.0"
     },
     "peerDependencies": {

@@ -1,34 +1,20 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
 import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/web-sdk";
-import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { silentLogger } from "../../core/src/testing/logger.js";
-import { ClientSideRule, ContextAttributeIsOneOfCondition, FeatureFlagEvaluator, ProductMetadata, ServerSideEvaluation } from "@octopusdeploy/openfeature-core";
+import {
+    ClientSideRule,
+    ContextAttributeIsOneOfCondition,
+    FeatureFlagApiClient,
+    FeatureFlagEvaluator,
+    ProductMetadata,
+    ServerSideEvaluation,
+} from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
 
-jest.mock("./featureFlagApiClient.js");
-
-describe.skip("octopusFeatureProvider", () => {
-    // Stub out local storage for this particular test
-    global.localStorage = {
-        getItem: jest.fn(),
-        setItem: jest.fn(),
-        clear: jest.fn(),
-        length: 0,
-        key: jest.fn(),
-        removeItem: jest.fn(),
-    };
-
-    test("use this to verify that the provider is happy end to end", async () => {
-        const client = new OctopusFeatureProvider({
-            clientIdentifier: "TODO",
-            productMetadata: new ProductMetadata("TestClient"),
-        });
-
-        await OpenFeature.setProviderAndWait(client);
-        await OpenFeature.setContext({ username: "admin" });
-        const result = OpenFeature.getClient().getBooleanValue("heartbeat", false, {});
-        expect(result).toBe(true);
-    });
+// Only the API client is replaced. The evaluator and wire contract stay real, so the tests below can build evaluators.
+jest.mock("@octopusdeploy/openfeature-core", () => {
+    const core = jest.requireActual<typeof import("@octopusdeploy/openfeature-core")>("@octopusdeploy/openfeature-core");
+    return { ...core, FeatureFlagApiClient: jest.fn() };
 });
 
 describe("Context is available for segment evaluation immediately after provider is ready", () => {
