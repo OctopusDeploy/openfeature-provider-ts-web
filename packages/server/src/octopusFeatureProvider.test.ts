@@ -6,7 +6,6 @@ import {
     ContextAttributeIsOneOfCondition,
     FeatureFlagApiClient,
     FeatureFlagEvaluator,
-    InMemoryEvaluationCache,
     ProductMetadata,
     ServerSideEvaluation,
 } from "@octopusdeploy/openfeature-core";
@@ -180,10 +179,15 @@ test("Identifies itself to the API client as the server provider", () => {
     );
 });
 
-test("Keeps its evaluations in memory, since a Node process has no storage that outlives it", () => {
+// The API client falls back to its cache when a fetch fails. A cache that held anything would let a failed fetch serve
+// evaluations from an earlier start, which the tests above can't catch because they replace the client.
+test("Gives the API client a cache that never returns evaluations", () => {
     buildProvider();
 
-    expect(FeatureFlagApiClient).toHaveBeenCalledWith(expect.objectContaining({ cache: expect.any(InMemoryEvaluationCache) }));
+    const [{ cache }] = jest.mocked(FeatureFlagApiClient).mock.calls[0];
+    cache.write({ evaluations: [], contentHash: "hash" });
+
+    expect(cache.read()).toBeUndefined();
 });
 
 test("Reports the metadata name backend telemetry expects", () => {
