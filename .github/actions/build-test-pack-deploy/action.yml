@@ -47,11 +47,23 @@ runs:
       shell: bash
       run: npm run test:package
 
+    - name: Resolve packages
+      id: packages
+      shell: bash
+      # The packages are released in lockstep, so every one listed here is stamped, packed and pushed on every run.
+      run: echo "paths=packages/core packages/web" >> "$GITHUB_OUTPUT"
+
     - name: Compute version
       id: version
       shell: bash
       run: |
+        PATHS="${{ steps.packages.outputs.paths }}"
         BASE=$(node -p "require('./packages/web/package.json').version")
+        # Release Please's linked-versions plugin keeps these equal. If they drift, web's exact pin on core is wrong.
+        for path in $PATHS; do
+          PKG_VERSION=$(node -p "require('./$path/package.json').version")
+          [ "$PKG_VERSION" = "$BASE" ] || { echo "Error: $path is at $PKG_VERSION but packages/web is at $BASE"; exit 1; }
+        done
         if [ -n "${{ inputs.prerelease-tag }}" ]; then
           VERSION="${BASE}-${{ inputs.prerelease-tag }}.$(date -u +%Y%m%dT%H%M%S).${GITHUB_SHA:0:9}"
         else
@@ -68,7 +80,47 @@ runs:
       # dist/ is unaffected, so no rebuild is needed.
       # --ignore-scripts skips the repo's preversion/version lifecycle hooks (e.g. preversion runs
       # the linter); stamping is a pure version-number write and must not trigger other gates.
-      run: npm version "${{ steps.version.outputs.version }}" -w packages/web --no-git-tag-version --allow-same-version --ignore-scripts
+      # --no-workspaces-update stops npm reinstalling the workspace. Until the pins below are rewritten, web
+      # still pins core's base version, which the stamped local core no longer satisfies, so npm would try
+      # to fetch it from the registry.
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        PATHS="${{ steps.packages.outputs.paths }}"
+        npm version "$VERSION" $(printf -- "-w %s " $PATHS) --no-git-tag-version --allow-same-version --ignore-scripts --no-workspaces-update
+        # npm version only moves each package's own version. Point exact pins on the other packages at the
+        # stamped version too, or a prerelease web would depend on core's base release.
+        node -e '
+          const fs = require("fs");
+          const [version, ...paths] = process.argv.slice(1);
+          const read = (path) => JSON.parse(fs.readFileSync(`${path}/package.json`, "utf8"));
+          const names = new Set(paths.map((path) => read(path).name));
+          for (const path of paths) {
+            const pkg = read(path);
+            for (const dep of Object.keys(pkg.dependencies ?? {})) if (names.has(dep)) pkg.dependencies[dep] = version;
+            fs.writeFileSync(`${path}/package.json`, JSON.stringify(pkg, null, 4) + "\n");
+          }
+        ' "$VERSION" $PATHS
+
+    - name: Check workspace pins
+      shell: bash
+      # Release builds rely on Release Please's node-workspace plugin to keep these pins in step.
+      run: |
+        node -e '
+          const fs = require("fs");
+          const [version, ...paths] = process.argv.slice(1);
+          const pkgs = paths.map((path) => ({ path, pkg: JSON.parse(fs.readFileSync(`${path}/package.json`, "utf8")) }));
+          const names = new Set(pkgs.map(({ pkg }) => pkg.name));
+          let failed = false;
+          for (const { path, pkg } of pkgs) {
+            for (const [dep, range] of Object.entries(pkg.dependencies ?? {})) {
+              if (names.has(dep) && range !== version) {
+                console.error(`Error: ${path} depends on ${dep}@${range}, expected ${version}`);
+                failed = true;
+              }
+            }
+          }
+          process.exit(failed ? 1 : 0);
+        ' "${{ steps.version.outputs.version }}" ${{ steps.packages.outputs.paths }}
 
     - name: Pack
       id: pack
