@@ -1,7 +1,7 @@
 import { OpenFeature } from "@openfeature/web-sdk";
 import { runSpecificationFixtures } from "specification-tests";
 import { OctopusFeatureProvider } from "../octopusFeatureProvider.js";
-import { ProductMetadata } from "../productMetadata.js";
+import { ProductMetadata } from "@octopusdeploy/openfeature-core";
 
 // The web SDK uses static context: set it, then evaluate synchronously.
 runSpecificationFixtures(async ({ serverUri, clientIdentifier, slug, defaultValue, context }) => {

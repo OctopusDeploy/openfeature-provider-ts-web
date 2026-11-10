@@ -1,4 +1,4 @@
-import { Logger } from "@openfeature/web-sdk";
+import { Logger } from "@openfeature/core";
 
 /** A Logger stub for tests that need one to construct a provider or context but don't assert on it. */
 export function silentLogger(): Logger {
