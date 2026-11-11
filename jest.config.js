@@ -3,6 +3,21 @@ module.exports = {
     globalSetup: "<rootDir>/jest.globalSetup.js",
     projects: [
         {
+            displayName: "api-surface",
+            rootDir: "<rootDir>/api-surface",
+            testEnvironment: "node",
+            moduleFileExtensions: ["ts", "js"],
+            moduleNameMapper: {
+                "^(\\.{1,2}/.*)\\.js$": "$1",
+            },
+            resetMocks: true,
+            // The fixtures are read by the compiler, not run, so only the checker's own tests belong here.
+            testRegex: ".*\\.(test|spec)\\.(ts)$",
+            transform: {
+                ".(ts)": "ts-jest",
+            },
+        },
+        {
             displayName: "core",
             rootDir: "<rootDir>/packages/core",
             testEnvironment: "node",

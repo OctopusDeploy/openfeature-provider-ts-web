@@ -1,5 +1,5 @@
 // Deliberately leaks a hidden type through a return type, a conditional branch and a type guard, so the leak check has failing cases to test.
-import { EvaluationContext } from "@openfeature/web-sdk";
+import { EvaluationContext } from "@openfeature/core";
 import { HiddenBranch, HiddenGuarded, HiddenResult } from "./hiddenTypes.js";
 
 export class LeakyProvider {

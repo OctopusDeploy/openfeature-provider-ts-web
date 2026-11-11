@@ -1,5 +1,5 @@
 import * as path from "path";
-import { analyseApiSurface } from "./testing/apiSurface.js";
+import { analyseApiSurface } from "api-surface";
 
 describe("public API of the web entry point", () => {
     // Use the build config so inferred types match the published declarations, not the jest and node globals tests compile with.
