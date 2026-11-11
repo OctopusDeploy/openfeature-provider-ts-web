@@ -1,5 +1,5 @@
 name: "Build, Test, Pack, and Deploy"
-description: "Builds, tests, packs the npm package, and pushes it to Octopus"
+description: "Builds, tests, packs the npm packages, and pushes them to one Octopus release"
 
 inputs:
   prerelease-tag:
@@ -43,15 +43,23 @@ runs:
       shell: bash
       run: npm run lint:package
 
-    - name: Smoke test package
+    - name: Resolve packages
+      id: packages
       shell: bash
-      run: npm run test:package
+      # The packages are released in lockstep, so every one listed here is stamped, packed and pushed on every run.
+      run: echo "paths=packages/core packages/web" >> "$GITHUB_OUTPUT"
 
     - name: Compute version
       id: version
       shell: bash
       run: |
+        PATHS="${{ steps.packages.outputs.paths }}"
         BASE=$(node -p "require('./packages/web/package.json').version")
+        # Release Please's linked-versions plugin keeps these equal. If they drift, web's exact pin on core is wrong.
+        for path in $PATHS; do
+          PKG_VERSION=$(node -p "require('./$path/package.json').version")
+          [ "$PKG_VERSION" = "$BASE" ] || { echo "Error: $path is at $PKG_VERSION but packages/web is at $BASE"; exit 1; }
+        done
         if [ -n "${{ inputs.prerelease-tag }}" ]; then
           VERSION="${BASE}-${{ inputs.prerelease-tag }}.$(date -u +%Y%m%dT%H%M%S).${GITHUB_SHA:0:9}"
         else
@@ -68,33 +76,87 @@ runs:
       # dist/ is unaffected, so no rebuild is needed.
       # --ignore-scripts skips the repo's preversion/version lifecycle hooks (e.g. preversion runs
       # the linter); stamping is a pure version-number write and must not trigger other gates.
-      run: npm version "${{ steps.version.outputs.version }}" -w packages/web --no-git-tag-version --allow-same-version --ignore-scripts
+      # --no-workspaces-update skips the reinstall npm version would otherwise run. Until the pins below are
+      # rewritten, web still pins core's base version, which the stamped local core no longer satisfies, so that
+      # reinstall would try to fetch core's base version from the registry.
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        PATHS="${{ steps.packages.outputs.paths }}"
+        npm version "$VERSION" $(printf -- "-w %s " $PATHS) --no-git-tag-version --allow-same-version --ignore-scripts --no-workspaces-update
+        # npm version only moves each package's own version. Point exact pins on the other packages at the
+        # stamped version too, or a prerelease web would depend on core's base release.
+        node -e '
+          const fs = require("fs");
+          const [version, ...paths] = process.argv.slice(1);
+          const read = (path) => JSON.parse(fs.readFileSync(`${path}/package.json`, "utf8"));
+          const names = new Set(paths.map((path) => read(path).name));
+          for (const path of paths) {
+            const pkg = read(path);
+            for (const dep of Object.keys(pkg.dependencies ?? {})) if (names.has(dep)) pkg.dependencies[dep] = version;
+            fs.writeFileSync(`${path}/package.json`, JSON.stringify(pkg, null, 4) + "\n");
+          }
+        ' "$VERSION" $PATHS
+
+    - name: Check workspace pins
+      shell: bash
+      # Release builds rely on Release Please's node-workspace plugin to keep these pins in step.
+      run: |
+        node -e '
+          const fs = require("fs");
+          const [version, ...paths] = process.argv.slice(1);
+          const pkgs = paths.map((path) => ({ path, pkg: JSON.parse(fs.readFileSync(`${path}/package.json`, "utf8")) }));
+          const names = new Set(pkgs.map(({ pkg }) => pkg.name));
+          let failed = false;
+          for (const { path, pkg } of pkgs) {
+            for (const [dep, range] of Object.entries(pkg.dependencies ?? {})) {
+              if (names.has(dep) && range !== version) {
+                console.error(`Error: ${path} depends on ${dep}@${range}, expected ${version}`);
+                failed = true;
+              }
+            }
+          }
+          process.exit(failed ? 1 : 0);
+        ' "${{ steps.version.outputs.version }}" ${{ steps.packages.outputs.paths }}
+
+    - name: Smoke test package
+      shell: bash
+      # Runs after stamping so it installs the exact core and web versions that are about to be pushed.
+      run: npm run test:package
 
     - name: Pack
       id: pack
       shell: bash
       run: |
-        FILE=$(npm pack -w packages/web | tail -n 1)
-        [ -f "$FILE" ] || { echo "Error: npm pack did not produce $FILE"; exit 1; }
-        # npm pack joins the package id and version with a hyphen
-        # (octopusdeploy-openfeature-3.0.2-pr....tgz). Octopus parses package filenames by splitting
-        # on the first "-<digit>" run, so it reads the id as "octopusdeploy-openfeature-3" and the
-        # version as "0.2-pr...". Rename so the id/version separator is a dot, which Octopus treats as
-        # the canonical separator, yielding the correct id "octopusdeploy-openfeature".
-        PKG_ID=$(node -p "require('./packages/web/package.json').name.replace('@','').replace('/','-')")
-        DEST="${PKG_ID}.${{ steps.version.outputs.version }}.tgz"
-        mv "$FILE" "$DEST"
-        echo "id=$PKG_ID" >> "$GITHUB_OUTPUT"
-        echo "name=$DEST" >> "$GITHUB_OUTPUT"
-        echo "Package: $DEST"
+        VERSION="${{ steps.version.outputs.version }}"
+        FILES=""
+        REFS=""
+        for path in ${{ steps.packages.outputs.paths }}; do
+          FILE=$(npm pack -w "$path" | tail -n 1)
+          [ -f "$FILE" ] || { echo "Error: npm pack did not produce $FILE"; exit 1; }
+          # npm pack joins the package id and version with a hyphen
+          # (octopusdeploy-openfeature-3.0.2-pr....tgz). Octopus parses package filenames by splitting
+          # on the first "-<digit>" run, so it reads the id as "octopusdeploy-openfeature-3" and the
+          # version as "0.2-pr...". Rename so the id/version separator is a dot, which Octopus treats as
+          # the canonical separator, yielding the correct id "octopusdeploy-openfeature".
+          PKG_ID=$(node -p "require('./$path/package.json').name.replace('@','').replace('/','-')")
+          DEST="${PKG_ID}.${VERSION}.tgz"
+          mv "$FILE" "$DEST"
+          FILES+="$DEST"$'\n'
+          REFS+="$PKG_ID:$VERSION"$'\n'
+          echo "Package: $DEST"
+        done
+        {
+          printf 'files<<EOF\n%sEOF\n' "$FILES"
+          printf 'refs<<EOF\n%sEOF\n' "$REFS"
+        } >> "$GITHUB_OUTPUT"
 
-    # We don't push to Octopus from forks, so we upload the package as an artifact instead
-    - name: Publish npm package
+    # We don't push to Octopus from forks, so we upload the packages as an artifact instead
+    - name: Publish npm packages
       uses: actions/upload-artifact@v7
       if: github.event.pull_request.head.repo.fork == true
       with:
-        name: ${{ steps.pack.outputs.name }}
-        path: ${{ steps.pack.outputs.name }}
+        name: npm-packages
+        path: ${{ steps.pack.outputs.files }}
 
     - name: Login to Octopus Deploy
       if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
@@ -107,14 +169,18 @@ runs:
       uses: OctopusDeploy/push-package-action@v4
       if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
       with:
-        packages: |
-          ${{ steps.pack.outputs.name }}
+        packages: ${{ steps.pack.outputs.files }}
+        # Release builds reuse the base version, so a re-run after a partial failure finds these already pushed.
+        # Ignore rather than overwrite, so a re-run can never replace a package behind a deployed release.
+        overwrite_mode: IgnoreIfExists
 
-    - name: Create Release in Octopus
-      uses: OctopusDeploy/create-release-action@v4
-      if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
-      with:
-        project: "OpenFeature TypeScript Web Provider"
-        release_number: ${{ steps.version.outputs.version }}
-        packages: |
-          ${{ steps.pack.outputs.id }}:${{ steps.version.outputs.version }}
+    # Disabled until the "OpenFeature TypeScript Providers" Octopus project exists (BMBB-832). The old
+    # project has no step for core, and its releases can't be deployed now that web depends on core.
+    # - name: Create Release in Octopus
+    #   uses: OctopusDeploy/create-release-action@v4
+    #   if: github.event.pull_request.head.repo.fork != true && github.actor != 'dependabot[bot]'
+    #   with:
+    #     project: "OpenFeature TypeScript Providers"
+    #     release_number: ${{ steps.version.outputs.version }}
+    #     packages: ${{ steps.pack.outputs.refs }}
+    #     ignore_existing: "true"

@@ -1,6 +1,6 @@
 # Releasing
 
-Versioning and publishing are automated. Release Please owns the versions and changelogs; GitHub Actions builds, tests, and packs the package; and Octopus Deploy publishes release versions to the npm registry.
+Versioning and publishing are automated. Release Please owns the versions and changelogs; GitHub Actions builds, tests, and packs the packages; and Octopus Deploy publishes release versions to the npm registry.
 
 ## Pipeline
 
@@ -29,14 +29,14 @@ flowchart TD
     class OCT oct;
 ```
 
-- **Release builds** run after a Release Please PR is merged; the packaged artifact is pushed to Octopus Deploy, from which the release version is published to the npm registry by a manual action.
-- **Prerelease builds** run on pushes to `main`, the nightly schedule, and manual dispatches (all tagged `ci`), and PRs (`pr.<number>.<branch>`). These are pushed to Octopus Deploy and stay internal, except for fork PRs and Dependabot branches, which upload the package as a GitHub Actions artifact instead. Only `packages/web/package.json` is stamped with the prerelease version; `packages/web/src/version.ts` stays at the release base.
+- **Release builds** run after a Release Please PR is merged; the packages are pushed to Octopus Deploy, from which the release version is published to the npm registry by a manual action.
+- **Prerelease builds** run on pushes to `main`, the nightly schedule, and manual dispatches (all tagged `ci`), and PRs (`pr.<number>.<branch>`). These are pushed to Octopus Deploy and stay internal, except for fork PRs and Dependabot branches, which upload the packages as a GitHub Actions artifact instead. Every package is stamped with the same prerelease version, and web's exact pin on core is rewritten to match, so a prerelease web always installs the core it was built with. `packages/web/src/version.ts` stays at the release base.
 
 ## Versioning
 
-The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`). Only web is built and pushed to Octopus Deploy for now; core gets tags and GitHub releases but no published package.
+The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`). Every build packs every package, pushes them all to Octopus Deploy, and creates one release that references all of them.
 
-The release workflow can also be run manually from the Actions tab to re-run Release Please without pushing a commit, for example after a failed run. Manual runs only do anything on `main`; runs from other branches are skipped.
+The release workflow can also be run manually from the Actions tab to re-run Release Please without pushing a commit, for example after a failed run. Manual runs only do anything on `main`; runs from other branches are skipped. Re-running a release build after a partial failure is safe: packages and releases that already exist in Octopus Deploy are skipped rather than replaced.
 
 ## Cutting a release
 
