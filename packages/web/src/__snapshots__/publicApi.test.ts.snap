@@ -10,9 +10,9 @@ exports[`public API of the web entry point matches the committed snapshot 1`] = 
 
 class OctopusFeatureProvider implements Provider
     constructor(configuration: OctopusFeatureConfiguration): OctopusFeatureProvider
-    hooks: never[]
+    hooks: Hook[]
     initialize(context?: EvaluationContext | undefined): Promise<void>
-    metadata: { name: string; }
+    metadata: ProviderMetadata
     onContextChange(oldContext: EvaluationContext, newContext: EvaluationContext): Promise<void>
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean): ResolutionDetails<boolean>
     resolveNumberEvaluation(flagKey: string, defaultValue: number): ResolutionDetails<number>

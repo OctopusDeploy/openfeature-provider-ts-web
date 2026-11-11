@@ -2,8 +2,10 @@ import {
     DefaultLogger,
     EvaluationContext,
     FlagNotFoundError,
+    Hook,
     JsonValue,
     Provider,
+    ProviderMetadata,
     ProviderNotReadyError,
     ResolutionDetails,
     TypeMismatchError,
@@ -34,13 +36,13 @@ export class OctopusFeatureProvider implements Provider {
         this.context = {};
     }
 
-    metadata = {
+    metadata: ProviderMetadata = {
         name: "octopus-ts-web-provider",
     };
 
     readonly runsOn = "client";
 
-    hooks = [];
+    hooks: Hook[] = [];
 
     async initialize(context?: EvaluationContext): Promise<void> {
         if (context) {
