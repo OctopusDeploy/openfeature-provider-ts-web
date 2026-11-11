@@ -40,7 +40,7 @@ git submodule update --init
 - Node.js 26 (the version CI uses)
 - npm
 
-The server provider supports the Node versions in its `engines.node`, and the Minimum Node workflow runs the same checks on the oldest of them.
+The server provider supports the Node versions in its `engines.node`, and the Minimum Node workflow reads the oldest of them from there and runs the same checks on it.
 
 ### Commands
 

@@ -46,7 +46,8 @@ export class OctopusFeatureProvider implements Provider {
 
     async initialize(): Promise<void> {
         // The SDK initializes a provider again when it is set after being removed. Evaluations from the earlier start
-        // must not outlive a fetch that fails this time.
+        // must not outlive a fetch that fails this time, and a rejected fetch below skips its assignment, so clear
+        // them first.
         this.evaluator = undefined;
 
         // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
