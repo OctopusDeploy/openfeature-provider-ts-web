@@ -10,5 +10,10 @@
             "default": "./src/index.ts"
         }
     },
+    "devDependencies": {
+        "@octopusdeploy/openfeature-core": "*",
+        "@openfeature/core": "^1.2.0",
+        "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
     "license": "Apache-2.0"
 }
