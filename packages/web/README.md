@@ -1,6 +1,6 @@
 # Octopus Deploy OpenFeature Provider for TypeScript/JavaScript (web clients)
 
-[![CI build](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/OctopusDeploy/openfeature-provider-ts-web/actions/workflows/main.yml?query=branch:main)
+[![CI build](https://github.com/OctopusDeploy/openfeature-provider-ts/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/OctopusDeploy/openfeature-provider-ts/actions/workflows/main.yml?query=branch:main)
 
 The OctopusDeploy TypeScript/JavaScript [OpenFeature provider
 ](https://openfeature.dev/docs/reference/concepts/provider/) for web clients, to be used with the [OpenFeature web SDK](https://openfeature.dev/docs/reference/technologies/client/web/).
