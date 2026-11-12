@@ -17,7 +17,7 @@ export interface OctopusFeatureConfiguration {
 
     /**
      * How long, in milliseconds, between checks for new feature flag evaluations. The evaluations are fetched again
-     * only when the check reports they have changed. Defaults to one minute, the same as the .NET and Java providers.
+     * only when the check reports they have changed. Defaults to one minute.
      */
     cacheDurationMs?: number;
 }

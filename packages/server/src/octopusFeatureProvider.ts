@@ -15,6 +15,7 @@ import { FeatureFlagEvaluatorCache } from "./featureFlagEvaluatorCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
 
+// The same as the .NET and Java providers.
 const defaultCacheDurationMs = 60_000;
 
 export class OctopusFeatureProvider implements Provider {
