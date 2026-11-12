@@ -33,6 +33,14 @@ const clientReturning = (raw: RawEvaluationResponse | undefined) =>
 
 describe("FeatureFlagEvaluatorFactory", () => {
     describe("when the server returns evaluations", () => {
+        test("Does not warn", async () => {
+            const logger = silentLogger();
+
+            await new FeatureFlagEvaluatorFactory(clientReturning(fetched), new FakeCache(cachedEntry), logger).createEvaluator();
+
+            expect(logger.warn).not.toHaveBeenCalled();
+        });
+
         test("Writes them to the cache", async () => {
             const cache = new FakeCache();
 
@@ -53,6 +61,23 @@ describe("FeatureFlagEvaluatorFactory", () => {
             const evaluator = await new FeatureFlagEvaluatorFactory(clientReturning(undefined), new FakeCache(cachedEntry), silentLogger()).createEvaluator();
 
             expect(evaluator.evaluate("cached-feature", {})).toEqual({ value: true, reason: "The flag is enabled for this environment." });
+        });
+
+        test("Warns that the cached entry may be stale", async () => {
+            const logger = silentLogger();
+
+            await new FeatureFlagEvaluatorFactory(clientReturning(undefined), new FakeCache(cachedEntry), logger).createEvaluator();
+
+            expect(logger.warn).toHaveBeenCalledWith("Using the last cached feature flag evaluations, which may be stale.");
+        });
+
+        // The rejection already says no cached evaluations are available, so a warning would only repeat it.
+        test("Does not warn when there is no cached entry", async () => {
+            const logger = silentLogger();
+
+            await expect(new FeatureFlagEvaluatorFactory(clientReturning(undefined), new FakeCache(), logger).createEvaluator()).rejects.toThrow();
+
+            expect(logger.warn).not.toHaveBeenCalled();
         });
 
         test("Leaves the cache as it is", async () => {

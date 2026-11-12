@@ -26,6 +26,9 @@ export class FeatureFlagEvaluatorFactory {
 
         if (raw === undefined) {
             raw = this.cache.read();
+            if (raw !== undefined) {
+                this.logger.warn("Using the last cached feature flag evaluations, which may be stale.");
+            }
         } else {
             this.cache.write(raw);
         }
