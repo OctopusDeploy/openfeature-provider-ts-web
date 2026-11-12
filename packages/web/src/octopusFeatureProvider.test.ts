@@ -10,12 +10,15 @@ import {
     ServerSideEvaluation,
 } from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
+import { FeatureFlagEvaluatorFactory } from "./featureFlagEvaluatorFactory.js";
 
-// Only the API client is replaced. The evaluator and wire contract stay real, so the tests below can build evaluators.
+// Only the API client and the factory are replaced. The evaluator and wire contract stay real, so the tests below can
+// build evaluators. The factory's own fallback to the cache is covered in featureFlagEvaluatorFactory.test.ts.
 jest.mock("@octopusdeploy/openfeature-core", () => {
     const core = jest.requireActual<typeof import("@octopusdeploy/openfeature-core")>("@octopusdeploy/openfeature-core");
     return { ...core, FeatureFlagApiClient: jest.fn() };
 });
+jest.mock("./featureFlagEvaluatorFactory.js");
 
 describe("Context is available for segment evaluation immediately after provider is ready", () => {
     const context = { serverUri: "app.example.com" };
@@ -23,7 +26,8 @@ describe("Context is available for segment evaluation immediately after provider
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockResolvedValue(
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest.fn().mockResolvedValue(
             new FeatureFlagEvaluator(
                 {
                     evaluations: [
@@ -88,7 +92,8 @@ describe("Flag type errors are surfaced correctly", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest
             .fn()
             .mockResolvedValue(
                 new FeatureFlagEvaluator(
@@ -136,7 +141,8 @@ describe("Unsuccessful boolean evaluations surface the OpenFeature error contrac
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest
             .fn()
             .mockResolvedValue(new FeatureFlagEvaluator({ evaluations: [new ServerSideEvaluation("feature-a", true)], contentHash: "" }, silentLogger())); // value with no reason: malformed
         const provider = new OctopusFeatureProvider({
@@ -182,7 +188,8 @@ describe("A provider that retrieved no evaluations", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(unavailable);
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest.fn().mockRejectedValue(unavailable);
     });
 
     afterEach(async () => {
@@ -214,7 +221,7 @@ describe("A provider that retrieved no evaluations", () => {
 
     test("Passes an unexpected failure to the caller too", async () => {
         const unexpected = new TypeError("Cannot read properties of undefined");
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(unexpected);
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest.fn().mockRejectedValue(unexpected);
 
         await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBe(unexpected);
 
@@ -252,7 +259,7 @@ describe("A provider that retrieved no evaluations", () => {
 
     // The SDK initializes the same provider again when it is set after being removed.
     test("Does not keep evaluations from an earlier start when initialized again", async () => {
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest
             .fn()
             .mockResolvedValueOnce(new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()))
             .mockRejectedValueOnce(unavailable);
@@ -279,7 +286,8 @@ describe("A context change while initialization is still fetching", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockImplementation(
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest.fn().mockImplementation(
             () =>
                 new Promise<FeatureFlagEvaluator>((resolve, reject) => {
                     finishFetch = ({ evaluator, error }) => (evaluator ? resolve(evaluator) : reject(error));
@@ -338,7 +346,8 @@ describe("A provider served from the cache", () => {
     beforeEach(async () => {
         await OpenFeature.setContext({});
         jest.mocked(FeatureFlagApiClient).mockClear();
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockResolvedValue(
+        jest.mocked(FeatureFlagEvaluatorFactory).mockClear();
+        jest.mocked(FeatureFlagEvaluatorFactory).prototype.createEvaluator = jest.fn().mockResolvedValue(
             new FeatureFlagEvaluator(
                 {
                     evaluations: [new ServerSideEvaluation("cached-feature", true, "The flag is enabled for this environment.")],

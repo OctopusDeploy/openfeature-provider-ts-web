@@ -11,16 +11,9 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/server-sdk";
-import { EvaluationCache, FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, FeatureFlagEvaluator, parseEvaluationResponse } from "@octopusdeploy/openfeature-core";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
-
-// The provider already holds the evaluations it fetched, so a cache adds nothing, and falling back to one would let a
-// failed fetch quietly serve evaluations from an earlier start.
-const noEvaluationCache: EvaluationCache = {
-    read: () => undefined,
-    write: () => undefined,
-};
 
 const defaultCacheDurationMs = 60_000;
 
@@ -52,7 +45,6 @@ export class OctopusFeatureProvider implements Provider {
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger: this.logger,
             providerMetadata: { name: "openfeature-provider-ts-server", version: PROVIDER_VERSION },
-            cache: noEvaluationCache,
         });
     }
 
@@ -78,7 +70,7 @@ export class OctopusFeatureProvider implements Provider {
         try {
             // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
             // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND.
-            this.evaluator = await this.client.getEvaluator(polling.signal);
+            this.evaluator = await this.fetchEvaluator(polling.signal);
         } finally {
             // Poll even when the first fetch failed, as the .NET and Java providers do, so the provider recovers once
             // the server is reachable rather than staying in ERROR until the process restarts.
@@ -153,7 +145,7 @@ export class OctopusFeatureProvider implements Provider {
                 return;
             }
 
-            const next = await this.client.getEvaluator(signal);
+            const next = await this.fetchEvaluator(signal);
             if (signal.aborted) {
                 return;
             }
@@ -170,6 +162,20 @@ export class OctopusFeatureProvider implements Provider {
             }
             this.logger.error("Failed to retrieve updated feature flag evaluations. Retaining the existing evaluations, which may be stale.", error);
         }
+    }
+
+    /**
+     * There is no cache to fall back to: the provider already holds the evaluations it fetched, and falling back to
+     * evaluations from an earlier start would let a failed fetch quietly serve them.
+     *
+     * @throws {ProviderNotReadyError} when the server returned nothing usable.
+     */
+    private async fetchEvaluator(signal: AbortSignal): Promise<FeatureFlagEvaluator> {
+        const raw = await this.client.getServerSideEvaluations(signal);
+        if (raw === undefined) {
+            throw new ProviderNotReadyError("Unable to retrieve feature flags.");
+        }
+        return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
     }
 
     private rejectNonBooleanEvaluation(flagKey: string): never {
