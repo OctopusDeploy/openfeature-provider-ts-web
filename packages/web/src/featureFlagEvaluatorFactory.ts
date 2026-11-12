@@ -1,5 +1,6 @@
 import { Logger, ProviderNotReadyError } from "@openfeature/web-sdk";
-import { EvaluationCache, FeatureFlagApiClient, FeatureFlagEvaluator, parseEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, FeatureFlagEvaluator, parseEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import { EvaluationCache } from "./evaluationCache.js";
 
 /**
  * Builds the evaluator the web provider evaluates against, from the API client's evaluations or, when the server has

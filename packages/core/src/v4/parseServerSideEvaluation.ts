@@ -1,5 +1,4 @@
-import { RawEvaluationResponse } from "../caching/evaluationCache.js";
-import { EvaluationResponse } from "../evaluation/evaluationResponse.js";
+import { EvaluationResponse, RawEvaluationResponse } from "../evaluation/evaluationResponse.js";
 import { ClientSideRule } from "./clientSideRule.js";
 import { asArray, asBoolean, asRecord, asString } from "./jsonUtils.js";
 import { parseClientSideRule } from "./parseClientSideRule.js";

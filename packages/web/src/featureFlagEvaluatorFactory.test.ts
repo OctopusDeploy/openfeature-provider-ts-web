@@ -1,5 +1,6 @@
 import { ProviderNotReadyError } from "@openfeature/web-sdk";
-import { EvaluationCache, FeatureFlagApiClient, RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import { EvaluationCache } from "./evaluationCache.js";
 import { silentLogger } from "../../core/src/testing/logger.js";
 import { FeatureFlagEvaluatorFactory } from "./featureFlagEvaluatorFactory.js";
 

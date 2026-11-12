@@ -9,3 +9,13 @@ export interface EvaluationResponse {
     readonly evaluations: readonly ServerSideEvaluation[];
     readonly contentHash: string;
 }
+
+/**
+ * Unparsed, exactly as received from the v4 endpoint.
+ *
+ * @internal
+ */
+export interface RawEvaluationResponse {
+    evaluations: unknown;
+    contentHash: string;
+}
