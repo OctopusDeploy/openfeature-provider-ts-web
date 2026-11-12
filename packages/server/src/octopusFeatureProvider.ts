@@ -3,7 +3,6 @@ import {
     EvaluationContext,
     FlagNotFoundError,
     JsonValue,
-    Logger,
     OpenFeatureEventEmitter,
     Provider,
     ProviderEvents,
@@ -11,40 +10,32 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/server-sdk";
-import { FeatureFlagApiClient, FeatureFlagEvaluator, parseEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagEvaluatorCache } from "./featureFlagEvaluatorCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
 
 const defaultCacheDurationMs = 60_000;
 
-// setTimeout fires almost at once for any delay it can't hold, which would turn polling into a busy loop.
-const maxTimerDelayMs = 2 ** 31 - 1;
-
 export class OctopusFeatureProvider implements Provider {
-    private readonly client: FeatureFlagApiClient;
-    private readonly logger: Logger;
-    private readonly cacheDurationMs: number;
-    private evaluator: FeatureFlagEvaluator | undefined;
-
-    // Replaced each time the provider initializes, so a refresh from an earlier start can't outlive onClose.
-    private polling: AbortController | undefined;
-    private refreshTimer: ReturnType<typeof setTimeout> | undefined;
-    private refreshInFlight: Promise<void> | undefined;
+    private readonly evaluatorCache: FeatureFlagEvaluatorCache;
 
     constructor(configuration: OctopusFeatureConfiguration) {
-        const cacheDurationMs = configuration.cacheDurationMs ?? defaultCacheDurationMs;
-        if (!Number.isFinite(cacheDurationMs) || cacheDurationMs <= 0 || cacheDurationMs > maxTimerDelayMs) {
-            throw new RangeError(`cacheDurationMs must be greater than 0 and at most ${maxTimerDelayMs}, but was ${cacheDurationMs}.`);
-        }
-        this.cacheDurationMs = cacheDurationMs;
-        this.logger = configuration.logger ?? new DefaultLogger();
-        this.client = new FeatureFlagApiClient({
+        const logger = configuration.logger ?? new DefaultLogger();
+        const client = new FeatureFlagApiClient({
             clientIdentifier: configuration.clientIdentifier,
             productMetadata: configuration.productMetadata,
             serverUri: configuration.serverUri,
             releaseVersionOverride: configuration.releaseVersionOverride,
-            logger: this.logger,
+            logger,
             providerMetadata: { name: "openfeature-provider-ts-server", version: PROVIDER_VERSION },
+        });
+        this.evaluatorCache = new FeatureFlagEvaluatorCache({
+            client,
+            cacheDurationMs: configuration.cacheDurationMs ?? defaultCacheDurationMs,
+            logger,
+            // Initialization failed, so the SDK has the provider in ERROR. Ready moves it back now flags are available.
+            onRecovered: () => this.events.emit(ProviderEvents.Ready),
         });
     }
 
@@ -59,29 +50,14 @@ export class OctopusFeatureProvider implements Provider {
     readonly events = new OpenFeatureEventEmitter();
 
     async initialize(): Promise<void> {
-        // The SDK initializes a provider again when it is set after being removed. Evaluations from the earlier start
-        // must not outlive a fetch that fails this time, and a rejected fetch below skips its assignment, so clear
-        // them first.
-        this.evaluator = undefined;
-        this.stopPolling();
-        const polling = new AbortController();
-        this.polling = polling;
-
-        try {
-            // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
-            // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND.
-            this.evaluator = await this.fetchEvaluator(polling.signal);
-        } finally {
-            // Poll even when the first fetch failed, as the .NET and Java providers do, so the provider recovers once
-            // the server is reachable rather than staying in ERROR until the process restarts.
-            this.scheduleRefresh(polling.signal);
-        }
+        // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
+        // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND. The cache keeps polling regardless, as
+        // the .NET and Java providers do, so the provider recovers once the server is reachable.
+        await this.evaluatorCache.initialize();
     }
 
     async onClose(): Promise<void> {
-        this.stopPolling();
-        // Let a refresh that was already under way settle, so nothing it started is left running after close.
-        await this.refreshInFlight;
+        await this.evaluatorCache.shutdown();
     }
 
     // Server-side evaluation context arrives with every call, so one provider serves every request concurrently. The
@@ -102,82 +78,6 @@ export class OctopusFeatureProvider implements Provider {
         return this.rejectNonBooleanEvaluation(flagKey);
     }
 
-    private stopPolling(): void {
-        this.polling?.abort();
-        this.polling = undefined;
-        clearTimeout(this.refreshTimer);
-        this.refreshTimer = undefined;
-    }
-
-    /**
-     * Waits a full interval after each refresh finishes, rather than firing on a fixed beat, so a slow server can never
-     * have two refreshes in flight at once.
-     */
-    private scheduleRefresh(signal: AbortSignal): void {
-        if (signal.aborted) {
-            return;
-        }
-
-        this.refreshTimer = setTimeout(() => {
-            const refresh = this.refresh(signal).finally(() => {
-                if (this.refreshInFlight === refresh) {
-                    this.refreshInFlight = undefined;
-                }
-                this.scheduleRefresh(signal);
-            });
-            this.refreshInFlight = refresh;
-        }, this.cacheDurationMs);
-
-        // Polling must never be the thing that keeps a Node process alive.
-        this.refreshTimer.unref();
-    }
-
-    /**
-     * Never rejects: a failed refresh keeps the evaluations already held, and the next one tries again. Like the .NET
-     * and Java providers, it never gives up while the provider is open, so the flags are not left stale for good.
-     */
-    private async refresh(signal: AbortSignal): Promise<void> {
-        const current = this.evaluator;
-
-        try {
-            // With nothing held yet there is nothing to compare, so go straight to fetching.
-            if (current && !(await this.client.haveFeaturesChanged(current.contentHash, signal))) {
-                return;
-            }
-
-            const next = await this.fetchEvaluator(signal);
-            if (signal.aborted) {
-                return;
-            }
-
-            this.evaluator = next;
-
-            // Initialization failed, so the SDK has the provider in ERROR. Ready moves it back now flags are available.
-            if (!current) {
-                this.events.emit(ProviderEvents.Ready);
-            }
-        } catch (error) {
-            if (signal.aborted) {
-                return;
-            }
-            this.logger.error("Failed to retrieve updated feature flag evaluations. Retaining the existing evaluations, which may be stale.", error);
-        }
-    }
-
-    /**
-     * There is no cache to fall back to: the provider already holds the evaluations it fetched, and falling back to
-     * evaluations from an earlier start would let a failed fetch quietly serve them.
-     *
-     * @throws {ProviderNotReadyError} when the server returned nothing usable.
-     */
-    private async fetchEvaluator(signal: AbortSignal): Promise<FeatureFlagEvaluator> {
-        const raw = await this.client.getServerSideEvaluations(signal);
-        if (raw === undefined) {
-            throw new ProviderNotReadyError("Unable to retrieve feature flags.");
-        }
-        return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
-    }
-
     private rejectNonBooleanEvaluation(flagKey: string): never {
         if (!this.requireEvaluator().findEvaluationBySlug(flagKey)) {
             throw new FlagNotFoundError(flagKey);
@@ -190,9 +90,10 @@ export class OctopusFeatureProvider implements Provider {
      * reports PROVIDER_NOT_READY instead of masking the outage as FLAG_NOT_FOUND.
      */
     private requireEvaluator(): FeatureFlagEvaluator {
-        if (!this.evaluator) {
+        const evaluator = this.evaluatorCache.getEvaluator();
+        if (!evaluator) {
             throw new ProviderNotReadyError("No Octopus feature flags are available. The provider failed to initialize, or was used before initializing.");
         }
-        return this.evaluator;
+        return evaluator;
     }
 }
