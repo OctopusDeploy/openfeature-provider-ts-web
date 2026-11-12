@@ -8,28 +8,29 @@ import {
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/web-sdk";
+import { FeatureFlagEvaluatorFactory } from "./featureFlagEvaluatorFactory.js";
 import { LocalStorageCache } from "./localStorageCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
 import { FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
 
 export class OctopusFeatureProvider implements Provider {
-    private client: FeatureFlagApiClient;
+    private readonly evaluatorFactory: FeatureFlagEvaluatorFactory;
     private evaluator: FeatureFlagEvaluator | undefined;
     private initialization: Promise<void> | undefined;
     private context: EvaluationContext;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         const logger = configuration.logger ?? new DefaultLogger();
-        this.client = new FeatureFlagApiClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: configuration.clientIdentifier,
             productMetadata: configuration.productMetadata,
             serverUri: configuration.serverUri,
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger,
             providerMetadata: { name: "openfeature-provider-ts-web", version: PROVIDER_VERSION },
-            cache: new LocalStorageCache(logger),
         });
+        this.evaluatorFactory = new FeatureFlagEvaluatorFactory(client, new LocalStorageCache(logger), logger);
         this.context = {};
     }
 
@@ -50,7 +51,7 @@ export class OctopusFeatureProvider implements Provider {
         // must not outlive a fetch that fails this time.
         this.evaluator = undefined;
 
-        this.initialization = this.client.getEvaluator().then((evaluator) => {
+        this.initialization = this.evaluatorFactory.createEvaluator().then((evaluator) => {
             this.evaluator = evaluator;
         });
 

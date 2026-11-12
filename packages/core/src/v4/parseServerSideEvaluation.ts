@@ -1,7 +1,18 @@
+import { RawEvaluationResponse } from "../caching/evaluationCache.js";
+import { EvaluationResponse } from "../evaluation/evaluationResponse.js";
 import { ClientSideRule } from "./clientSideRule.js";
 import { asArray, asBoolean, asRecord, asString } from "./jsonUtils.js";
 import { parseClientSideRule } from "./parseClientSideRule.js";
 import { ServerSideEvaluation } from "./serverSideEvaluation.js";
+
+/**
+ * Reads a whole response from the v4 evaluations endpoint, as the API client or a cache returned it.
+ *
+ * @internal
+ */
+export function parseEvaluationResponse(raw: RawEvaluationResponse): EvaluationResponse {
+    return { evaluations: parseServerSideEvaluations(raw.evaluations), contentHash: raw.contentHash };
+}
 
 /**
  * Reads the v4 evaluations endpoint's response: an array of flags.

@@ -10,6 +10,7 @@ test("the entry point exports what the providers consume", () => {
         "ProductMetadata",
         "ServerSideEvaluation",
         "octopusHttpHeaderNames",
+        "parseEvaluationResponse",
         "parseServerSideEvaluations",
     ]);
 });

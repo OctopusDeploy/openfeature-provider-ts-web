@@ -11,5 +11,5 @@ export type { FeatureFlagApiClientOptions } from "./http/featureFlagApiClient.js
 export { octopusHttpHeaderNames } from "./http/octopusHttpHeaderNames.js";
 export { ClientSideRule } from "./v4/clientSideRule.js";
 export { ContextAttributeIsOneOfCondition } from "./v4/conditions/contextAttributeIsOneOfCondition.js";
-export { parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
+export { parseEvaluationResponse, parseServerSideEvaluations } from "./v4/parseServerSideEvaluation.js";
 export { ServerSideEvaluation } from "./v4/serverSideEvaluation.js";
