@@ -1,6 +1,6 @@
 import { FeatureFlagApiClient } from "./featureFlagApiClient.js";
 import { silentLogger } from "../testing/logger.js";
-import axios from "axios";
+import axios, { GenericAbortSignal } from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { ProductMetadata } from "../configuration/productMetadata.js";
 
@@ -120,6 +120,23 @@ describe("FeatureFlagApiClient", () => {
 
             await expect(newClient().getServerSideEvaluations()).resolves.toBeUndefined();
         });
+
+        // Reporting a cancellation as no evaluations would log a failed fetch for every close during a request.
+        test("Rejects without logging a failure when the request is cancelled", async () => {
+            mockAdapter.onGet().reply(200, [], { ContentHash: "aGFzaA==" });
+            const logger = silentLogger();
+            const client = new FeatureFlagApiClient({
+                clientIdentifier: "a.b.c",
+                productMetadata: new ProductMetadata("TestClient"),
+                logger,
+                providerMetadata: testProviderMetadata,
+            });
+            // Core has no DOM or Node types, so this stands in for an AbortSignal that has already aborted.
+            const abortedSignal: GenericAbortSignal = { aborted: true };
+
+            await expect(client.getServerSideEvaluations(abortedSignal)).rejects.toBeInstanceOf(axios.CanceledError);
+            expect(logger.warn).not.toHaveBeenCalled();
+        });
     });
 
     describe("checking whether the features have changed", () => {
@@ -187,6 +204,23 @@ describe("FeatureFlagApiClient", () => {
             arrangeResponse();
 
             await expect(newClient().haveFeaturesChanged("aGFzaA==")).rejects.toBeDefined();
+        });
+
+        // Each retry logs a warning, so none means the cancellation was not retried.
+        test("Rejects without retrying when the request is cancelled", async () => {
+            mockAdapter.onGet(checkUrl).reply(200, { contentHash: "aGFzaA==" });
+            const logger = silentLogger();
+            const client = new FeatureFlagApiClient({
+                clientIdentifier: "a.b.c",
+                productMetadata: new ProductMetadata("TestClient"),
+                logger,
+                providerMetadata: testProviderMetadata,
+            });
+            // Core has no DOM or Node types, so this stands in for an AbortSignal that has already aborted.
+            const abortedSignal: GenericAbortSignal = { aborted: true };
+
+            await expect(client.haveFeaturesChanged("aGFzaA==", abortedSignal)).rejects.toBeInstanceOf(axios.CanceledError);
+            expect(logger.warn).not.toHaveBeenCalled();
         });
     });
 });

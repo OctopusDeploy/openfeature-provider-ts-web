@@ -1,5 +1,5 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, GenericAbortSignal, RawAxiosHeaders } from "axios";
-import axiosRetry from "axios-retry";
+import axiosRetry, { isNetworkOrIdempotentRequestError } from "axios-retry";
 import { Logger } from "@openfeature/core";
 import { RawEvaluationResponse } from "../evaluation/evaluationResponse.js";
 import { ProductMetadata } from "../configuration/productMetadata.js";
@@ -49,6 +49,9 @@ export class FeatureFlagApiClient {
         this.axiosInstance = axios.create({ timeout: requestTimeoutMs });
         axiosRetry(this.axiosInstance, {
             retries: 3,
+            // axios-retry's default treats a cancelled GET as retryable, so each cancellation would be retried and
+            // logged as a failure.
+            retryCondition: (error) => !axios.isCancel(error) && isNetworkOrIdempotentRequestError(error),
             onRetry: (retryCount, error) =>
                 this.logger.warn(
                     `Failed to retrieve feature flags ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
@@ -63,7 +66,7 @@ export class FeatureFlagApiClient {
      * @throws when the server can't be reached or does not return a content hash, so the caller can keep what it has.
      */
     async haveFeaturesChanged(contentHash: string, signal?: GenericAbortSignal): Promise<boolean> {
-        if (contentHash === "") {
+        if (!contentHash) {
             return true;
         }
 
@@ -87,6 +90,8 @@ export class FeatureFlagApiClient {
      * Fetches the current evaluations, unparsed, so a provider can cache them exactly as received.
      *
      * Resolves to undefined, rather than rejecting, when the server returned nothing usable.
+     *
+     * @throws when signal aborts the request, so a cancellation is never mistaken for an outage.
      */
     async getServerSideEvaluations(signal?: GenericAbortSignal): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
@@ -118,13 +123,17 @@ export class FeatureFlagApiClient {
 
     /**
      * Reports no evaluations, rather than rejecting, when the request fails: an unreachable server, or any
-     * unsuccessful status once axios-retry has given up.
+     * unsuccessful status once axios-retry has given up. A cancelled request still rejects, because the caller asked
+     * for it and nothing failed.
      */
     private async requestEvaluations(config: AxiosRequestConfig): Promise<AxiosResponse<unknown> | undefined> {
         try {
             return await this.axiosInstance.request<unknown>(config);
         } catch (e) {
-            this.logger.warn(`Failed to retrieve feature flag evaluations.\n${JSON.stringify(e)}`);
+            if (axios.isCancel(e)) {
+                throw e;
+            }
+            this.logger.warn(`Failed to retrieve feature flag evaluations from ${this.serverUri}.\n${JSON.stringify(e)}`);
             return undefined;
         }
     }

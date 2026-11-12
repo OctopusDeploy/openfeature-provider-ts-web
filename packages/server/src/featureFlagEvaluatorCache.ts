@@ -62,7 +62,13 @@ export class FeatureFlagEvaluatorCache {
         this.polling = polling;
 
         try {
-            this.evaluator = await this.fetchEvaluator(polling.signal);
+            const evaluator = await this.fetchEvaluator(polling.signal);
+            // A response can arrive just before shutdown, or before the provider is initialized again. Its evaluations
+            // belong to a start that has ended, so they must not be installed.
+            if (polling.signal.aborted) {
+                throw new ProviderNotReadyError("The provider was closed before it finished initializing.");
+            }
+            this.evaluator = evaluator;
         } finally {
             this.scheduleRefresh(polling.signal);
         }

@@ -158,6 +158,26 @@ describe("A provider that retrieved no evaluations", () => {
 
         expect((await OpenFeature.getClient().getBooleanDetails("feature-a", false)).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
     });
+
+    // Aborting does nothing to a response that has already arrived, so the earlier start's fetch can still finish.
+    test("Does not install evaluations from an earlier start whose fetch finishes after it was closed", async () => {
+        let finishFirstFetch: (response: RawEvaluationResponse) => void = () => undefined;
+        jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations = jest
+            .fn()
+            .mockReturnValueOnce(new Promise((resolve) => (finishFirstFetch = resolve)))
+            .mockResolvedValueOnce(undefined);
+        const provider = buildProvider();
+
+        const firstStart = provider.initialize();
+        await provider.onClose();
+        const secondStart = provider.initialize();
+        finishFirstFetch({ evaluations: [{ slug: "feature-a", value: true, reason: "The flag is enabled for this environment." }], contentHash: "hash" });
+
+        await expect(firstStart).rejects.toThrow(ProviderNotReadyError);
+        await expect(secondStart).rejects.toThrow(ProviderNotReadyError);
+        await expect(provider.resolveBooleanEvaluation("feature-a", false, {})).rejects.toThrow(ProviderNotReadyError);
+        await provider.onClose();
+    });
 });
 
 test("Does not fetch evaluations for each evaluation", async () => {
