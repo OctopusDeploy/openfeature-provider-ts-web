@@ -1,11 +1,8 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, GenericAbortSignal, RawAxiosHeaders } from "axios";
 import axiosRetry from "axios-retry";
-import { Logger, ProviderNotReadyError } from "@openfeature/core";
-import { EvaluationCache, RawEvaluationResponse } from "../caching/evaluationCache.js";
+import { Logger } from "@openfeature/core";
+import { RawEvaluationResponse } from "../evaluation/evaluationResponse.js";
 import { ProductMetadata } from "../configuration/productMetadata.js";
-import { EvaluationResponse } from "../evaluation/evaluationResponse.js";
-import { FeatureFlagEvaluator } from "../evaluation/featureFlagEvaluator.js";
-import { parseServerSideEvaluations } from "../v4/parseServerSideEvaluation.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 
 const requestTimeoutMs = 100_000;
@@ -24,10 +21,14 @@ export interface FeatureFlagApiClientOptions {
     logger: Logger;
     /** Identifies the provider package in the X-Octopus-Client header, e.g. openfeature-provider-ts-web/5.0.2. */
     providerMetadata: { name: string; version: string };
-    cache: EvaluationCache;
 }
 
-/** @internal */
+/**
+ * Retrieves evaluations from the Feature Flags service, and nothing more. Turning them into an evaluator, falling back
+ * to a cache, and deciding when to fetch again are each provider's job.
+ *
+ * @internal
+ */
 export class FeatureFlagApiClient {
     private readonly clientIdentifier: string;
     private readonly serverUri: string;
@@ -36,7 +37,6 @@ export class FeatureFlagApiClient {
     private readonly releaseVersionOverride?: string;
     private readonly productMetadata: ProductMetadata;
     private readonly providerMetadata: { name: string; version: string };
-    private readonly cache: EvaluationCache;
 
     constructor(options: FeatureFlagApiClientOptions) {
         this.clientIdentifier = options.clientIdentifier;
@@ -45,7 +45,6 @@ export class FeatureFlagApiClient {
         this.productMetadata = options.productMetadata;
         this.logger = options.logger;
         this.providerMetadata = options.providerMetadata;
-        this.cache = options.cache;
         // A request that never gets a response would otherwise stall polling for good. 100s matches .NET's HttpClient default.
         this.axiosInstance = axios.create({ timeout: requestTimeoutMs });
         axiosRetry(this.axiosInstance, {
@@ -55,21 +54,6 @@ export class FeatureFlagApiClient {
                     `Failed to retrieve feature flags ${retryCount} time(s) for client identifier ${this.clientIdentifier} from ${this.serverUri} with error: \n ${JSON.stringify(error)}`
                 ),
         });
-    }
-
-    /**
-     * @throws {ProviderNotReadyError} when the server returned nothing usable and no cached evaluations are available.
-     */
-    async getEvaluator(signal?: GenericAbortSignal): Promise<FeatureFlagEvaluator> {
-        const raw = await this.fetchEvaluations(signal);
-
-        if (raw === undefined) {
-            throw new ProviderNotReadyError(
-                `Unable to retrieve feature flags for client identifier ${this.clientIdentifier} from ${this.serverUri}, and no cached evaluations are available.`
-            );
-        }
-
-        return new FeatureFlagEvaluator(parseEvaluationResponse(raw), this.logger);
     }
 
     /**
@@ -99,19 +83,12 @@ export class FeatureFlagApiClient {
         return current !== contentHash;
     }
 
-    private async fetchEvaluations(signal: GenericAbortSignal | undefined): Promise<RawEvaluationResponse | undefined> {
-        const raw = await this.fetchEvaluationsFromServer(signal);
-
-        if (raw === undefined) {
-            return this.cache.read();
-        }
-
-        this.cache.write(raw);
-
-        return raw;
-    }
-
-    private async fetchEvaluationsFromServer(signal: GenericAbortSignal | undefined): Promise<RawEvaluationResponse | undefined> {
+    /**
+     * Fetches the current evaluations, unparsed, so a provider can cache them exactly as received.
+     *
+     * Resolves to undefined, rather than rejecting, when the server returned nothing usable.
+     */
+    async getServerSideEvaluations(signal?: GenericAbortSignal): Promise<RawEvaluationResponse | undefined> {
         const config: AxiosRequestConfig = {
             url: `${this.serverUri}/api/feature-flags/evaluations/v4/`,
             maxContentLength: Infinity,
@@ -147,7 +124,7 @@ export class FeatureFlagApiClient {
         try {
             return await this.axiosInstance.request<unknown>(config);
         } catch (e) {
-            this.logger.warn(`Failed to retrieve feature manifest. Falling back to cached evaluations, if present.\n${JSON.stringify(e)}`);
+            this.logger.warn(`Failed to retrieve feature flag evaluations.\n${JSON.stringify(e)}`);
             return undefined;
         }
     }
@@ -170,10 +147,6 @@ export class FeatureFlagApiClient {
         }
         return `${value} ${this.providerMetadata.name}/${this.providerMetadata.version}`;
     }
-}
-
-function parseEvaluationResponse(raw: RawEvaluationResponse): EvaluationResponse {
-    return { evaluations: parseServerSideEvaluations(raw.evaluations), contentHash: raw.contentHash };
 }
 
 /** The check endpoint returns the current content hash base64-encoded, the same form as the ContentHash header. */

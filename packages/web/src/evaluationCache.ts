@@ -1,12 +1,4 @@
-/**
- * Unparsed, exactly as received from the v4 endpoint.
- *
- * @internal
- */
-export interface RawEvaluationResponse {
-    evaluations: unknown;
-    contentHash: string;
-}
+import type { RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
 
 /**
  * The last evaluations fetched, kept so the provider can still start when the server can't be reached.

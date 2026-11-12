@@ -1,18 +1,12 @@
 import { OctopusFeatureProvider } from "./octopusFeatureProvider.js";
 import { ErrorCode, OpenFeature, ProviderEvents, ProviderNotReadyError, ProviderStatus } from "@openfeature/server-sdk";
 import { silentLogger } from "../../core/src/testing/logger.js";
-import {
-    ClientSideRule,
-    ContextAttributeIsOneOfCondition,
-    FeatureFlagApiClient,
-    FeatureFlagEvaluator,
-    ProductMetadata,
-    ServerSideEvaluation,
-} from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, ProductMetadata, RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
 import { PROVIDER_VERSION } from "./version.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 
-// Only the API client is replaced. The evaluator and wire contract stay real, so the tests below can build evaluators.
+// Only the API client is replaced. The parser and evaluator stay real, so the tests below serve evaluations as the
+// endpoint returns them.
 jest.mock("@octopusdeploy/openfeature-core", () => {
     const core = jest.requireActual<typeof import("@octopusdeploy/openfeature-core")>("@octopusdeploy/openfeature-core");
     return { ...core, FeatureFlagApiClient: jest.fn() };
@@ -26,10 +20,13 @@ const buildProvider = (configuration: Partial<OctopusFeatureConfiguration> = {})
         ...configuration,
     });
 
-const serveEvaluations = (...evaluations: ServerSideEvaluation[]) => {
-    jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
-        .fn()
-        .mockResolvedValue(new FeatureFlagEvaluator({ evaluations, contentHash: "hash" }, silentLogger()));
+const serveEvaluations = (...evaluations: object[]) => {
+    const response: RawEvaluationResponse = { evaluations, contentHash: "hash" };
+    jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations = jest.fn().mockResolvedValue(response);
+};
+
+const serveNothingUsable = () => {
+    jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations = jest.fn().mockResolvedValue(undefined);
 };
 
 beforeEach(() => {
@@ -42,11 +39,16 @@ afterEach(async () => {
 
 describe("Evaluation context is supplied per evaluation", () => {
     beforeEach(async () => {
-        serveEvaluations(
-            new ServerSideEvaluation("segmented-feature", undefined, undefined, "evaluation-key", [
-                new ClientSideRule("Client-side targeting", [new ContextAttributeIsOneOfCondition("serverUri", ["app.example.com"])]),
-            ])
-        );
+        serveEvaluations({
+            slug: "segmented-feature",
+            evaluationKey: "evaluation-key",
+            rules: [
+                {
+                    name: "Client-side targeting",
+                    conditions: [{ type: "context-attribute-is-one-of", key: "serverUri", values: ["app.example.com"] }],
+                },
+            ],
+        });
         await OpenFeature.setProviderAndWait(buildProvider());
     });
 
@@ -75,7 +77,7 @@ describe("Evaluation context is supplied per evaluation", () => {
 
 describe("Flag type errors are surfaced correctly", () => {
     beforeEach(async () => {
-        serveEvaluations(new ServerSideEvaluation("feature-a", true, "The flag is enabled for this environment."));
+        serveEvaluations({ slug: "feature-a", value: true, reason: "The flag is enabled for this environment." });
         await OpenFeature.setProviderAndWait(buildProvider());
     });
 
@@ -91,7 +93,7 @@ describe("Flag type errors are surfaced correctly", () => {
 
 describe("Unsuccessful boolean evaluations surface the OpenFeature error contract", () => {
     beforeEach(async () => {
-        serveEvaluations(new ServerSideEvaluation("feature-a", true)); // value with no reason: malformed
+        serveEvaluations({ slug: "feature-a", value: true }); // value with no reason: malformed
         await OpenFeature.setProviderAndWait(buildProvider());
     });
 
@@ -111,14 +113,10 @@ describe("Unsuccessful boolean evaluations surface the OpenFeature error contrac
 // Without evaluations we cannot tell an unknown slug from one we never received, so initialization fails: the SDK moves
 // the provider to ERROR, and every evaluation reports PROVIDER_NOT_READY rather than FLAG_NOT_FOUND.
 describe("A provider that retrieved no evaluations", () => {
-    const unavailable = new ProviderNotReadyError("Unable to retrieve feature flags, and no cached evaluations are available.");
-
-    beforeEach(() => {
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest.fn().mockRejectedValue(unavailable);
-    });
+    beforeEach(() => serveNothingUsable());
 
     test("Fails initialization, so the caller that set it learns the flags are unavailable", async () => {
-        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBe(unavailable);
+        await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toThrow(ProviderNotReadyError);
     });
 
     test("Moves the provider to ERROR and emits PROVIDER_ERROR with the reason", async () => {
@@ -129,7 +127,7 @@ describe("A provider that retrieved no evaluations", () => {
             await expect(OpenFeature.setProviderAndWait(buildProvider())).rejects.toBeDefined();
 
             expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.ERROR);
-            expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: unavailable.message }));
+            expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "Unable to retrieve feature flags." }));
         } finally {
             OpenFeature.removeHandler(ProviderEvents.Error, onError);
         }
@@ -148,28 +146,28 @@ describe("A provider that retrieved no evaluations", () => {
 
     // The SDK initializes the same provider again when it is set after being removed.
     test("Does not keep evaluations from an earlier start when initialized again", async () => {
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = jest
+        jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations = jest
             .fn()
-            .mockResolvedValueOnce(new FeatureFlagEvaluator({ evaluations: [], contentHash: "hash" }, silentLogger()))
-            .mockRejectedValueOnce(unavailable);
+            .mockResolvedValueOnce({ evaluations: [], contentHash: "hash" })
+            .mockResolvedValueOnce(undefined);
         const provider = buildProvider();
         await OpenFeature.setProviderAndWait(provider);
         await OpenFeature.clearProviders();
 
-        await expect(OpenFeature.setProviderAndWait(provider)).rejects.toBe(unavailable);
+        await expect(OpenFeature.setProviderAndWait(provider)).rejects.toThrow(ProviderNotReadyError);
 
         expect((await OpenFeature.getClient().getBooleanDetails("feature-a", false)).errorCode).toBe(ErrorCode.PROVIDER_NOT_READY);
     });
 });
 
 test("Does not fetch evaluations for each evaluation", async () => {
-    serveEvaluations(new ServerSideEvaluation("feature-a", true, "The flag is enabled for this environment."));
+    serveEvaluations({ slug: "feature-a", value: true, reason: "The flag is enabled for this environment." });
     await OpenFeature.setProviderAndWait(buildProvider());
 
     await OpenFeature.getClient().getBooleanValue("feature-a", false);
     await OpenFeature.getClient().getBooleanValue("feature-a", false);
 
-    expect(jest.mocked(FeatureFlagApiClient).prototype.getEvaluator).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations).toHaveBeenCalledTimes(1);
 });
 
 // Matches the .NET and Java providers: check the content hash every cacheDuration (one minute by default), fetch again
@@ -179,19 +177,21 @@ describe("Polling for flag updates", () => {
     const enabled = "The flag is enabled for this environment.";
     const disabled = "The flag is disabled for this environment.";
 
-    const evaluator = (value: boolean, contentHash: string) =>
-        new FeatureFlagEvaluator({ evaluations: [new ServerSideEvaluation("feature-a", value, value ? enabled : disabled)], contentHash }, silentLogger());
+    const evaluations = (value: boolean, contentHash: string): RawEvaluationResponse => ({
+        evaluations: [{ slug: "feature-a", value, reason: value ? enabled : disabled }],
+        contentHash,
+    });
 
-    let getEvaluator: jest.Mock;
+    let getServerSideEvaluations: jest.Mock;
     let haveFeaturesChanged: jest.Mock;
 
     const evaluateFeatureA = () => OpenFeature.getClient().getBooleanValue("feature-a", false);
 
     beforeEach(() => {
         jest.useFakeTimers();
-        getEvaluator = jest.fn().mockResolvedValue(evaluator(true, "first"));
+        getServerSideEvaluations = jest.fn().mockResolvedValue(evaluations(true, "first"));
         haveFeaturesChanged = jest.fn().mockResolvedValue(false);
-        jest.mocked(FeatureFlagApiClient).prototype.getEvaluator = getEvaluator;
+        jest.mocked(FeatureFlagApiClient).prototype.getServerSideEvaluations = getServerSideEvaluations;
         jest.mocked(FeatureFlagApiClient).prototype.haveFeaturesChanged = haveFeaturesChanged;
     });
 
@@ -229,7 +229,7 @@ describe("Polling for flag updates", () => {
 
         await jest.advanceTimersByTimeAsync(oneMinute * 3);
 
-        expect(getEvaluator).toHaveBeenCalledTimes(1);
+        expect(getServerSideEvaluations).toHaveBeenCalledTimes(1);
     });
 
     test("Evaluates against the new evaluations once they have changed", async () => {
@@ -237,7 +237,7 @@ describe("Polling for flag updates", () => {
         expect(await evaluateFeatureA()).toBe(true);
 
         haveFeaturesChanged.mockResolvedValueOnce(true);
-        getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+        getServerSideEvaluations.mockResolvedValueOnce(evaluations(false, "second"));
         await jest.advanceTimersByTimeAsync(oneMinute);
 
         expect(await evaluateFeatureA()).toBe(false);
@@ -253,7 +253,7 @@ describe("Polling for flag updates", () => {
         try {
             await OpenFeature.setProviderAndWait(buildProvider());
             haveFeaturesChanged.mockResolvedValueOnce(true);
-            getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+            getServerSideEvaluations.mockResolvedValueOnce(evaluations(false, "second"));
 
             await jest.advanceTimersByTimeAsync(oneMinute);
 
@@ -269,7 +269,7 @@ describe("Polling for flag updates", () => {
             "fetching the changed evaluations fails",
             () => {
                 haveFeaturesChanged.mockResolvedValueOnce(true);
-                getEvaluator.mockRejectedValueOnce(new ProviderNotReadyError("unavailable"));
+                getServerSideEvaluations.mockResolvedValueOnce(undefined);
             },
         ],
     ])("Keeps the evaluations it has, stays READY, and tries again next interval when %s", async (_, arrangeFailure) => {
@@ -282,7 +282,7 @@ describe("Polling for flag updates", () => {
         expect(OpenFeature.getClient().providerStatus).toBe(ProviderStatus.READY);
 
         haveFeaturesChanged.mockResolvedValueOnce(true);
-        getEvaluator.mockResolvedValueOnce(evaluator(false, "second"));
+        getServerSideEvaluations.mockResolvedValueOnce(evaluations(false, "second"));
         await jest.advanceTimersByTimeAsync(oneMinute);
 
         expect(await evaluateFeatureA()).toBe(false);
@@ -290,7 +290,7 @@ describe("Polling for flag updates", () => {
 
     // Initialization still rejects, as it did before polling, but the provider keeps trying like .NET and Java do.
     test("Recovers from a failed initialization once the flags can be fetched", async () => {
-        getEvaluator.mockRejectedValueOnce(new ProviderNotReadyError("unavailable"));
+        getServerSideEvaluations.mockResolvedValueOnce(undefined);
         const onReady = jest.fn();
         OpenFeature.addHandler(ProviderEvents.Ready, onReady);
         try {
@@ -364,17 +364,6 @@ test("Identifies itself to the API client as the server provider", () => {
     expect(FeatureFlagApiClient).toHaveBeenCalledWith(
         expect.objectContaining({ providerMetadata: { name: "openfeature-provider-ts-server", version: PROVIDER_VERSION } })
     );
-});
-
-// The API client falls back to its cache when a fetch fails. A cache that held anything would let a failed fetch serve
-// evaluations from an earlier start, which the tests above can't catch because they replace the client.
-test("Gives the API client a cache that never returns evaluations", () => {
-    buildProvider();
-
-    const [{ cache }] = jest.mocked(FeatureFlagApiClient).mock.calls[0];
-    cache.write({ evaluations: [], contentHash: "hash" });
-
-    expect(cache.read()).toBeUndefined();
 });
 
 test("Reports the metadata name backend telemetry expects", () => {

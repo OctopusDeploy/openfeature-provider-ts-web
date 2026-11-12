@@ -1,5 +1,6 @@
 import { Logger } from "@openfeature/web-sdk";
-import type { EvaluationCache, RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import type { RawEvaluationResponse } from "@octopusdeploy/openfeature-core";
+import type { EvaluationCache } from "./evaluationCache.js";
 
 interface EvaluationCacheEntry {
     // Note: This counts cache shapes, not endpoint or manifest versions.
