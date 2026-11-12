@@ -1,10 +1,8 @@
 // Core's exports exist for the provider packages. Everything except ProductMetadata is internal
 // and keeps its @internal tag. ProductMetadata is public, so each provider re-exports it from its
 // own entry point.
-export type { EvaluationCache, RawEvaluationResponse } from "./caching/evaluationCache.js";
-export { InMemoryEvaluationCache } from "./caching/inMemoryEvaluationCache.js";
 export { ProductMetadata } from "./configuration/productMetadata.js";
-export type { EvaluationResponse } from "./evaluation/evaluationResponse.js";
+export type { EvaluationResponse, RawEvaluationResponse } from "./evaluation/evaluationResponse.js";
 export { FeatureFlagEvaluator } from "./evaluation/featureFlagEvaluator.js";
 export { FeatureFlagApiClient } from "./http/featureFlagApiClient.js";
 export type { FeatureFlagApiClientOptions } from "./http/featureFlagApiClient.js";

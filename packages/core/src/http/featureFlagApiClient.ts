@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse, GenericAbortSignal, RawAxiosHeaders } from "axios";
 import axiosRetry from "axios-retry";
 import { Logger } from "@openfeature/core";
-import { RawEvaluationResponse } from "../caching/evaluationCache.js";
+import { RawEvaluationResponse } from "../evaluation/evaluationResponse.js";
 import { ProductMetadata } from "../configuration/productMetadata.js";
 import { octopusHttpHeaderNames } from "./octopusHttpHeaderNames.js";
 
