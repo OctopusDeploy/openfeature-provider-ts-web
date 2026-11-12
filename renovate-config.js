@@ -7,7 +7,22 @@ module.exports = {
   semanticCommitType: "fix",
   semanticCommitScope: "deps",
 
-  enabledManagers: ["npm", "github-actions"],
+  enabledManagers: ["npm", "github-actions", "custom.regex"],
+
+  customManagers: [
+    {
+      // The github-actions manager only reads node-version from an actions/setup-node step. The CI build
+      // passes it to the local test action instead, so look it up the same way setup-node would.
+      customType: "regex",
+      managerFilePatterns: ["/^\\.github/actions/build-test-pack-deploy/action\\.yml$/"],
+      matchStrings: ["uses: \\./\\.github/actions/test\\s+with:\\s+node-version: (?<currentValue>\\S+)"],
+      depNameTemplate: "node",
+      datasourceTemplate: "github-releases",
+      packageNameTemplate: "actions/node-versions",
+      versioningTemplate: "node",
+      extractVersionTemplate: "^(?<version>\\d+\\.\\d+\\.\\d+)(-\\d+)?$",
+    },
+  ],
 
   packageRules: [
     {

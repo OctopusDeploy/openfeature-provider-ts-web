@@ -36,5 +36,23 @@ module.exports = {
                 ".(ts)": "ts-jest",
             },
         },
+        {
+            displayName: "server",
+            rootDir: "<rootDir>/packages/server",
+            // No localStorage mock: server runs in Node, so nothing it calls should reach for browser storage.
+            testEnvironment: "node",
+            moduleFileExtensions: ["ts", "js"],
+            moduleNameMapper: {
+                "^(\\.{1,2}/.*)\\.js$": "$1",
+            },
+            resetMocks: true,
+            setupFilesAfterEnv: ["jest-expect-message", "jest-extended"],
+            // Like web, server runs against core's built output.
+            transformIgnorePatterns: ["/node_modules/", "/packages/core/dist/"],
+            testRegex: ".*\\.(test|spec)\\.(ts)$",
+            transform: {
+                ".(ts)": "ts-jest",
+            },
+        },
     ],
 };

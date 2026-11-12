@@ -34,7 +34,7 @@ flowchart TD
 
 ## Versioning
 
-The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`). Every build packs every package, pushes them all to Octopus Deploy, and creates one release that references all of them.
+The packages under `packages/` are released in lockstep: a releasable commit touching any one of them bumps all of them to the same version, in a single release PR. Each package is tagged with its component name (`core-vX.Y.Z`, `web-vX.Y.Z`). Releases up to and including 6.0.0 predate the split and use unprefixed tags (`vX.Y.Z`). Every build packs every released package, pushes them all to Octopus Deploy, and creates one release that references all of them. The server provider in `packages/server` isn't released yet: it's private, Release Please doesn't manage it, and CI tests it but doesn't stamp, pack or push it. It still pins core's exact version, so a release PR that bumps core must also bump that pin, in `packages/server/package.json` and in its `packages/server` entry in `package-lock.json`, or `npm ci` fails.
 
 The release workflow can also be run manually from the Actions tab to re-run Release Please without pushing a commit, for example after a failed run. Manual runs only do anything on `main`; runs from other branches are skipped. Re-running a release build after a partial failure is safe: packages and releases that already exist in Octopus Deploy are skipped rather than replaced.
 

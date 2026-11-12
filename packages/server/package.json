@@ -1,0 +1,66 @@
+{
+    "name": "@octopusdeploy/openfeature-server",
+    "version": "6.0.0",
+    "private": true,
+    "description": "The Octopus Feature Flags OpenFeature Provider for Node",
+    "type": "commonjs",
+    "main": "dist/cjs/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.ts",
+                "default": "./dist/esm/index.js"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            }
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "sideEffects": false,
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+        "build": "npm run clean && tsc -p tsconfig.build.cjs.json && tsc -p tsconfig.build.esm.json && node scripts/writeModuleMarkers.js",
+        "lint:package": "publint --strict && attw --pack .",
+        "test:package": "node scripts/smokeTestPackage.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/OctopusDeploy/openfeature-provider-ts.git"
+    },
+    "keywords": [
+        "octopus deploy",
+        "openfeature",
+        "feature flags",
+        "feature toggles"
+    ],
+    "author": "Octopus Deploy",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/OctopusDeploy/openfeature-provider-ts/issues"
+    },
+    "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts#readme",
+    "devDependencies": {
+        "@openfeature/server-sdk": "^1.23.0",
+        "specification-tests": "*"
+    },
+    "dependencies": {
+        "@octopusdeploy/openfeature-core": "6.0.0"
+    },
+    "peerDependencies": {
+        "@openfeature/core": "^1.2.0",
+        "@openfeature/server-sdk": "^1.14.0"
+    }
+}
