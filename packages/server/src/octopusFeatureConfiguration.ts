@@ -14,4 +14,10 @@ export interface OctopusFeatureConfiguration {
 
     /** Overrides the application release version embedded in the ClientIdentifier */
     releaseVersionOverride?: string;
+
+    /**
+     * How long, in milliseconds, between checks for new feature flag evaluations. The evaluations are fetched again
+     * only when the check reports they have changed. Defaults to one minute.
+     */
+    cacheDurationMs?: number;
 }

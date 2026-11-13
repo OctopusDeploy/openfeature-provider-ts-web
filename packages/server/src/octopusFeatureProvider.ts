@@ -3,36 +3,40 @@ import {
     EvaluationContext,
     FlagNotFoundError,
     JsonValue,
+    OpenFeatureEventEmitter,
     Provider,
+    ProviderEvents,
     ProviderNotReadyError,
     ResolutionDetails,
     TypeMismatchError,
 } from "@openfeature/server-sdk";
-import { EvaluationCache, FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagApiClient, FeatureFlagEvaluator } from "@octopusdeploy/openfeature-core";
+import { FeatureFlagEvaluatorCache } from "./featureFlagEvaluatorCache.js";
 import { OctopusFeatureConfiguration } from "./octopusFeatureConfiguration.js";
 import { PROVIDER_VERSION } from "./version.js";
 
-// The provider already holds the evaluations it fetched, so a cache adds nothing, and falling back to one would let a
-// failed fetch quietly serve evaluations from an earlier start.
-const noEvaluationCache: EvaluationCache = {
-    read: () => undefined,
-    write: () => undefined,
-};
+// The same as the .NET and Java providers.
+const defaultCacheDurationMs = 60_000;
 
 export class OctopusFeatureProvider implements Provider {
-    private client: FeatureFlagApiClient;
-    private evaluator: FeatureFlagEvaluator | undefined;
+    private readonly evaluatorCache: FeatureFlagEvaluatorCache;
 
     constructor(configuration: OctopusFeatureConfiguration) {
         const logger = configuration.logger ?? new DefaultLogger();
-        this.client = new FeatureFlagApiClient({
+        const client = new FeatureFlagApiClient({
             clientIdentifier: configuration.clientIdentifier,
             productMetadata: configuration.productMetadata,
             serverUri: configuration.serverUri,
             releaseVersionOverride: configuration.releaseVersionOverride,
             logger,
             providerMetadata: { name: "openfeature-provider-ts-server", version: PROVIDER_VERSION },
-            cache: noEvaluationCache,
+        });
+        this.evaluatorCache = new FeatureFlagEvaluatorCache({
+            client,
+            cacheDurationMs: configuration.cacheDurationMs ?? defaultCacheDurationMs,
+            logger,
+            // Initialization failed, so the SDK has the provider in ERROR. Ready moves it back now flags are available.
+            onRecovered: () => this.events.emit(ProviderEvents.Ready),
         });
     }
 
@@ -44,15 +48,17 @@ export class OctopusFeatureProvider implements Provider {
 
     hooks = [];
 
-    async initialize(): Promise<void> {
-        // The SDK initializes a provider again when it is set after being removed. Evaluations from the earlier start
-        // must not outlive a fetch that fails this time, and a rejected fetch below skips its assignment, so clear
-        // them first.
-        this.evaluator = undefined;
+    readonly events = new OpenFeatureEventEmitter();
 
+    async initialize(): Promise<void> {
         // A rejection moves the provider to ERROR and rejects setProviderAndWait, so the caller learns the flags are
-        // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND.
-        this.evaluator = await this.client.getEvaluator();
+        // unavailable instead of every slug quietly reading as FLAG_NOT_FOUND. The cache keeps polling regardless, as
+        // the .NET and Java providers do, so the provider recovers once the server is reachable.
+        await this.evaluatorCache.initialize();
+    }
+
+    async onClose(): Promise<void> {
+        await this.evaluatorCache.shutdown();
     }
 
     // Server-side evaluation context arrives with every call, so one provider serves every request concurrently. The
@@ -85,9 +91,10 @@ export class OctopusFeatureProvider implements Provider {
      * reports PROVIDER_NOT_READY instead of masking the outage as FLAG_NOT_FOUND.
      */
     private requireEvaluator(): FeatureFlagEvaluator {
-        if (!this.evaluator) {
+        const evaluator = this.evaluatorCache.getEvaluator();
+        if (!evaluator) {
             throw new ProviderNotReadyError("No Octopus feature flags are available. The provider failed to initialize, or was used before initializing.");
         }
-        return this.evaluator;
+        return evaluator;
     }
 }

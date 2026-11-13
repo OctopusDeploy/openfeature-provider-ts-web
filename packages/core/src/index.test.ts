@@ -6,10 +6,10 @@ test("the entry point exports what the providers consume", () => {
         "ContextAttributeIsOneOfCondition",
         "FeatureFlagApiClient",
         "FeatureFlagEvaluator",
-        "InMemoryEvaluationCache",
         "ProductMetadata",
         "ServerSideEvaluation",
         "octopusHttpHeaderNames",
+        "parseEvaluationResponse",
         "parseServerSideEvaluations",
     ]);
 });
