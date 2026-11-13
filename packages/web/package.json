@@ -1,6 +1,6 @@
 {
     "name": "@octopusdeploy/openfeature",
-    "version": "6.0.0",
+    "version": "6.1.0",
     "description": "The Octopus Feature Flags OpenFeature Provider",
     "type": "commonjs",
     "main": "dist/cjs/index.js",
@@ -52,7 +52,7 @@
         "specification-tests": "*"
     },
     "dependencies": {
-        "@octopusdeploy/openfeature-core": "6.0.0"
+        "@octopusdeploy/openfeature-core": "6.1.0"
     },
     "peerDependencies": {
         "@openfeature/core": "^1.2.0",
