@@ -75,7 +75,7 @@ jobs:
             got=$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@openfeature/$name/package.json')).version")
             [ "$got" = "$want" ] || { echo "Expected @openfeature/$name@$want, got $got"; exit 1; }
           done
-          nested=$(find packages specification-tests -path "*/node_modules/@openfeature/*" -prune -print)
+          nested=$(find packages specification-tests api-surface -path "*/node_modules/@openfeature/*" -prune -print)
           [ -z "$nested" ] || { echo "Expected one shared copy of each OpenFeature package, also found: $nested"; exit 1; }
 
       - name: Build

@@ -1,0 +1,19 @@
+{
+    "name": "api-surface",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Shared test helper that snapshots each provider's public API and checks it exposes no types consumers can't import. Never published.",
+    "type": "commonjs",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        }
+    },
+    "devDependencies": {
+        "@octopusdeploy/openfeature-core": "*",
+        "@openfeature/core": "^1.2.0",
+        "typescript": "npm:@typescript/typescript6@^6.0.2"
+    },
+    "license": "Apache-2.0"
+}

@@ -54,6 +54,7 @@
     "homepage": "https://github.com/OctopusDeploy/openfeature-provider-ts#readme",
     "devDependencies": {
         "@openfeature/server-sdk": "^1.23.0",
+        "api-surface": "*",
         "specification-tests": "*"
     },
     "dependencies": {

@@ -1,24 +1,24 @@
 import * as path from "path";
 import { analyseApiSurface } from "./apiSurface.js";
 
-const tsconfig = path.join(__dirname, "..", "..", "tsconfig.json");
-const fixture = (name: string) => path.join(__dirname, "apiSurfaceFixtures", name, "index.ts");
+const tsconfig = path.join(__dirname, "..", "tsconfig.json");
+const fixture = (name: string) => path.join(__dirname, "fixtures", name, "index.ts");
 
 describe("analyseApiSurface", () => {
     it("reports types that are reachable from the surface but not exported", () => {
         const { leaks } = analyseApiSurface(fixture("leak"), tsconfig);
 
         expect(leaks).toEqual([
-            "LeakyProvider exposes HiddenResult (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
-            "LeakyProvider exposes HiddenBranch (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
-            "LeakyProvider exposes HiddenGuarded (src/testing/apiSurfaceFixtures/leak/hiddenTypes.ts)",
+            "LeakyProvider exposes HiddenResult (src/fixtures/leak/hiddenTypes.ts)",
+            "LeakyProvider exposes HiddenBranch (src/fixtures/leak/hiddenTypes.ts)",
+            "LeakyProvider exposes HiddenGuarded (src/fixtures/leak/hiddenTypes.ts)",
         ]);
     });
 
     it("reports types from core that are reachable from the surface but not exported", () => {
         const { leaks } = analyseApiSurface(fixture("coreLeak"), tsconfig);
 
-        expect(leaks).toEqual(["CoreLeakyProvider exposes ServerSideEvaluation (../core/dist/cjs/v4/serverSideEvaluation.d.ts)"]);
+        expect(leaks).toEqual(["CoreLeakyProvider exposes ServerSideEvaluation (../packages/core/dist/cjs/v4/serverSideEvaluation.d.ts)"]);
     });
 
     it("marks a class re-exported with `export type` as type-only", () => {

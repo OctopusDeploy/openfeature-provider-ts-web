@@ -2,10 +2,12 @@ import {
     DefaultLogger,
     EvaluationContext,
     FlagNotFoundError,
+    Hook,
     JsonValue,
     OpenFeatureEventEmitter,
     Provider,
     ProviderEvents,
+    ProviderMetadata,
     ProviderNotReadyError,
     ResolutionDetails,
     TypeMismatchError,
@@ -40,13 +42,13 @@ export class OctopusFeatureProvider implements Provider {
         });
     }
 
-    metadata = {
+    readonly metadata: ProviderMetadata = {
         name: "octopus-ts-server-provider",
     };
 
     readonly runsOn = "server";
 
-    hooks = [];
+    readonly hooks: Hook[] = [];
 
     readonly events = new OpenFeatureEventEmitter();
 
