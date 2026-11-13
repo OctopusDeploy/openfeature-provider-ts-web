@@ -5,6 +5,6 @@
 | Package | Description |
 | --- | --- |
 | [`@octopusdeploy/openfeature`](packages/web) | OpenFeature provider for web clients |
-| [`@octopusdeploy/openfeature-server`](packages/server) | OpenFeature provider for Node. Not yet released. |
+| [`@octopusdeploy/openfeature-server`](packages/server) | OpenFeature provider for Node. In beta: install `@octopusdeploy/openfeature-server@beta`. |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to build and test locally.

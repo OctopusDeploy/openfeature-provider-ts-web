@@ -1,10 +1,18 @@
 # Octopus Deploy OpenFeature Provider for Node
 
-**Not yet released.** This package is under development and is not published to npm.
+**Beta.** This package is published under the `beta` dist-tag while its API settles, so install it with `@beta`.
 
 The Octopus Deploy TypeScript/JavaScript [OpenFeature provider](https://openfeature.dev/docs/reference/concepts/provider/) for Node, to be used with the [OpenFeature server SDK](https://openfeature.dev/docs/reference/technologies/server/javascript/).
 
 For browsers, use [`@octopusdeploy/openfeature`](https://www.npmjs.com/package/@octopusdeploy/openfeature) instead.
+
+## Installation
+
+```
+npm i @octopusdeploy/openfeature-server@beta @openfeature/server-sdk
+```
+
+`@openfeature/server-sdk` is a peer dependency, so your app and the provider share a single copy of the OpenFeature SDK. npm 7+ and pnpm 8+ install it automatically. Yarn does not, so list `@openfeature/server-sdk` and its own peer dependency `@openfeature/core` in your `package.json`.
 
 ## Usage
 

@@ -30,8 +30,7 @@ runs:
       id: packages
       shell: bash
       # The packages are released in lockstep, so every one listed here is stamped, packed and pushed on every run.
-      # packages/server isn't released yet, so it isn't listed (BMBB-1401).
-      run: echo "paths=packages/core packages/web" >> "$GITHUB_OUTPUT"
+      run: echo "paths=packages/core packages/web packages/server" >> "$GITHUB_OUTPUT"
 
     - name: Compute version
       id: version

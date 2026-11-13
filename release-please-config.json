@@ -10,6 +10,11 @@
             "release-type": "node",
             "component": "web",
             "extra-files": ["src/version.ts"]
+        },
+        "packages/server": {
+            "release-type": "node",
+            "component": "server",
+            "extra-files": ["src/version.ts"]
         }
     },
     "plugins": [
@@ -17,7 +22,7 @@
         {
             "type": "linked-versions",
             "groupName": "openfeature-providers",
-            "components": ["core", "web"]
+            "components": ["core", "web", "server"]
         }
     ]
 }
