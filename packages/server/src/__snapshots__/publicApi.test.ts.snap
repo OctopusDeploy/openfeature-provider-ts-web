@@ -12,9 +12,9 @@ exports[`public API of the server entry point matches the committed snapshot 1`]
 class OctopusFeatureProvider implements Provider
     constructor(configuration: OctopusFeatureConfiguration): OctopusFeatureProvider
     readonly events: OpenFeatureEventEmitter
-    hooks: Hook[]
+    readonly hooks: Hook[]
     initialize(): Promise<void>
-    metadata: ProviderMetadata
+    readonly metadata: ProviderMetadata
     onClose(): Promise<void>
     resolveBooleanEvaluation(flagKey: string, defaultValue: boolean, context: EvaluationContext): Promise<ResolutionDetails<boolean>>
     resolveNumberEvaluation(flagKey: string, defaultValue: number): Promise<ResolutionDetails<number>>

@@ -42,13 +42,13 @@ export class OctopusFeatureProvider implements Provider {
         });
     }
 
-    metadata: ProviderMetadata = {
+    readonly metadata: ProviderMetadata = {
         name: "octopus-ts-server-provider",
     };
 
     readonly runsOn = "server";
 
-    hooks: Hook[] = [];
+    readonly hooks: Hook[] = [];
 
     readonly events = new OpenFeatureEventEmitter();
 
