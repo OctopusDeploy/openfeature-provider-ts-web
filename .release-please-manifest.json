@@ -1,4 +1,5 @@
 {
     "packages/core": "6.0.0",
-    "packages/web": "6.0.0"
+    "packages/web": "6.0.0",
+    "packages/server": "6.0.0"
 }
