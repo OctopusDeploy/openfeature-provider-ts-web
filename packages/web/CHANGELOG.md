@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.1.0](https://github.com/OctopusDeploy/openfeature-provider-ts/compare/web-v6.0.0...web-v6.1.0) (2026-11-13)
+
+
+### Features
+
+* poll for flag updates on an interval in the server provider ([#194](https://github.com/OctopusDeploy/openfeature-provider-ts/issues/194)) ([627a04e](https://github.com/OctopusDeploy/openfeature-provider-ts/commit/627a04e8e65db6309269edc45aadf8595a817716))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @octopusdeploy/openfeature-core bumped from 6.0.0 to 6.1.0
+
 ## [6.0.0](https://github.com/OctopusDeploy/openfeature-provider-ts/compare/v5.0.2...v6.0.0) (2026-11-05)
 
 
